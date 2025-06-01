@@ -114,9 +114,9 @@
         delta = 0;
       }
 
-      // Update "Earth Years" display
-      const simDays = simTimeMs / 1000;
-      const years = simDays / 365;
+      // ONE simulated day = 1000 simMs, so:
+      const simDays = simTimeMs / 1000;        // 1000 ms → 1 simulated day
+      const years   = simDays / 365;           // 365 simDays → 1 Earth Year
       document.getElementById('yearsDisplay').textContent = `Earth Years: ${years.toFixed(2)}`;
 
       // Move stars in both directions
@@ -135,7 +135,7 @@
         ctx.fill();
       }
 
-      // Sun parameters
+      // Sun (1,391,000 km → 2000 px)
       const sunDiaPx = 2000;
       const sunRadPx = sunDiaPx / 2;
       const sunCenterX = -800;
@@ -145,7 +145,7 @@
       ctx.fillStyle = 'yellow';
       ctx.fill();
 
-      // Planet diameters (km → px)
+      // DIAMETERS (km → px)
       const sunDiaKm   = 1_391_000;
       const merDiaKm   = 4_880;
       const venDiaKm   = 12_104;
@@ -155,7 +155,7 @@
       const satDiaKm   = 120_536;
       const uraDiaKm   = 50_724;
       const nepDiaKm   = 49_244;
-      const moonDiaKm  = 3_474;      // Earth's moon
+      const moonDiaKm  = 3_474;
 
       const merDiaPx   = (merDiaKm   / sunDiaKm) * sunDiaPx;
       const venDiaPx   = (venDiaKm   / sunDiaKm) * sunDiaPx;
@@ -177,7 +177,7 @@
       const nepRadPx   = nepDiaPx   / 2;
       const moonRadPx  = moonDiaPx  / 2;
 
-      // Orbital periods (days)
+      // ORBITAL PERIODS (days)
       const merPeriodDays   = 88;
       const venPeriodDays   = 225;
       const earthPeriodDays = 365;
@@ -186,9 +186,9 @@
       const satPeriodDays   = 10759;
       const uraPeriodDays   = 30687;
       const nepPeriodDays   = 60190;
-      const moonPeriodDays  = 27.3;   // lunar orbit
+      const moonPeriodDays  = 27.3;
 
-      // Define gaps between orbits
+      // GAPS (px)
       const gap1 = 50;
       const gap2 = 40;
       const gap3 = 40;
@@ -228,11 +228,8 @@
       ctx.fillStyle = 'blue';
       ctx.fill();
 
-      // MOON (orbiting Earth)
-      const earthOrbitKm = 149600000; // Earth–Sun average km
-      const moonDistKm   = 384400;    // Moon–Earth average km
-      // scale moon orbit radius relative to Earth orbit radius
-      const moonOrbitR = earthOrbitR * (moonDistKm / earthOrbitKm);
+      // MOON (around Earth)
+      const moonOrbitR = earthOrbitR * (384400 / 149600000);
       const moonAngle  = (simDays / moonPeriodDays) * Math.PI * 2;
       const moonX      = earthX + Math.cos(moonAngle) * moonOrbitR;
       const moonY      = earthY + Math.sin(moonAngle) * moonOrbitR;
@@ -286,7 +283,7 @@
       ctx.lineWidth = 2;
       ctx.stroke();
 
-      // URANUS (shifted right)
+      // URANUS
       const uraOrbitR = sunRadPx + uraRadPx + gap1 + merRadPx + gap2 + venRadPx + gap3 + earthRadPx + gap4 + marsRadPx + gap5 + jupRadPx + gapAfterJupiter + satRadPx + gap6;
       const uraAngle  = (simDays / uraPeriodDays) * Math.PI * 2;
       const uraX      = sunCenterX + Math.cos(uraAngle) * uraOrbitR;
@@ -296,7 +293,7 @@
       ctx.fillStyle = 'lightblue';
       ctx.fill();
 
-      // NEPTUNE (shifted farther right)
+      // NEPTUNE
       const nepOrbitR = sunRadPx + nepRadPx + gap1 + merRadPx + gap2 + venRadPx + gap3 + earthRadPx + gap4 + marsRadPx + gap5 + jupRadPx + gapAfterJupiter + satRadPx + gap6 + uraRadPx + gap7;
       const nepAngle  = (simDays / nepPeriodDays) * Math.PI * 2;
       const nepX      = sunCenterX + Math.cos(nepAngle) * nepOrbitR;
