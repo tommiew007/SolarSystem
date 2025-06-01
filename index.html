@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Solar System Model with Moon</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: black;
+      color: white;
+      font-family: sans-serif;
+    }
+    canvas {
+      display: block;
+    }
+    #overlay {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 8px;
+      border-radius: 4px;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+    #overlay span {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  <div id="overlay">
+    <span>← decreases time factor</span>
+    <span>→ increases time factor</span>
+    <span>SPACE toggles pause/resume</span>
+    <span>ESC resets simulation</span>
+    <span id="timeFactorDisplay">Time Factor: 0.0</span>
+    <span id="yearsDisplay">Earth Years: 0.00</span>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    let stars = [];
+    let speedFactor = 0.0;
+    let simTimeMs = 0;
+    let lastTimestamp = null;
+    let paused = false;
+
+    function generateStars(count) {
+      const out = [];
+      for (let i = 0; i < count; i++) {
+        out.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          radius: Math.random() * 1.2 + 0.3,
+          opacity: Math.random() * 0.7 + 0.3
+        });
+      }
+      return out;
+    }
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      stars = generateStars(400);
+    }
+
+    function lerp(a, b, t) {
+      return a + (b - a) * t;
+    }
+
+    function getMercuryColor(simTime) {
+      const palette = [
+        [255,   0,   0],
+        [255, 165,   0],
+        [165,  42,  42]
+      ];
+      const cycleMs = 3000;
+      const t = ((simTime % cycleMs) + cycleMs) % cycleMs / cycleMs;
+      const seg = t * 3;
+      if (seg < 1) {
+        const f = seg;
+        const [r1, g1, b1] = palette[0];
+        const [r2, g2, b2] = palette[1];
+        return `rgb(${Math.round(lerp(r1, r2, f))},${Math.round(lerp(g1, g2, f))},${Math.round(lerp(b1, b2, f))})`;
+      } else if (seg < 2) {
+        const f = seg - 1;
+        const [r1, g1, b1] = palette[1];
+        const [r2, g2, b2] = palette[2];
+        return `rgb(${Math.round(lerp(r1, r2, f))},${Math.round(lerp(g1, g2, f))},${Math.round(lerp(b1, b2, f))})`;
+      } else {
+        const f = seg - 2;
+        const [r1, g1, b1] = palette[2];
+        const [r2, g2, b2] = palette[0];
+        return `rgb(${Math.round(lerp(r1, r2, f))},${Math.round(lerp(g1, g2, f))},${Math.round(lerp(b1, b2, f))})`;
+      }
+    }
+
+    function drawScene(timestamp) {
+      if (lastTimestamp === null) {
+        lastTimestamp = timestamp;
+      }
+      let delta = timestamp - lastTimestamp;
+      lastTimestamp = timestamp;
+
+      if (!paused) {
+        simTimeMs += delta * speedFactor;
+      } else {
+        delta = 0;
+      }
+
+      // Update "Earth Years" display
+      const simDays = simTimeMs / 1000;
+      const years = simDays / 365;
+      document.getElementById('yearsDisplay').textContent = `Earth Years: ${years.toFixed(2)}`;
+
+      // Move stars in both directions
+      const starSpeedConstant = 0.02;
+      for (const s of stars) {
+        s.x += delta * speedFactor * starSpeedConstant;
+        if (s.x > canvas.width) s.x -= canvas.width;
+        if (s.x < 0) s.x += canvas.width;
+      }
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (const s of stars) {
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${s.opacity})`;
+        ctx.fill();
+      }
+
+      // Sun parameters
+      const sunDiaPx = 2000;
+      const sunRadPx = sunDiaPx / 2;
+      const sunCenterX = -800;
+      const sunCenterY = canvas.height / 2;
+      ctx.beginPath();
+      ctx.arc(sunCenterX, sunCenterY, sunRadPx, 0, Math.PI * 2);
+      ctx.fillStyle = 'yellow';
+      ctx.fill();
+
+      // Planet diameters (km → px)
+      const sunDiaKm   = 1_391_000;
+      const merDiaKm   = 4_880;
+      const venDiaKm   = 12_104;
+      const earthDiaKm = 12_756;
+      const marsDiaKm  = 6_792;
+      const jupDiaKm   = 142_984;
+      const satDiaKm   = 120_536;
+      const uraDiaKm   = 50_724;
+      const nepDiaKm   = 49_244;
+      const moonDiaKm  = 3_474;      // Earth's moon
+
+      const merDiaPx   = (merDiaKm   / sunDiaKm) * sunDiaPx;
+      const venDiaPx   = (venDiaKm   / sunDiaKm) * sunDiaPx;
+      const earthDiaPx = (earthDiaKm / sunDiaKm) * sunDiaPx;
+      const marsDiaPx  = (marsDiaKm  / sunDiaKm) * sunDiaPx;
+      const jupDiaPx   = (jupDiaKm   / sunDiaKm) * sunDiaPx;
+      const satDiaPx   = (satDiaKm   / sunDiaKm) * sunDiaPx;
+      const uraDiaPx   = (uraDiaKm   / sunDiaKm) * sunDiaPx;
+      const nepDiaPx   = (nepDiaKm   / sunDiaKm) * sunDiaPx;
+      const moonDiaPx  = (moonDiaKm  / sunDiaKm) * sunDiaPx;
+
+      const merRadPx   = merDiaPx   / 2;
+      const venRadPx   = venDiaPx   / 2;
+      const earthRadPx = earthDiaPx / 2;
+      const marsRadPx  = marsDiaPx  / 2;
+      const jupRadPx   = jupDiaPx   / 2;
+      const satRadPx   = satDiaPx   / 2;
+      const uraRadPx   = uraDiaPx   / 2;
+      const nepRadPx   = nepDiaPx   / 2;
+      const moonRadPx  = moonDiaPx  / 2;
+
+      // Orbital periods (days)
+      const merPeriodDays   = 88;
+      const venPeriodDays   = 225;
+      const earthPeriodDays = 365;
+      const marsPeriodDays  = 687;
+      const jupPeriodDays   = 4333;
+      const satPeriodDays   = 10759;
+      const uraPeriodDays   = 30687;
+      const nepPeriodDays   = 60190;
+      const moonPeriodDays  = 27.3;   // lunar orbit
+
+      // Define gaps between orbits
+      const gap1 = 50;
+      const gap2 = 40;
+      const gap3 = 40;
+      const gap4 = 40;
+      const gap5 = 40;
+      const gapAfterJupiter = 150;
+      const gap6 = 100;
+      const gap7 = 60;
+
+      // MERCURY
+      const merOrbitR = sunRadPx + merRadPx + gap1;
+      const merAngle  = (simDays / merPeriodDays) * Math.PI * 2;
+      const merX      = sunCenterX + Math.cos(merAngle) * merOrbitR;
+      const merY      = sunCenterY + Math.sin(merAngle) * merOrbitR;
+      ctx.beginPath();
+      ctx.arc(merX, merY, merRadPx, 0, Math.PI * 2);
+      ctx.fillStyle = getMercuryColor(simTimeMs);
+      ctx.fill();
+
+      // VENUS
+      const venOrbitR = sunRadPx + venRadPx + gap1 + merRadPx + gap2;
+      const venAngle  = (simDays / venPeriodDays) * Math.PI * 2;
+      const venX      = sunCenterX + Math.cos(venAngle) * venOrbitR;
+      const venY      = sunCenterY + Math.sin(venAngle) * venOrbitR;
+      ctx.beginPath();
+      ctx.arc(venX, venY, venRadPx, 0, Math.PI * 2);
+      ctx.fillStyle = 'white';
+      ctx.fill();
+
+      // EARTH
+      const earthOrbitR = sunRadPx + earthRadPx + gap1 + merRadPx + gap2 + venRadPx + gap3;
+      const earthAngle  = (simDays / earthPeriodDays) * Math.PI * 2;
+      const earthX      = sunCenterX + Math.cos(earthAngle) * earthOrbitR;
+      const earthY      = sunCenterY + Math.sin(earthAngle) * earthOrbitR;
+      ctx.beginPath();
+      ctx.arc(earthX, earthY, earthRadPx, 0, Math.PI * 2);
+      ctx.fillStyle = 'blue';
+      ctx.fill();
+
+      // MOON (orbiting Earth)
+      const earthOrbitKm = 149600000; // Earth–Sun average km
+      const moonDistKm   = 384400;    // Moon–Earth average km
+      // scale moon orbit radius relative to Earth orbit radius
+      const moonOrbitR = earthOrbitR * (moonDistKm / earthOrbitKm);
+      const moonAngle  = (simDays / moonPeriodDays) * Math.PI * 2;
+      const moonX      = earthX + Math.cos(moonAngle) * moonOrbitR;
+      const moonY      = earthY + Math.sin(moonAngle) * moonOrbitR;
+      ctx.beginPath();
+      ctx.arc(moonX, moonY, moonRadPx, 0, Math.PI * 2);
+      ctx.fillStyle = 'lightgray';
+      ctx.fill();
+
+      // MARS
+      const marsOrbitR = sunRadPx + marsRadPx + gap1 + merRadPx + gap2 + venRadPx + gap3 + earthRadPx + gap4;
+      const marsAngle  = (simDays / marsPeriodDays) * Math.PI * 2;
+      const marsX      = sunCenterX + Math.cos(marsAngle) * marsOrbitR;
+      const marsY      = sunCenterY + Math.sin(marsAngle) * marsOrbitR;
+      ctx.beginPath();
+      ctx.arc(marsX, marsY, marsRadPx, 0, Math.PI * 2);
+      ctx.fillStyle = 'red';
+      ctx.fill();
+
+      // JUPITER
+      const jupOrbitR = sunRadPx + jupRadPx + gap1 + merRadPx + gap2 + venRadPx + gap3 + earthRadPx + gap4 + marsRadPx + gap5;
+      const jupAngle  = (simDays / jupPeriodDays) * Math.PI * 2;
+      const jupX      = sunCenterX + Math.cos(jupAngle) * jupOrbitR;
+      const jupY      = sunCenterY + Math.sin(jupAngle) * jupOrbitR;
+      ctx.beginPath();
+      ctx.arc(jupX, jupY, jupRadPx, 0, Math.PI * 2);
+      ctx.fillStyle = 'orange';
+      ctx.fill();
+
+      // SATURN
+      const satOrbitR = sunRadPx + satRadPx + gap1 + merRadPx + gap2 + venRadPx + gap3 + earthRadPx + gap4 + marsRadPx + gap5 + jupRadPx + gapAfterJupiter;
+      const satAngle  = (simDays / satPeriodDays) * Math.PI * 2;
+      const satX      = sunCenterX + Math.cos(satAngle) * satOrbitR;
+      const satY      = sunCenterY + Math.sin(satAngle) * satOrbitR;
+      ctx.beginPath();
+      ctx.arc(satX, satY, satRadPx, 0, Math.PI * 2);
+      ctx.fillStyle = 'lightgray';
+      ctx.fill();
+
+      // SATURN’S TILTED RINGS
+      ctx.beginPath();
+      ctx.ellipse(
+        satX,
+        satY,
+        satRadPx * 1.5,
+        satRadPx * 0.4,
+        Math.PI / 5,
+        0,
+        2 * Math.PI
+      );
+      ctx.strokeStyle = 'rgba(200,200,200,0.8)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // URANUS (shifted right)
+      const uraOrbitR = sunRadPx + uraRadPx + gap1 + merRadPx + gap2 + venRadPx + gap3 + earthRadPx + gap4 + marsRadPx + gap5 + jupRadPx + gapAfterJupiter + satRadPx + gap6;
+      const uraAngle  = (simDays / uraPeriodDays) * Math.PI * 2;
+      const uraX      = sunCenterX + Math.cos(uraAngle) * uraOrbitR;
+      const uraY      = sunCenterY + Math.sin(uraAngle) * uraOrbitR;
+      ctx.beginPath();
+      ctx.arc(uraX, uraY, uraRadPx, 0, Math.PI * 2);
+      ctx.fillStyle = 'lightblue';
+      ctx.fill();
+
+      // NEPTUNE (shifted farther right)
+      const nepOrbitR = sunRadPx + nepRadPx + gap1 + merRadPx + gap2 + venRadPx + gap3 + earthRadPx + gap4 + marsRadPx + gap5 + jupRadPx + gapAfterJupiter + satRadPx + gap6 + uraRadPx + gap7;
+      const nepAngle  = (simDays / nepPeriodDays) * Math.PI * 2;
+      const nepX      = sunCenterX + Math.cos(nepAngle) * nepOrbitR;
+      const nepY      = sunCenterY + Math.sin(nepAngle) * nepOrbitR;
+      ctx.beginPath();
+      ctx.arc(nepX, nepY, nepRadPx, 0, Math.PI * 2);
+      ctx.fillStyle = 'darkblue';
+      ctx.fill();
+
+      requestAnimationFrame(drawScene);
+    }
+
+    function updateOverlay() {
+      document.getElementById('timeFactorDisplay').textContent = `Time Factor: ${speedFactor.toFixed(1)}`;
+      const simDays = simTimeMs / 1000;
+      document.getElementById('yearsDisplay').textContent = `Earth Years: ${(simDays / 365).toFixed(2)}`;
+    }
+
+    window.addEventListener('keydown', e => {
+      if (e.key === 'ArrowRight') {
+        speedFactor += 1;
+        updateOverlay();
+      }
+      if (e.key === 'ArrowLeft') {
+        speedFactor -= 1;
+        updateOverlay();
+      }
+      if (e.key === ' ') {
+        paused = !paused;
+      }
+      if (e.key === 'Escape') {
+        paused = false;
+        speedFactor = 0;
+        simTimeMs = 0;
+        lastTimestamp = null;
+        updateOverlay();
+      }
+    });
+
+    window.addEventListener('resize', resizeCanvas);
+
+    resizeCanvas();
+    updateOverlay();
+    requestAnimationFrame(drawScene);
+  </script>
+</body>
+</html>
