@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Solar System Model with Moon</title>
+  <title>Solar System Model with Zoom & Pan</title>
   <style>
     body, html {
       margin: 0;
@@ -22,34 +22,428 @@
       background: rgba(0, 0, 0, 0.6);
       padding: 8px;
       border-radius: 4px;
-      font-size: 14px;
-      line-height: 1.4;
+      font-size: 12px;
+      line-height: 1.32;
     }
     #overlay span {
       display: block;
+    }
+    .hidden-ui {
+      display: none !important;
+    }
+    #infoCard, #legend, #followPanel {
+      position: absolute;
+      background: rgba(5, 10, 20, 0.74);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+    }
+    #infoCard {
+      top: 10px;
+      left: 10px;
+      width: 270px;
+      padding: 12px 14px;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    #infoCard h2 {
+      margin: 0 0 2px;
+      font-size: 18px;
+      line-height: 1.1;
+    }
+    #infoCard .type {
+      display: block;
+      margin-bottom: 10px;
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    #infoCard dl {
+      margin: 0;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 4px 10px;
+    }
+    #infoCard dt {
+      color: rgba(255, 255, 255, 0.66);
+    }
+    #infoCard dd {
+      margin: 0;
+    }
+    #infoCard .fact {
+      margin: 10px 0 0;
+      color: #d7e9ff;
+    }
+    #infoCard .hint {
+      margin: 8px 0 0;
+      color: rgba(255, 255, 255, 0.54);
+      font-size: 11px;
+    }
+    #infoCard figure {
+      margin: 12px 0 0;
+    }
+    #infoCard img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.04);
+    }
+    #infoCard figcaption {
+      margin-top: 6px;
+      color: rgba(255, 255, 255, 0.56);
+      font-size: 10px;
+      line-height: 1.35;
+    }
+    #legend {
+      left: 10px;
+      bottom: 10px;
+      width: 270px;
+      padding: 10px 12px;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    #legend strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 13px;
+    }
+    #legend span {
+      display: block;
+      color: rgba(255, 255, 255, 0.85);
+    }
+    #followPanel {
+      top: 10px;
+      right: 10px;
+      width: 250px;
+      padding: 10px 12px;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    #followPanel strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 13px;
+    }
+    #followPanel p {
+      margin: 0 0 8px;
+      color: rgba(255, 255, 255, 0.78);
+    }
+    #followPanel select {
+      width: 100%;
+      padding: 7px 8px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.07);
+      color: white;
+      font: inherit;
+      color-scheme: dark;
+    }
+    #followPanel option {
+      color: #0c1020;
+      background: #ffffff;
+    }
+    .is-hidden {
+      display: none !important;
     }
   </style>
 </head>
 <body>
   <canvas id="canvas"></canvas>
+  <div id="infoCard"></div>
+  <div id="followPanel" class="is-hidden">
+    <strong>Follow Object</strong>
+    <p>Select a body to keep it centered on screen while the simulation continues.</p>
+    <select id="followSelect"></select>
+  </div>
   <div id="overlay">
-    <span>← decreases time factor</span>
-    <span>→ increases time factor</span>
+    <span>W increases time factor</span>
+    <span>S decreases time factor</span>
     <span>SPACE toggles pause/resume</span>
     <span>ESC resets simulation</span>
+    <span>L toggles labels</span>
+    <span>H toggles help</span>
+    <span>M toggles music</span>
+    <span>F opens follow chooser</span>
+    <span>Z zooms in</span>
+    <span>X zooms out</span>
+    <span>↑ pans up</span>
+    <span>↓ pans down</span>
+    <span>→ pan right</span>
+    <span>← pan left</span>
     <span id="timeFactorDisplay">Time Factor: 0.0</span>
+    <span id="timeScaleDisplay">Rate: Paused</span>
+    <span id="musicDisplay">Music: Off</span>
     <span id="yearsDisplay">Earth Years: 0.00</span>
+    <span id="labelDisplay">Labels: Off</span>
+    <span id="followDisplay">Follow: Free camera</span>
+    <span id="motionDisplay">Motion: Compact orbits, real relative speeds</span>
+  </div>
+  <div id="legend">
+    <strong>Scale Guide</strong>
+    <span>Planet and moon diameters are drawn from the same size scale relative to the Sun.</span>
+    <span>Planet spacing is compacted to fit the screen and adjusts evenly with window width.</span>
+    <span>Orbital motion keeps real relative speed differences even though orbit spacing is compressed.</span>
+    <span>Green marks the habitable zone and blue marks the frost-line region.</span>
   </div>
 
   <script>
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
+    const infoCard = document.getElementById('infoCard');
+    const followPanel = document.getElementById('followPanel');
+    const followSelect = document.getElementById('followSelect');
+
+    const SUN_DIAMETER_KM = 1_391_000;
+    const SUN_DIAMETER_PX = 2000;
+    const EARTH_ORBITAL_PERIOD_DAYS = 365.256;
+    const EARTH_ORBITAL_SPEED_KMS = 29.78;
+    const EARTH_ORBIT_RADIUS_KM = 149_598_262;
+    const MIN_SCALE = 0.05;
+    const MAX_SCALE = 120;
+    const HAS_WEB_AUDIO = Boolean(window.AudioContext || window.webkitAudioContext);
+    const HABITABLE_ZONE_INNER_KM = EARTH_ORBIT_RADIUS_KM * 0.95;
+    const HABITABLE_ZONE_OUTER_KM = EARTH_ORBIT_RADIUS_KM * 1.67;
+    const FROST_LINE_INNER_KM = EARTH_ORBIT_RADIUS_KM * 2.55;
+    const FROST_LINE_OUTER_KM = EARTH_ORBIT_RADIUS_KM * 2.95;
+
+    const SUN_INFO = {
+      id: 'sun',
+      name: 'Sun',
+      type: 'Star',
+      diameterKm: SUN_DIAMETER_KM,
+      orbitalPeriodDays: null,
+      moonCount: null,
+      fact: 'The Sun contains more than 99% of the solar system\'s mass.'
+    };
+
+    const PLANETS = [
+      {
+        name: 'Mercury',
+        diameterKm: 4_879,
+        semiMajorAxisKm: 57_909_227,
+        orbitalPeriodDays: 87.97,
+        orbitalSpeedKmS: 47.36,
+        trailColor: '#d77a46',
+        colorFn: getMercuryColor,
+        fact: 'Mercury has the shortest year of any planet in our solar system.',
+        moons: []
+      },
+      {
+        name: 'Venus',
+        diameterKm: 12_104,
+        semiMajorAxisKm: 108_209_475,
+        orbitalPeriodDays: 224.70,
+        orbitalSpeedKmS: 35.02,
+        color: '#efe4cc',
+        trailColor: '#efe4cc',
+        fact: 'Venus spins so slowly that a day there lasts longer than its year.',
+        moons: []
+      },
+      {
+        name: 'Earth',
+        diameterKm: 12_756,
+        semiMajorAxisKm: 149_598_262,
+        orbitalPeriodDays: 365.256,
+        orbitalSpeedKmS: 29.78,
+        color: '#3d7bfd',
+        trailColor: '#7ab2ff',
+        fact: 'Earth is the only known world with stable liquid water on its surface.',
+        moons: [
+          { name: 'Moon', diameterKm: 3_474.8, orbitRadiusKm: 384_400, orbitalPeriodDays: 27.32, color: '#d9d9d9', fact: 'Earth\'s Moon drives most ocean tides and always shows nearly the same face to us.' }
+        ]
+      },
+      {
+        name: 'Mars',
+        diameterKm: 6_792,
+        semiMajorAxisKm: 227_943_824,
+        orbitalPeriodDays: 686.98,
+        orbitalSpeedKmS: 24.07,
+        color: '#c7502e',
+        trailColor: '#f07f58',
+        fact: 'Mars hosts Olympus Mons, the tallest known volcano in the solar system.',
+        moons: [
+          { name: 'Phobos', diameterKm: 22.5, orbitRadiusKm: 9_376, orbitalPeriodDays: 0.319, color: '#bfb6a7', fact: 'Phobos orbits Mars faster than Mars rotates, so it rises in the west.' },
+          { name: 'Deimos', diameterKm: 12.4, orbitRadiusKm: 23_463, orbitalPeriodDays: 1.263, color: '#a79888', fact: 'Deimos is the smaller and more distant of Mars\'s two moons.' }
+        ]
+      },
+      {
+        name: 'Jupiter',
+        diameterKm: 142_984,
+        semiMajorAxisKm: 778_340_821,
+        orbitalPeriodDays: 4_332.59,
+        orbitalSpeedKmS: 13.07,
+        color: '#d7a86e',
+        trailColor: '#f0c58d',
+        fact: 'Jupiter is the largest planet and helps shape many small-body orbits with its gravity.',
+        moons: [
+          { name: 'Io', diameterKm: 3_643.2, orbitRadiusKm: 421_700, orbitalPeriodDays: 1.769, color: '#f1d46d', fact: 'Io is the most volcanically active world known.' },
+          { name: 'Europa', diameterKm: 3_121.6, orbitRadiusKm: 671_100, orbitalPeriodDays: 3.551, color: '#d9cdb8', fact: 'Europa likely hides a global salty ocean beneath its ice shell.' },
+          { name: 'Ganymede', diameterKm: 5_268.2, orbitRadiusKm: 1_070_400, orbitalPeriodDays: 7.155, color: '#9c8f7a', fact: 'Ganymede is the largest moon in the solar system.' },
+          { name: 'Callisto', diameterKm: 4_820.6, orbitRadiusKm: 1_882_700, orbitalPeriodDays: 16.689, color: '#837663', fact: 'Callisto preserves one of the oldest cratered surfaces around Jupiter.' }
+        ]
+      },
+      {
+        name: 'Saturn',
+        diameterKm: 120_536,
+        semiMajorAxisKm: 1_426_666_422,
+        orbitalPeriodDays: 10_759.22,
+        orbitalSpeedKmS: 9.69,
+        color: '#dbc58a',
+        trailColor: '#ebd6a4',
+        fact: 'Saturn\'s rings are made mostly of water ice ranging from dust to house-sized chunks.',
+        rings: {
+          tilt: Math.PI / 5,
+          flatten: 0.34,
+          bands: [
+            { innerFactor: 1.16, outerFactor: 1.30, color: 'rgba(214, 198, 165, 0.22)' },
+            { innerFactor: 1.32, outerFactor: 1.79, color: 'rgba(232, 220, 190, 0.48)' },
+            { innerFactor: 1.87, outerFactor: 2.28, color: 'rgba(224, 214, 186, 0.34)' },
+            { innerFactor: 2.34, outerFactor: 2.40, color: 'rgba(241, 237, 225, 0.36)' }
+          ]
+        },
+        moons: [
+          { name: 'Mimas', diameterKm: 396.4, orbitRadiusKm: 185_520, orbitalPeriodDays: 0.942, color: '#cfcbc4' },
+          { name: 'Enceladus', diameterKm: 504.2, orbitRadiusKm: 238_020, orbitalPeriodDays: 1.370, color: '#e4eef3', fact: 'Enceladus ejects water-rich plumes from a global ocean beneath its ice.' },
+          { name: 'Tethys', diameterKm: 1_062.2, orbitRadiusKm: 294_670, orbitalPeriodDays: 1.888, color: '#ddd4c5' },
+          { name: 'Dione', diameterKm: 1_122.8, orbitRadiusKm: 377_400, orbitalPeriodDays: 2.737, color: '#c9c1b4' },
+          { name: 'Rhea', diameterKm: 1_527.6, orbitRadiusKm: 527_070, orbitalPeriodDays: 4.518, color: '#b7b0a6' },
+          { name: 'Titan', diameterKm: 5_149.5, orbitRadiusKm: 1_221_870, orbitalPeriodDays: 15.945, color: '#d39f4c', fact: 'Titan is the only moon with a dense atmosphere and stable surface lakes.' },
+          { name: 'Iapetus', diameterKm: 1_468.6, orbitRadiusKm: 3_560_820, orbitalPeriodDays: 79.321, color: '#998b70', fact: 'Iapetus has one bright hemisphere and one dramatically dark hemisphere.' }
+        ]
+      },
+      {
+        name: 'Uranus',
+        diameterKm: 51_118,
+        semiMajorAxisKm: 2_870_658_186,
+        orbitalPeriodDays: 30_688.5,
+        orbitalSpeedKmS: 6.81,
+        color: '#8ad9e8',
+        trailColor: '#a7eefb',
+        fact: 'Uranus rotates on its side, giving it one of the most extreme tilts of any planet.',
+        rings: {
+          tilt: Math.PI / 2.9,
+          flatten: 0.23,
+          bands: [
+            { innerFactor: 1.44, outerFactor: 1.49, color: 'rgba(180, 228, 237, 0.10)' },
+            { innerFactor: 1.58, outerFactor: 1.63, color: 'rgba(208, 245, 252, 0.16)' },
+            { innerFactor: 1.74, outerFactor: 1.81, color: 'rgba(184, 233, 240, 0.12)' },
+            { innerFactor: 1.94, outerFactor: 2.00, color: 'rgba(214, 247, 255, 0.18)' }
+          ]
+        },
+        moons: [
+          { name: 'Miranda', diameterKm: 471.6, orbitRadiusKm: 129_900, orbitalPeriodDays: 1.413, color: '#cfccc9', fact: 'Miranda is famous for giant cliffs and patchwork terrain.' },
+          { name: 'Ariel', diameterKm: 1_157.8, orbitRadiusKm: 191_020, orbitalPeriodDays: 2.520, color: '#e6e4df' },
+          { name: 'Umbriel', diameterKm: 1_169.4, orbitRadiusKm: 266_300, orbitalPeriodDays: 4.144, color: '#8f9096' },
+          { name: 'Titania', diameterKm: 1_576.8, orbitRadiusKm: 435_910, orbitalPeriodDays: 8.706, color: '#ccc6bd' },
+          { name: 'Oberon', diameterKm: 1_522.8, orbitRadiusKm: 583_520, orbitalPeriodDays: 13.463, color: '#a5a09b' }
+        ]
+      },
+      {
+        name: 'Neptune',
+        diameterKm: 49_528,
+        semiMajorAxisKm: 4_498_396_441,
+        orbitalPeriodDays: 60_182,
+        orbitalSpeedKmS: 5.43,
+        color: '#3b6fe3',
+        trailColor: '#7fa5ff',
+        fact: 'Neptune was the first planet discovered through mathematical prediction before observation.',
+        moons: [
+          { name: 'Proteus', diameterKm: 420, orbitRadiusKm: 117_647, orbitalPeriodDays: 1.122, color: '#7f8a92' },
+          { name: 'Triton', diameterKm: 2_706.8, orbitRadiusKm: 354_760, orbitalPeriodDays: 5.877, color: '#d6cfc2', fact: 'Triton orbits Neptune backward, strongly suggesting it was captured.' },
+          { name: 'Nereid', diameterKm: 340, orbitRadiusKm: 5_513_818, orbitalPeriodDays: 360.13, color: '#9ca0a8', fact: 'Nereid follows one of the most eccentric moon orbits in the solar system.' }
+        ]
+      }
+    ].map(planet => ({
+      ...planet,
+      radiusPx: diameterKmToPx(planet.diameterKm) / 2,
+      phase: getStablePhase(planet.name),
+      moons: planet.moons
+        .slice()
+        .sort((a, b) => a.orbitRadiusKm - b.orbitRadiusKm)
+        .map((moon, moonIndex, moonArray) => ({
+          ...moon,
+          radiusPx: diameterKmToPx(moon.diameterKm) / 2,
+          phase: moonArray.length === 1 ? getStablePhase(`${planet.name}-${moon.name}`) : getStablePhase(`${planet.name}-${moon.name}`) + (moonIndex / moonArray.length) * 0.2
+        }))
+    }));
+
+    const FOLLOW_OPTIONS = [
+      { id: '', label: 'Free camera' },
+      { id: 'sun', label: 'Sun' },
+      ...PLANETS.flatMap(planet => [
+        { id: `planet:${planet.name}`, label: planet.name },
+        ...planet.moons.map(moon => ({
+          id: `moon:${planet.name}:${moon.name}`,
+          label: `${moon.name} (${planet.name})`
+        }))
+      ])
+    ];
+
+    const WIKIPEDIA_TITLES = {
+      sun: ['Sun'],
+      'planet:Mercury': ['Mercury_(planet)', 'Mercury'],
+      'planet:Venus': ['Venus'],
+      'planet:Earth': ['Earth'],
+      'planet:Mars': ['Mars'],
+      'planet:Jupiter': ['Jupiter'],
+      'planet:Saturn': ['Saturn'],
+      'planet:Uranus': ['Uranus'],
+      'planet:Neptune': ['Neptune'],
+      'moon:Earth:Moon': ['Moon'],
+      'moon:Mars:Phobos': ['Phobos_(moon)', 'Phobos'],
+      'moon:Mars:Deimos': ['Deimos_(moon)', 'Deimos'],
+      'moon:Jupiter:Io': ['Io_(moon)', 'Io'],
+      'moon:Jupiter:Europa': ['Europa_(moon)', 'Europa'],
+      'moon:Jupiter:Ganymede': ['Ganymede_(moon)', 'Ganymede'],
+      'moon:Jupiter:Callisto': ['Callisto_(moon)', 'Callisto'],
+      'moon:Saturn:Mimas': ['Mimas_(moon)', 'Mimas'],
+      'moon:Saturn:Enceladus': ['Enceladus_(moon)', 'Enceladus'],
+      'moon:Saturn:Tethys': ['Tethys_(moon)', 'Tethys'],
+      'moon:Saturn:Dione': ['Dione_(moon)', 'Dione'],
+      'moon:Saturn:Rhea': ['Rhea_(moon)', 'Rhea'],
+      'moon:Saturn:Titan': ['Titan_(moon)', 'Titan'],
+      'moon:Saturn:Iapetus': ['Iapetus_(moon)', 'Iapetus'],
+      'moon:Uranus:Miranda': ['Miranda_(moon)', 'Miranda'],
+      'moon:Uranus:Ariel': ['Ariel_(moon)', 'Ariel'],
+      'moon:Uranus:Umbriel': ['Umbriel'],
+      'moon:Uranus:Titania': ['Titania_(moon)', 'Titania'],
+      'moon:Uranus:Oberon': ['Oberon_(moon)', 'Oberon'],
+      'moon:Neptune:Proteus': ['Proteus_(moon)', 'Proteus'],
+      'moon:Neptune:Triton': ['Triton_(moon)', 'Triton'],
+      'moon:Neptune:Nereid': ['Nereid_(moon)', 'Nereid']
+    };
 
     let stars = [];
     let speedFactor = 0.0;
     let simTimeMs = 0;
     let lastTimestamp = null;
     let paused = false;
+    let showLabels = false;
+    let showHelp = true;
+    let showFollowChooser = false;
+    let followTargetId = null;
+    let followNeedsZoom = false;
+    let musicEnabled = false;
+    let musicUnavailable = false;
+    let sceneBodies = [];
+    let hoveredBodyId = null;
+    let selectedBodyId = null;
+    let trailLastTimestamp = 0;
+    let infoCardRenderKey = '';
+
+    const bodyTrails = new Map();
+    const wikiImageCache = new Map();
+    let musicEngine = null;
+
+    // Zoom & pan state
+    let scale = 1.0;
+    let panX = 0;
+    let panY = 0;
 
     function generateStars(count) {
       const out = [];
@@ -58,7 +452,9 @@
           x: Math.random() * canvas.width,
           y: Math.random() * canvas.height,
           radius: Math.random() * 1.2 + 0.3,
-          opacity: Math.random() * 0.7 + 0.3
+          opacity: Math.random() * 0.7 + 0.3,
+          twinkleOffset: Math.random() * Math.PI * 2,
+          twinkleSpeed: Math.random() * 0.004 + 0.001
         });
       }
       return out;
@@ -68,10 +464,309 @@
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
       stars = generateStars(400);
+      bodyTrails.clear();
+      trailLastTimestamp = 0;
+      if (followTargetId) {
+        followNeedsZoom = true;
+      }
     }
 
     function lerp(a, b, t) {
       return a + (b - a) * t;
+    }
+
+    function clamp(value, min, max) {
+      return Math.min(max, Math.max(min, value));
+    }
+
+    function diameterKmToPx(diameterKm) {
+      return (diameterKm / SUN_DIAMETER_KM) * SUN_DIAMETER_PX;
+    }
+
+    function normalizeLog(value, minValue, maxValue) {
+      if (maxValue <= minValue) {
+        return 0.5;
+      }
+      return (Math.log(value) - Math.log(minValue)) / (Math.log(maxValue) - Math.log(minValue));
+    }
+
+    function getStablePhase(seed) {
+      let hash = 0;
+      for (let i = 0; i < seed.length; i++) {
+        hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+      }
+      return (hash / 0xffffffff) * Math.PI * 2;
+    }
+
+    function formatNumber(value) {
+      return value.toLocaleString('en-US');
+    }
+
+    function midiToHz(midi) {
+      return 440 * Math.pow(2, (midi - 69) / 12);
+    }
+
+    function escapeHtml(text) {
+      return String(text)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function formatOrbitalPeriod(days) {
+      if (!days) {
+        return 'N/A';
+      }
+      if (days >= 365) {
+        return `${days.toLocaleString('en-US', { maximumFractionDigits: 2 })} days (${(days / EARTH_ORBITAL_PERIOD_DAYS).toFixed(2)} years)`;
+      }
+      return `${days.toLocaleString('en-US', { maximumFractionDigits: 3 })} days`;
+    }
+
+    function getMoonFact(parentName, moon) {
+      return moon.fact || `One of ${parentName}'s major natural moons.`;
+    }
+
+    function getWikipediaTitleCandidates(body) {
+      if (!body) {
+        return [];
+      }
+
+      return WIKIPEDIA_TITLES[body.id] || [body.name];
+    }
+
+    async function loadWikipediaImageForBody(body) {
+      if (!body || wikiImageCache.has(body.id)) {
+        return;
+      }
+
+      wikiImageCache.set(body.id, { status: 'loading' });
+      updateInfoCard(true);
+
+      try {
+        const titleCandidates = getWikipediaTitleCandidates(body);
+        let foundImage = null;
+
+        for (const title of titleCandidates) {
+          const response = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`);
+          if (!response.ok) {
+            continue;
+          }
+
+          const payload = await response.json();
+          const url = payload?.thumbnail?.source || payload?.originalimage?.source;
+          if (!url) {
+            continue;
+          }
+
+          foundImage = {
+            status: 'ready',
+            url,
+            title: payload?.title || body.name
+          };
+          break;
+        }
+
+        if (!foundImage) {
+          throw new Error('No suitable Wikipedia image result');
+        }
+
+        wikiImageCache.set(body.id, foundImage);
+      } catch (error) {
+        wikiImageCache.set(body.id, { status: 'error' });
+      }
+
+      updateInfoCard(true);
+    }
+
+    function formatDuration(seconds) {
+      const absSeconds = Math.abs(seconds);
+      if (absSeconds < 60) {
+        return `${absSeconds.toFixed(absSeconds < 10 ? 1 : 0)} sec`;
+      }
+      if (absSeconds < 3600) {
+        const minutes = Math.floor(absSeconds / 60);
+        const remSeconds = absSeconds % 60;
+        return `${minutes}m ${remSeconds.toFixed(remSeconds < 10 ? 1 : 0)}s`;
+      }
+      const hours = Math.floor(absSeconds / 3600);
+      const minutes = Math.floor((absSeconds % 3600) / 60);
+      return `${hours}h ${minutes}m`;
+    }
+
+    function getTimeScaleDescription() {
+      if (speedFactor === 0) {
+        return 'Rate: Paused';
+      }
+
+      const direction = speedFactor > 0 ? '' : 'Reverse ';
+      const simDaysPerSecond = Math.abs(speedFactor);
+      const realSecondsPerSimDay = 1 / simDaysPerSecond;
+      const realSecondsPerEarthYear = EARTH_ORBITAL_PERIOD_DAYS / simDaysPerSecond;
+      const multipleOfRealTime = simDaysPerSecond * 86400;
+
+      if (realSecondsPerSimDay >= 1) {
+        return `Rate: ${direction}1 simulated day every ${formatDuration(realSecondsPerSimDay)} (${multipleOfRealTime.toLocaleString('en-US', { maximumFractionDigits: 0 })}x real time)`;
+      }
+
+      const simDaysEachSecond = simDaysPerSecond.toLocaleString('en-US', { maximumFractionDigits: 2 });
+      return `Rate: ${direction}${simDaysEachSecond} simulated days/sec • 1 Earth year in ${formatDuration(realSecondsPerEarthYear)} (${multipleOfRealTime.toLocaleString('en-US', { maximumFractionDigits: 0 })}x real time)`;
+    }
+
+    function createCelestialMusicEngine() {
+      if (!HAS_WEB_AUDIO) {
+        return null;
+      }
+
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      const context = new AudioContextClass();
+      const musicGain = context.createGain();
+      const filter = context.createBiquadFilter();
+      const dryGain = context.createGain();
+      const delay = context.createDelay(1.5);
+      const feedback = context.createGain();
+      const echoGain = context.createGain();
+      const shimmerOsc = context.createOscillator();
+      const shimmerGain = context.createGain();
+      const lfo = context.createOscillator();
+      const lfoGain = context.createGain();
+
+      musicGain.gain.value = 0;
+      filter.type = 'lowpass';
+      filter.frequency.value = 980;
+      filter.Q.value = 0.35;
+      dryGain.gain.value = 0.92;
+      delay.delayTime.value = 0.48;
+      feedback.gain.value = 0.34;
+      echoGain.gain.value = 0.23;
+      shimmerOsc.type = 'sine';
+      shimmerGain.gain.value = 0.0028;
+      lfo.type = 'sine';
+      lfo.frequency.value = 0.05;
+      lfoGain.gain.value = 180;
+
+      musicGain.connect(filter);
+      filter.connect(dryGain);
+      dryGain.connect(context.destination);
+      filter.connect(delay);
+      delay.connect(feedback);
+      feedback.connect(delay);
+      delay.connect(echoGain);
+      echoGain.connect(context.destination);
+      lfo.connect(lfoGain);
+      lfoGain.connect(filter.frequency);
+      shimmerOsc.connect(shimmerGain);
+      shimmerGain.connect(musicGain);
+
+      const voiceSettings = [
+        { type: 'triangle', gain: 0.022 },
+        { type: 'sine', gain: 0.017 },
+        { type: 'triangle', gain: 0.0115 },
+        { type: 'sine', gain: 0.007 }
+      ];
+
+      const voices = voiceSettings.map(setting => {
+        const osc = context.createOscillator();
+        const gain = context.createGain();
+        osc.type = setting.type;
+        gain.gain.value = setting.gain;
+        osc.connect(gain);
+        gain.connect(musicGain);
+        osc.start();
+        return { osc, gain };
+      });
+
+      shimmerOsc.start();
+      lfo.start();
+
+      const progression = [
+        [50, 57, 62, 69],
+        [48, 55, 60, 67],
+        [43, 50, 57, 64],
+        [45, 52, 57, 64]
+      ];
+      let progressionIndex = 0;
+      let suspendToken = 0;
+
+      function applyChord(chord) {
+        const now = context.currentTime;
+        voices[0].osc.frequency.setTargetAtTime(midiToHz(chord[0] - 12), now, 2.8);
+        voices[1].osc.frequency.setTargetAtTime(midiToHz(chord[1]), now, 2.4);
+        voices[2].osc.frequency.setTargetAtTime(midiToHz(chord[2]), now, 2.1);
+        voices[3].osc.frequency.setTargetAtTime(midiToHz(chord[3]), now, 1.9);
+        shimmerOsc.frequency.setTargetAtTime(midiToHz(chord[3] + 12), now, 1.1);
+      }
+
+      applyChord(progression[progressionIndex]);
+
+      const progressionTimer = window.setInterval(() => {
+        progressionIndex = (progressionIndex + 1) % progression.length;
+        applyChord(progression[progressionIndex]);
+      }, 7000);
+
+      return {
+        async setEnabled(enabled) {
+          suspendToken += 1;
+          const currentToken = suspendToken;
+          const now = context.currentTime;
+
+          if (enabled) {
+            await context.resume();
+            applyChord(progression[progressionIndex]);
+            musicGain.gain.cancelScheduledValues(context.currentTime);
+            musicGain.gain.setTargetAtTime(1, context.currentTime, 2.4);
+            return;
+          }
+
+          musicGain.gain.cancelScheduledValues(now);
+          musicGain.gain.setTargetAtTime(0, now, 0.8);
+          window.setTimeout(() => {
+            if (currentToken !== suspendToken) {
+              return;
+            }
+            context.suspend().catch(() => {});
+          }, 1800);
+        },
+        dispose() {
+          window.clearInterval(progressionTimer);
+          context.close().catch(() => {});
+        }
+      };
+    }
+
+    async function toggleMusic() {
+      if (!HAS_WEB_AUDIO) {
+        musicUnavailable = true;
+        musicEnabled = false;
+        updateOverlay();
+        return;
+      }
+
+      if (!musicEngine) {
+        musicEngine = createCelestialMusicEngine();
+      }
+
+      if (!musicEngine) {
+        musicUnavailable = true;
+        musicEnabled = false;
+        updateOverlay();
+        return;
+      }
+
+      musicEnabled = !musicEnabled;
+      updateOverlay();
+
+      try {
+        await musicEngine.setEnabled(musicEnabled);
+        musicUnavailable = false;
+      } catch (error) {
+        musicEnabled = false;
+        musicUnavailable = true;
+      }
+
+      updateOverlay();
     }
 
     function getMercuryColor(simTime) {
@@ -101,6 +796,487 @@
       }
     }
 
+    function getLayout() {
+      const sunRadPx = SUN_DIAMETER_PX / 2;
+      const sunVisibleWidth = clamp(canvas.width * 0.16, 140, 360);
+      const sunCenterX = -sunRadPx + sunVisibleWidth;
+      const sunCenterY = canvas.height / 2;
+      const maxOrbitR = Math.max(sunRadPx + 260, canvas.width - sunCenterX - 180);
+
+      return {
+        sunRadPx,
+        sunCenterX,
+        sunCenterY,
+        maxOrbitR
+      };
+    }
+
+    function getRingOuterFactor(rings) {
+      if (!rings || !rings.bands || rings.bands.length === 0) {
+        return 1;
+      }
+      return rings.bands.reduce((maxValue, band) => Math.max(maxValue, band.outerFactor), 1);
+    }
+
+    function computePlanetOrbitRadii(layout) {
+      const firstPlanet = PLANETS[0];
+      const adjacentRadiusTotal = PLANETS.slice(1).reduce(
+        (sum, planet, index) => sum + PLANETS[index].radiusPx + planet.radiusPx,
+        0
+      );
+      const availableGapSpace = Math.max(10, layout.maxOrbitR - layout.sunRadPx - firstPlanet.radiusPx - adjacentRadiusTotal);
+      const surfaceGap = availableGapSpace / PLANETS.length;
+
+      const orbitRadii = [];
+      let currentRadius = layout.sunRadPx + firstPlanet.radiusPx + surfaceGap;
+      orbitRadii.push(currentRadius);
+
+      for (let i = 1; i < PLANETS.length; i++) {
+        currentRadius += PLANETS[i - 1].radiusPx + PLANETS[i].radiusPx + surfaceGap;
+        orbitRadii.push(currentRadius);
+      }
+
+      return { orbitRadii, surfaceGap };
+    }
+
+    function mapDistanceToOrbitRadius(distanceKm, orbitRadii) {
+      if (distanceKm <= PLANETS[0].semiMajorAxisKm) {
+        return orbitRadii[0];
+      }
+
+      for (let i = 1; i < PLANETS.length; i++) {
+        const innerPlanet = PLANETS[i - 1];
+        const outerPlanet = PLANETS[i];
+        if (distanceKm <= outerPlanet.semiMajorAxisKm) {
+          const t = (distanceKm - innerPlanet.semiMajorAxisKm) / (outerPlanet.semiMajorAxisKm - innerPlanet.semiMajorAxisKm);
+          return lerp(orbitRadii[i - 1], orbitRadii[i], t);
+        }
+      }
+
+      const lastIndex = PLANETS.length - 1;
+      const prevIndex = lastIndex - 1;
+      const t = (distanceKm - PLANETS[prevIndex].semiMajorAxisKm) / (PLANETS[lastIndex].semiMajorAxisKm - PLANETS[prevIndex].semiMajorAxisKm);
+      return lerp(orbitRadii[prevIndex], orbitRadii[lastIndex], clamp(t, 0, 1.5));
+    }
+
+    function getMoonOrbitBounds(planetRadiusPx, moonCount) {
+      const minOrbit = Math.max(planetRadiusPx + 8, planetRadiusPx * 1.22 + 4);
+      const spread = clamp(20 + moonCount * 7 + planetRadiusPx * 0.18, 26, 86);
+      return {
+        minOrbit,
+        maxOrbit: minOrbit + spread
+      };
+    }
+
+    function mapMoonOrbitRadius(moon, moons, planetRadiusPx) {
+      const bounds = getMoonOrbitBounds(planetRadiusPx, moons.length);
+      if (moons.length === 1) {
+        return (bounds.minOrbit + bounds.maxOrbit) / 2;
+      }
+
+      const minOrbitKm = moons[0].orbitRadiusKm;
+      const maxOrbitKm = moons[moons.length - 1].orbitRadiusKm;
+      const t = normalizeLog(moon.orbitRadiusKm, minOrbitKm, maxOrbitKm);
+      return bounds.minOrbit + t * (bounds.maxOrbit - bounds.minOrbit);
+    }
+
+    // Keep compact orbits while preserving each planet's relative linear speed against Earth.
+    function getPlanetAngle(planet, orbitRadiusPx, simDays, earthOrbitRadiusPx) {
+      const earthDisplaySpeedPxPerDay = (Math.PI * 2 * earthOrbitRadiusPx) / EARTH_ORBITAL_PERIOD_DAYS;
+      const displaySpeedPxPerDay = earthDisplaySpeedPxPerDay * (planet.orbitalSpeedKmS / EARTH_ORBITAL_SPEED_KMS);
+      return planet.phase + (simDays * displaySpeedPxPerDay) / orbitRadiusPx;
+    }
+
+    function drawCircle(x, y, radius, fillStyle, shadowBlur = 0) {
+      ctx.save();
+      if (shadowBlur > 0) {
+        ctx.shadowColor = fillStyle;
+        ctx.shadowBlur = shadowBlur;
+      }
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fillStyle = fillStyle;
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawBand(x, y, innerRadius, outerRadius, fillStyle) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(x, y, outerRadius, 0, Math.PI * 2);
+      ctx.arc(x, y, innerRadius, 0, Math.PI * 2, true);
+      ctx.fillStyle = fillStyle;
+      ctx.fill('evenodd');
+      ctx.restore();
+    }
+
+    function drawBody(x, y, radiusPx, fillStyle) {
+      const tinyBody = radiusPx < 1;
+      drawCircle(x, y, Math.max(radiusPx, tinyBody ? 0.75 : radiusPx), fillStyle, tinyBody ? 4 : 0);
+    }
+
+    function drawLabel(x, y, radiusPx, text, tint = 'white') {
+      if (!showLabels) {
+        return;
+      }
+
+      const labelOffset = Math.max(radiusPx + 6 / scale, 9 / scale);
+      ctx.save();
+      ctx.font = `${10 / scale}px sans-serif`;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = 3 / scale;
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
+      ctx.strokeText(text, x + labelOffset, y - labelOffset * 0.45);
+      ctx.fillStyle = tint;
+      ctx.fillText(text, x + labelOffset, y - labelOffset * 0.45);
+      ctx.restore();
+    }
+
+    function drawOrbitGuide(cx, cy, radius, strokeStyle, lineWidth = 1) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+      ctx.strokeStyle = strokeStyle;
+      ctx.lineWidth = lineWidth / scale;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawRingBandsHalf(planet, x, y, radiusPx, half) {
+      if (!planet.rings || !planet.rings.bands || planet.rings.bands.length === 0) {
+        return;
+      }
+
+      const outerFactor = getRingOuterFactor(planet.rings);
+      const outerRadius = radiusPx * outerFactor + 4 / scale;
+      const outerHeight = outerRadius * planet.rings.flatten + 4 / scale;
+
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(planet.rings.tilt);
+      ctx.beginPath();
+      if (half === 'back') {
+        ctx.rect(-outerRadius, -outerHeight, outerRadius * 2, outerHeight);
+      } else {
+        ctx.rect(-outerRadius, 0, outerRadius * 2, outerHeight);
+      }
+      ctx.clip();
+
+      for (const band of planet.rings.bands) {
+        ctx.beginPath();
+        ctx.ellipse(0, 0, radiusPx * band.outerFactor, radiusPx * band.outerFactor * planet.rings.flatten, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, 0, radiusPx * band.innerFactor, radiusPx * band.innerFactor * planet.rings.flatten, 0, 0, Math.PI * 2);
+        ctx.fillStyle = band.color;
+        ctx.fill('evenodd');
+      }
+
+      ctx.beginPath();
+      ctx.ellipse(0, 0, radiusPx * outerFactor, radiusPx * outerFactor * planet.rings.flatten, 0, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+      ctx.lineWidth = 1 / scale;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawTrails(planetStates) {
+      for (const planet of planetStates) {
+        const trail = bodyTrails.get(planet.name);
+        if (!trail || trail.length < 2) {
+          continue;
+        }
+
+        ctx.save();
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.strokeStyle = planet.trailColor || planet.color || '#ffffff';
+        ctx.lineWidth = clamp(planet.radiusPx * 0.05, 0.7 / scale, 2 / scale);
+        for (let i = 1; i < trail.length; i++) {
+          ctx.globalAlpha = (i / trail.length) * 0.32;
+          ctx.beginPath();
+          ctx.moveTo(trail[i - 1].x, trail[i - 1].y);
+          ctx.lineTo(trail[i].x, trail[i].y);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+    }
+
+    function updateTrails(planetStates, timestamp) {
+      if (paused || Math.abs(speedFactor) < 0.001) {
+        return;
+      }
+      if (timestamp - trailLastTimestamp < 45) {
+        return;
+      }
+
+      trailLastTimestamp = timestamp;
+      for (const planet of planetStates) {
+        const trail = bodyTrails.get(planet.name) || [];
+        trail.push({ x: planet.x, y: planet.y });
+        if (trail.length > 80) {
+          trail.shift();
+        }
+        bodyTrails.set(planet.name, trail);
+      }
+    }
+
+    function buildPlanetStates(simDays, layout) {
+      const { orbitRadii, surfaceGap } = computePlanetOrbitRadii(layout);
+      const earthIndex = PLANETS.findIndex(planet => planet.name === 'Earth');
+      const earthOrbitRadiusPx = orbitRadii[earthIndex];
+
+      return PLANETS.map((planet, index) => {
+        const orbitRadiusPx = orbitRadii[index];
+        const angle = getPlanetAngle(planet, orbitRadiusPx, simDays, earthOrbitRadiusPx);
+        return {
+          ...planet,
+          surfaceGap,
+          orbitRadiusPx,
+          angle,
+          x: layout.sunCenterX + Math.cos(angle) * orbitRadiusPx,
+          y: layout.sunCenterY + Math.sin(angle) * orbitRadiusPx
+        };
+      });
+    }
+
+    function worldToScreen(worldX, worldY) {
+      return {
+        x: worldX * scale + panX,
+        y: worldY * scale + panY
+      };
+    }
+
+    function getCanvasPoint(clientX, clientY) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: clientX - rect.left,
+        y: clientY - rect.top
+      };
+    }
+
+    function getDefaultView() {
+      const layout = getLayout();
+      const { orbitRadii } = computePlanetOrbitRadii(layout);
+      const maxRadius = PLANETS.reduce((maxValue, planet, index) => {
+        const bodyRadius = planet.rings
+          ? planet.radiusPx * getRingOuterFactor(planet.rings)
+          : planet.radiusPx;
+        return Math.max(maxValue, orbitRadii[index] + bodyRadius);
+      }, layout.sunRadPx);
+
+      const margin = 36;
+      const fitScale = clamp(
+        Math.min(
+          (canvas.width - margin * 2) / (maxRadius * 2),
+          (canvas.height - margin * 2) / (maxRadius * 2)
+        ),
+        MIN_SCALE,
+        MAX_SCALE
+      );
+
+      return {
+        scale: fitScale,
+        panX: canvas.width / 2 - layout.sunCenterX * fitScale,
+        panY: canvas.height / 2 - layout.sunCenterY * fitScale
+      };
+    }
+
+    function applyDefaultView() {
+      const defaultView = getDefaultView();
+      scale = defaultView.scale;
+      panX = defaultView.panX;
+      panY = defaultView.panY;
+    }
+
+    function getFollowFocusRadius(body) {
+      const bodyRadius = body?.hitRadiusPx || body?.radiusPx || 1;
+      return Math.max(bodyRadius, 1);
+    }
+
+    function getFollowScale(body) {
+      const focusRadius = getFollowFocusRadius(body);
+      const targetDiameter = Math.min(canvas.width, canvas.height) / 3;
+      return clamp(targetDiameter / (focusRadius * 2), MIN_SCALE, MAX_SCALE);
+    }
+
+    function getFollowLabel() {
+      const option = FOLLOW_OPTIONS.find(entry => entry.id === followTargetId);
+      return option ? option.label : 'Free camera';
+    }
+
+    function stopFollowing() {
+      followTargetId = null;
+      followNeedsZoom = false;
+      updateFollowUI();
+    }
+
+    function updateFollowUI() {
+      followPanel.classList.toggle('is-hidden', !showFollowChooser);
+      followSelect.value = followTargetId || '';
+      document.getElementById('followDisplay').textContent = `Follow: ${getFollowLabel()}`;
+    }
+
+    function buildWorldBodies(layout, planetStates, simDays) {
+      const bodies = [
+        {
+          ...SUN_INFO,
+          x: layout.sunCenterX,
+          y: layout.sunCenterY,
+          radiusPx: layout.sunRadPx,
+          hitRadiusPx: layout.sunRadPx
+        }
+      ];
+
+      for (const planet of planetStates) {
+        const planetHitRadius = Math.max(
+          planet.radiusPx,
+          planet.rings ? planet.radiusPx * getRingOuterFactor(planet.rings) : planet.radiusPx
+        );
+
+        bodies.push({
+          id: `planet:${planet.name}`,
+          name: planet.name,
+          type: 'Planet',
+          x: planet.x,
+          y: planet.y,
+          radiusPx: planet.radiusPx,
+          hitRadiusPx: planetHitRadius,
+          diameterKm: planet.diameterKm,
+          orbitalPeriodDays: planet.orbitalPeriodDays,
+          moonCount: planet.moons.length,
+          fact: planet.fact
+        });
+
+        for (const moon of planet.moons) {
+          const moonOrbitRadiusPx = mapMoonOrbitRadius(moon, planet.moons, planet.radiusPx);
+          const moonAngle = moon.phase + (simDays / moon.orbitalPeriodDays) * Math.PI * 2;
+          const moonX = planet.x + Math.cos(moonAngle) * moonOrbitRadiusPx;
+          const moonY = planet.y + Math.sin(moonAngle) * moonOrbitRadiusPx;
+
+          bodies.push({
+            id: `moon:${planet.name}:${moon.name}`,
+            name: moon.name,
+            type: 'Moon',
+            parentName: planet.name,
+            x: moonX,
+            y: moonY,
+            radiusPx: moon.radiusPx,
+            hitRadiusPx: Math.max(moon.radiusPx, 7 / scale),
+            diameterKm: moon.diameterKm,
+            orbitalPeriodDays: moon.orbitalPeriodDays,
+            moonCount: 0,
+            fact: getMoonFact(planet.name, moon)
+          });
+        }
+      }
+
+      return bodies;
+    }
+
+    function screenToWorld(clientX, clientY) {
+      const point = getCanvasPoint(clientX, clientY);
+      return {
+        x: (point.x - panX) / scale,
+        y: (point.y - panY) / scale
+      };
+    }
+
+    function findSceneBodyById(id) {
+      if (!id) {
+        return null;
+      }
+      return sceneBodies.find(body => body.id === id) || null;
+    }
+
+    function findSceneBodyAt(screenX, screenY) {
+      for (let i = sceneBodies.length - 1; i >= 0; i--) {
+        const body = sceneBodies[i];
+        const hitRadius = Math.max(body.screenHitRadiusPx || 0, 7);
+        const dx = screenX - body.screenX;
+        const dy = screenY - body.screenY;
+        if ((dx * dx) + (dy * dy) <= hitRadius * hitRadius) {
+          return body;
+        }
+      }
+      return null;
+    }
+
+    function updateInfoCard(force = false) {
+      const activeBody = findSceneBodyById(selectedBodyId) || findSceneBodyById(hoveredBodyId);
+      const imageState = activeBody ? (wikiImageCache.get(activeBody.id) || { status: 'idle' }) : { status: 'none' };
+      const renderKey = [
+        activeBody ? activeBody.id : 'none',
+        showHelp ? 'help-on' : 'help-off',
+        selectedBodyId ? 'selected' : 'hover',
+        imageState.status,
+        imageState.url || ''
+      ].join('|');
+
+      if (!force && renderKey === infoCardRenderKey) {
+        return;
+      }
+
+      infoCardRenderKey = renderKey;
+
+      if (!activeBody) {
+        infoCard.classList.toggle('is-hidden', !showHelp);
+        if (!showHelp) {
+          infoCard.innerHTML = '';
+          return;
+        }
+
+        infoCard.innerHTML = `
+          <h2>Object Info</h2>
+          <span class="type">Hover or click</span>
+          <p class="fact">Move over a planet, moon, or the Sun to inspect scaled size, orbital timing, and a quick fact.</p>
+          <p class="hint">Click to pin a card in place. Click empty space to clear it.</p>
+        `;
+        return;
+      }
+
+      infoCard.classList.remove('is-hidden');
+      if (imageState.status === 'idle') {
+        loadWikipediaImageForBody(activeBody);
+      }
+
+      let imageMarkup = '';
+      if (imageState.status === 'ready') {
+        imageMarkup = `
+          <figure>
+            <img src="${escapeHtml(imageState.url)}" alt="${escapeHtml(`Wikipedia image of ${activeBody.name}`)}" loading="lazy" referrerpolicy="no-referrer">
+            <figcaption>Wikipedia image: ${escapeHtml(imageState.title || activeBody.name)}</figcaption>
+          </figure>
+        `;
+      } else if (imageState.status === 'loading' || imageState.status === 'idle') {
+        imageMarkup = `<p class="hint">Loading Wikipedia image...</p>`;
+      } else if (imageState.status === 'error') {
+        imageMarkup = `<p class="hint">Wikipedia image unavailable for this object right now.</p>`;
+      }
+
+      infoCard.innerHTML = `
+        <h2>${escapeHtml(activeBody.name)}</h2>
+        <span class="type">${escapeHtml(activeBody.type)}${activeBody.parentName ? ` • orbits ${escapeHtml(activeBody.parentName)}` : ''}</span>
+        <dl>
+          <dt>Diameter</dt>
+          <dd>${formatNumber(Math.round(activeBody.diameterKm))} km</dd>
+          <dt>Orbital Period</dt>
+          <dd>${formatOrbitalPeriod(activeBody.orbitalPeriodDays)}</dd>
+          <dt>Moon Count</dt>
+          <dd>${activeBody.moonCount === null ? 'N/A' : activeBody.moonCount}</dd>
+        </dl>
+        <p class="fact">${escapeHtml(activeBody.fact)}</p>
+        <p class="hint">${selectedBodyId ? 'Pinned. Click the same object or empty space to release.' : 'Hover for preview. Click to pin.'}</p>
+        ${imageMarkup}
+      `;
+    }
+
+    function updateHelpVisibility() {
+      document.getElementById('overlay').classList.toggle('hidden-ui', !showHelp);
+      document.getElementById('legend').classList.toggle('hidden-ui', !showHelp);
+    }
+
     function drawScene(timestamp) {
       if (lastTimestamp === null) {
         lastTimestamp = timestamp;
@@ -114,12 +1290,12 @@
         delta = 0;
       }
 
-      // ONE simulated day = 1000 simMs, so:
-      const simDays = simTimeMs / 1000;        // 1000 ms → 1 simulated day
-      const years   = simDays / 365;           // 365 simDays → 1 Earth Year
+      // ONE simulated day = 1000 simMs
+      const simDays = simTimeMs / 1000;
+      const years   = simDays / EARTH_ORBITAL_PERIOD_DAYS;
       document.getElementById('yearsDisplay').textContent = `Earth Years: ${years.toFixed(2)}`;
 
-      // Move stars in both directions
+      // Move stars horizontally
       const starSpeedConstant = 0.02;
       for (const s of stars) {
         s.x += delta * speedFactor * starSpeedConstant;
@@ -127,216 +1303,223 @@
         if (s.x < 0) s.x += canvas.width;
       }
 
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw stars
       for (const s of stars) {
+        const twinkle = 0.7 + Math.sin(timestamp * s.twinkleSpeed + s.twinkleOffset) * 0.3;
         ctx.beginPath();
         ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255,255,255,${s.opacity})`;
+        ctx.fillStyle = `rgba(255,255,255,${clamp(s.opacity * twinkle, 0.1, 1).toFixed(3)})`;
         ctx.fill();
       }
 
-      // Sun (1,391,000 km → 2000 px)
-      const sunDiaPx = 2000;
-      const sunRadPx = sunDiaPx / 2;
-      const sunCenterX = -800;
-      const sunCenterY = canvas.height / 2;
-      ctx.beginPath();
-      ctx.arc(sunCenterX, sunCenterY, sunRadPx, 0, Math.PI * 2);
-      ctx.fillStyle = 'yellow';
-      ctx.fill();
+      ctx.setTransform(scale, 0, 0, scale, panX, panY);
 
-      // DIAMETERS (km → px)
-      const sunDiaKm   = 1_391_000;
-      const merDiaKm   = 4_880;
-      const venDiaKm   = 12_104;
-      const earthDiaKm = 12_756;
-      const marsDiaKm  = 6_792;
-      const jupDiaKm   = 142_984;
-      const satDiaKm   = 120_536;
-      const uraDiaKm   = 50_724;
-      const nepDiaKm   = 49_244;
-      const moonDiaKm  = 3_474;
+      const layout = getLayout();
+      const planetStates = buildPlanetStates(simDays, layout);
+      const orbitRadii = planetStates.map(planet => planet.orbitRadiusPx);
+      const worldBodies = buildWorldBodies(layout, planetStates, simDays);
+      const worldBodyMap = new Map(worldBodies.map(body => [body.id, body]));
+      const followBody = followTargetId ? worldBodyMap.get(followTargetId) : null;
 
-      const merDiaPx   = (merDiaKm   / sunDiaKm) * sunDiaPx;
-      const venDiaPx   = (venDiaKm   / sunDiaKm) * sunDiaPx;
-      const earthDiaPx = (earthDiaKm / sunDiaKm) * sunDiaPx;
-      const marsDiaPx  = (marsDiaKm  / sunDiaKm) * sunDiaPx;
-      const jupDiaPx   = (jupDiaKm   / sunDiaKm) * sunDiaPx;
-      const satDiaPx   = (satDiaKm   / sunDiaKm) * sunDiaPx;
-      const uraDiaPx   = (uraDiaKm   / sunDiaKm) * sunDiaPx;
-      const nepDiaPx   = (nepDiaKm   / sunDiaKm) * sunDiaPx;
-      const moonDiaPx  = (moonDiaKm  / sunDiaKm) * sunDiaPx;
+      if (followBody) {
+        if (followNeedsZoom) {
+          scale = getFollowScale(followBody);
+          followNeedsZoom = false;
+        }
+        panX = canvas.width / 2 - followBody.x * scale;
+        panY = canvas.height / 2 - followBody.y * scale;
+      }
 
-      const merRadPx   = merDiaPx   / 2;
-      const venRadPx   = venDiaPx   / 2;
-      const earthRadPx = earthDiaPx / 2;
-      const marsRadPx  = marsDiaPx  / 2;
-      const jupRadPx   = jupDiaPx   / 2;
-      const satRadPx   = satDiaPx   / 2;
-      const uraRadPx   = uraDiaPx   / 2;
-      const nepRadPx   = nepDiaPx   / 2;
-      const moonRadPx  = moonDiaPx  / 2;
+      const habitableInnerRadius = mapDistanceToOrbitRadius(HABITABLE_ZONE_INNER_KM, orbitRadii);
+      const habitableOuterRadius = mapDistanceToOrbitRadius(HABITABLE_ZONE_OUTER_KM, orbitRadii);
+      const frostInnerRadius = mapDistanceToOrbitRadius(FROST_LINE_INNER_KM, orbitRadii);
+      const frostOuterRadius = mapDistanceToOrbitRadius(FROST_LINE_OUTER_KM, orbitRadii);
 
-      // ORBITAL PERIODS (days)
-      const merPeriodDays   = 88;
-      const venPeriodDays   = 225;
-      const earthPeriodDays = 365;
-      const marsPeriodDays  = 687;
-      const jupPeriodDays   = 4333;
-      const satPeriodDays   = 10759;
-      const uraPeriodDays   = 30687;
-      const nepPeriodDays   = 60190;
-      const moonPeriodDays  = 27.3;
+      updateTrails(planetStates, timestamp);
+      sceneBodies = worldBodies.map(body => {
+        const screenPoint = worldToScreen(body.x, body.y);
+        return {
+          ...body,
+          screenX: screenPoint.x,
+          screenY: screenPoint.y,
+          screenHitRadiusPx: Math.max((body.hitRadiusPx || body.radiusPx) * scale, 7)
+        };
+      });
 
-      // GAPS (px)
-      const gap1 = 50;
-      const gap2 = 40;
-      const gap3 = 40;
-      const gap4 = 40;
-      const gap5 = 40;
-      const gapAfterJupiter = 150;
-      const gap6 = 100;
-      const gap7 = 60;
+      drawBand(layout.sunCenterX, layout.sunCenterY, habitableInnerRadius, habitableOuterRadius, 'rgba(121, 222, 146, 0.08)');
+      drawBand(layout.sunCenterX, layout.sunCenterY, frostInnerRadius, frostOuterRadius, 'rgba(118, 176, 255, 0.06)');
 
-      // MERCURY
-      const merOrbitR = sunRadPx + merRadPx + gap1;
-      const merAngle  = (simDays / merPeriodDays) * Math.PI * 2;
-      const merX      = sunCenterX + Math.cos(merAngle) * merOrbitR;
-      const merY      = sunCenterY + Math.sin(merAngle) * merOrbitR;
-      ctx.beginPath();
-      ctx.arc(merX, merY, merRadPx, 0, Math.PI * 2);
-      ctx.fillStyle = getMercuryColor(simTimeMs);
-      ctx.fill();
+      for (const planet of planetStates) {
+        drawOrbitGuide(layout.sunCenterX, layout.sunCenterY, planet.orbitRadiusPx, 'rgba(255, 255, 255, 0.06)');
+      }
 
-      // VENUS
-      const venOrbitR = sunRadPx + venRadPx + gap1 + merRadPx + gap2;
-      const venAngle  = (simDays / venPeriodDays) * Math.PI * 2;
-      const venX      = sunCenterX + Math.cos(venAngle) * venOrbitR;
-      const venY      = sunCenterY + Math.sin(venAngle) * venOrbitR;
-      ctx.beginPath();
-      ctx.arc(venX, venY, venRadPx, 0, Math.PI * 2);
-      ctx.fillStyle = 'white';
-      ctx.fill();
+      drawTrails(planetStates);
 
-      // EARTH
-      const earthOrbitR = sunRadPx + earthRadPx + gap1 + merRadPx + gap2 + venRadPx + gap3;
-      const earthAngle  = (simDays / earthPeriodDays) * Math.PI * 2;
-      const earthX      = sunCenterX + Math.cos(earthAngle) * earthOrbitR;
-      const earthY      = sunCenterY + Math.sin(earthAngle) * earthOrbitR;
-      ctx.beginPath();
-      ctx.arc(earthX, earthY, earthRadPx, 0, Math.PI * 2);
-      ctx.fillStyle = 'blue';
-      ctx.fill();
+      const sunBody = worldBodyMap.get('sun');
+      drawCircle(sunBody.x, sunBody.y, layout.sunRadPx * 1.08, 'rgba(255, 205, 70, 0.12)');
+      drawCircle(sunBody.x, sunBody.y, layout.sunRadPx, '#ffd24d');
+      drawLabel(sunBody.x, sunBody.y, layout.sunRadPx, 'Sun', '#fff6c2');
 
-      // MOON (around Earth)
-      const moonOrbitR = earthOrbitR * (384400 / 149600000);
-      const moonAngle  = (simDays / moonPeriodDays) * Math.PI * 2;
-      const moonX      = earthX + Math.cos(moonAngle) * moonOrbitR;
-      const moonY      = earthY + Math.sin(moonAngle) * moonOrbitR;
-      ctx.beginPath();
-      ctx.arc(moonX, moonY, moonRadPx, 0, Math.PI * 2);
-      ctx.fillStyle = 'lightgray';
-      ctx.fill();
+      for (const planet of planetStates) {
+        const planetBody = worldBodyMap.get(`planet:${planet.name}`);
+        const planetColor = planet.colorFn ? planet.colorFn(simTimeMs) : planet.color;
 
-      // MARS
-      const marsOrbitR = sunRadPx + marsRadPx + gap1 + merRadPx + gap2 + venRadPx + gap3 + earthRadPx + gap4;
-      const marsAngle  = (simDays / marsPeriodDays) * Math.PI * 2;
-      const marsX      = sunCenterX + Math.cos(marsAngle) * marsOrbitR;
-      const marsY      = sunCenterY + Math.sin(marsAngle) * marsOrbitR;
-      ctx.beginPath();
-      ctx.arc(marsX, marsY, marsRadPx, 0, Math.PI * 2);
-      ctx.fillStyle = 'red';
-      ctx.fill();
+        drawRingBandsHalf(planet, planetBody.x, planetBody.y, planet.radiusPx, 'back');
 
-      // JUPITER
-      const jupOrbitR = sunRadPx + jupRadPx + gap1 + merRadPx + gap2 + venRadPx + gap3 + earthRadPx + gap4 + marsRadPx + gap5;
-      const jupAngle  = (simDays / jupPeriodDays) * Math.PI * 2;
-      const jupX      = sunCenterX + Math.cos(jupAngle) * jupOrbitR;
-      const jupY      = sunCenterY + Math.sin(jupAngle) * jupOrbitR;
-      ctx.beginPath();
-      ctx.arc(jupX, jupY, jupRadPx, 0, Math.PI * 2);
-      ctx.fillStyle = 'orange';
-      ctx.fill();
+        drawBody(planetBody.x, planetBody.y, planet.radiusPx, planetColor);
+        drawRingBandsHalf(planet, planetBody.x, planetBody.y, planet.radiusPx, 'front');
+        drawLabel(planetBody.x, planetBody.y, planet.radiusPx, planet.name);
 
-      // SATURN
-      const satOrbitR = sunRadPx + satRadPx + gap1 + merRadPx + gap2 + venRadPx + gap3 + earthRadPx + gap4 + marsRadPx + gap5 + jupRadPx + gapAfterJupiter;
-      const satAngle  = (simDays / satPeriodDays) * Math.PI * 2;
-      const satX      = sunCenterX + Math.cos(satAngle) * satOrbitR;
-      const satY      = sunCenterY + Math.sin(satAngle) * satOrbitR;
-      ctx.beginPath();
-      ctx.arc(satX, satY, satRadPx, 0, Math.PI * 2);
-      ctx.fillStyle = 'lightgray';
-      ctx.fill();
+        if (showLabels && planet.moons.length > 0) {
+          const moonOrbitBounds = getMoonOrbitBounds(planet.radiusPx, planet.moons.length);
+          drawOrbitGuide(planetBody.x, planetBody.y, moonOrbitBounds.maxOrbit, 'rgba(255, 255, 255, 0.04)', 0.8);
+        }
 
-      // SATURN’S TILTED RINGS
-      ctx.beginPath();
-      ctx.ellipse(
-        satX,
-        satY,
-        satRadPx * 1.5,
-        satRadPx * 0.4,
-        Math.PI / 5,
-        0,
-        2 * Math.PI
-      );
-      ctx.strokeStyle = 'rgba(200,200,200,0.8)';
-      ctx.lineWidth = 2;
-      ctx.stroke();
+        for (const moon of planet.moons) {
+          const moonBody = worldBodyMap.get(`moon:${planet.name}:${moon.name}`);
+          const moonOrbitRadiusPx = Math.hypot(moonBody.x - planetBody.x, moonBody.y - planetBody.y);
 
-      // URANUS
-      const uraOrbitR = sunRadPx + uraRadPx + gap1 + merRadPx + gap2 + venRadPx + gap3 + earthRadPx + gap4 + marsRadPx + gap5 + jupRadPx + gapAfterJupiter + satRadPx + gap6;
-      const uraAngle  = (simDays / uraPeriodDays) * Math.PI * 2;
-      const uraX      = sunCenterX + Math.cos(uraAngle) * uraOrbitR;
-      const uraY      = sunCenterY + Math.sin(uraAngle) * uraOrbitR;
-      ctx.beginPath();
-      ctx.arc(uraX, uraY, uraRadPx, 0, Math.PI * 2);
-      ctx.fillStyle = 'lightblue';
-      ctx.fill();
+          if (showLabels) {
+            drawOrbitGuide(planetBody.x, planetBody.y, moonOrbitRadiusPx, 'rgba(255, 255, 255, 0.05)', 0.6);
+          }
 
-      // NEPTUNE
-      const nepOrbitR = sunRadPx + nepRadPx + gap1 + merRadPx + gap2 + venRadPx + gap3 + earthRadPx + gap4 + marsRadPx + gap5 + jupRadPx + gapAfterJupiter + satRadPx + gap6 + uraRadPx + gap7;
-      const nepAngle  = (simDays / nepPeriodDays) * Math.PI * 2;
-      const nepX      = sunCenterX + Math.cos(nepAngle) * nepOrbitR;
-      const nepY      = sunCenterY + Math.sin(nepAngle) * nepOrbitR;
-      ctx.beginPath();
-      ctx.arc(nepX, nepY, nepRadPx, 0, Math.PI * 2);
-      ctx.fillStyle = 'darkblue';
-      ctx.fill();
+          drawBody(moonBody.x, moonBody.y, moon.radiusPx, moon.color);
+          drawLabel(moonBody.x, moonBody.y, moon.radiusPx, moon.name, '#f0f0f0');
+        }
+      }
 
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      updateInfoCard();
       requestAnimationFrame(drawScene);
     }
 
     function updateOverlay() {
       document.getElementById('timeFactorDisplay').textContent = `Time Factor: ${speedFactor.toFixed(1)}`;
+      document.getElementById('timeScaleDisplay').textContent = getTimeScaleDescription();
+      document.getElementById('musicDisplay').textContent = musicUnavailable
+        ? 'Music: Unavailable'
+        : `Music: ${musicEnabled ? 'On' : 'Off'}`;
       const simDays = simTimeMs / 1000;
-      document.getElementById('yearsDisplay').textContent = `Earth Years: ${(simDays / 365).toFixed(2)}`;
+      document.getElementById('yearsDisplay').textContent = `Earth Years: ${(simDays / EARTH_ORBITAL_PERIOD_DAYS).toFixed(2)}`;
+      document.getElementById('labelDisplay').textContent = `Labels: ${showLabels ? 'On' : 'Off'}`;
+      document.getElementById('followDisplay').textContent = `Follow: ${getFollowLabel()}`;
+      document.getElementById('motionDisplay').textContent = 'Motion: Compact orbits, real relative speeds';
     }
 
     window.addEventListener('keydown', e => {
-      if (e.key === 'ArrowRight') {
+      const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+
+      if (key === 'w') {
         speedFactor += 1;
         updateOverlay();
       }
-      if (e.key === 'ArrowLeft') {
+      if (key === 's') {
         speedFactor -= 1;
         updateOverlay();
       }
       if (e.key === ' ') {
+        e.preventDefault();
         paused = !paused;
+      }
+      if (key === 'l') {
+        showLabels = !showLabels;
+        updateOverlay();
+      }
+      if (key === 'h') {
+        showHelp = !showHelp;
+        updateHelpVisibility();
+      }
+      if (key === 'm') {
+        toggleMusic();
+      }
+      if (key === 'f') {
+        showFollowChooser = !showFollowChooser;
+        updateFollowUI();
+        if (showFollowChooser) {
+          followSelect.focus();
+        }
       }
       if (e.key === 'Escape') {
         paused = false;
         speedFactor = 0;
         simTimeMs = 0;
         lastTimestamp = null;
+        bodyTrails.clear();
+        trailLastTimestamp = 0;
+        followTargetId = null;
+        followNeedsZoom = false;
+        showFollowChooser = false;
+        applyDefaultView();
+        updateFollowUI();
         updateOverlay();
       }
+      if (key === 'z') {
+        scale = clamp(scale * 1.1, MIN_SCALE, MAX_SCALE);
+      }
+      if (key === 'x') {
+        scale = clamp(scale / 1.1, MIN_SCALE, MAX_SCALE);
+      }
+      if (e.key === 'ArrowUp') {
+        if (followTargetId) stopFollowing();
+        panY += 50;
+      }
+      if (e.key === 'ArrowDown') {
+        if (followTargetId) stopFollowing();
+        panY -= 50;
+      }
+      if (e.key === 'ArrowRight') {
+        if (followTargetId) stopFollowing();
+        panX -= 50;
+      }
+      if (e.key === 'ArrowLeft') {
+        if (followTargetId) stopFollowing();
+        panX += 50;
+      }
+    });
+
+    followSelect.addEventListener('change', () => {
+      followTargetId = followSelect.value || null;
+      followNeedsZoom = !!followTargetId;
+      showFollowChooser = false;
+      updateFollowUI();
+      updateOverlay();
+    });
+
+    canvas.addEventListener('mousemove', e => {
+      const canvasPoint = getCanvasPoint(e.clientX, e.clientY);
+      const hoveredBody = findSceneBodyAt(canvasPoint.x, canvasPoint.y);
+      hoveredBodyId = hoveredBody ? hoveredBody.id : null;
+      canvas.style.cursor = hoveredBody ? 'pointer' : 'default';
+      updateInfoCard();
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+      hoveredBodyId = null;
+      canvas.style.cursor = 'default';
+      updateInfoCard();
+    });
+
+    canvas.addEventListener('click', e => {
+      const canvasPoint = getCanvasPoint(e.clientX, e.clientY);
+      const clickedBody = findSceneBodyAt(canvasPoint.x, canvasPoint.y);
+      selectedBodyId = clickedBody && clickedBody.id !== selectedBodyId ? clickedBody.id : null;
+      updateInfoCard();
     });
 
     window.addEventListener('resize', resizeCanvas);
 
+    followSelect.innerHTML = FOLLOW_OPTIONS
+      .map(option => `<option value="${option.id}">${option.label}</option>`)
+      .join('');
     resizeCanvas();
+    applyDefaultView();
     updateOverlay();
+    updateHelpVisibility();
+    updateFollowUI();
+    updateInfoCard();
     requestAnimationFrame(drawScene);
   </script>
 </body>
