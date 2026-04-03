@@ -1729,6 +1729,10 @@
       setDisplayedTimeFactor(parsedValue);
     }
 
+    function confirmDestructiveAction(message) {
+      return window.confirm(message);
+    }
+
     function isTouchUILayout() {
       return window.matchMedia('(pointer: coarse)').matches || window.innerWidth <= 960;
     }
@@ -3340,6 +3344,10 @@
     }
 
     async function clearSavedSettings() {
+      if (!confirmDestructiveAction('Clear all saved settings and restore defaults?')) {
+        return;
+      }
+
       try {
         window.localStorage.removeItem(STORAGE_KEY);
       } catch (error) {
@@ -4281,9 +4289,13 @@
         zoomAtViewportCenter(1 / 1.1);
       }
       if (key === 'r' && e.shiftKey) {
-        resetSimulationToDefaults();
+        if (confirmDestructiveAction('Reset the simulation to defaults? This will restore the default view and UI settings.')) {
+          resetSimulationToDefaults();
+        }
       } else if (key === 'r') {
-        applySimulationReset();
+        if (confirmDestructiveAction('Reset the simulation to its starting state? This will clear the current time, camera view, trails, and follow state.')) {
+          applySimulationReset();
+        }
       }
       if (e.key === 'ArrowUp') {
         if (followTargetId) stopFollowing();
