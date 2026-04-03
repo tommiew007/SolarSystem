@@ -914,6 +914,7 @@
     const wikiImageCache = new Map();
     const activeTouchPoints = new Map();
     let musicEngine = null;
+    const LOCAL_IMAGE_CACHE_KEY = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
     // Zoom & pan state
     let scale = 1.0;
@@ -1181,7 +1182,7 @@
         return null;
       }
       const fileName = `${body.id.toLowerCase().replaceAll(':', '--')}.png`;
-      return `images/${fileName}`;
+      return `images/${fileName}?v=${LOCAL_IMAGE_CACHE_KEY}`;
     }
 
     function isActiveInfoBody(bodyId) {
@@ -1425,46 +1426,14 @@
             }
             return;
           } catch (error) {
-            // Fall through to remote lookup when no local asset exists yet.
+            wikiImageCache.set(body.id, { status: 'error' });
+            if (isActiveInfoBody(body.id)) {
+              updateInfoCard(true);
+            }
+            return;
           }
         }
-
-        const titleCandidates = getWikipediaImageTitleCandidates(body);
-        let foundImage = null;
-
-        for (const title of titleCandidates) {
-          const response = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`);
-          if (!response.ok) {
-            continue;
-          }
-
-          const payload = await response.json();
-          const url = payload?.originalimage?.source || payload?.thumbnail?.source;
-          if (!url) {
-            continue;
-          }
-
-          const image = await loadImageElement(url);
-
-          foundImage = {
-            status: 'ready',
-            url,
-            title: payload?.title || body.name,
-            image,
-            subjectBounds: detectImageSubjectBounds(image),
-            sourceType: 'remote'
-          };
-          if (shouldUseSceneRenderImage(body)) {
-            foundImage.renderImage = createSceneRenderImage(body, image, foundImage.subjectBounds);
-          }
-          break;
-        }
-
-        if (!foundImage) {
-          throw new Error('No suitable Wikipedia image result');
-        }
-
-        wikiImageCache.set(body.id, foundImage);
+        wikiImageCache.set(body.id, { status: 'error' });
       } catch (error) {
         wikiImageCache.set(body.id, { status: 'error' });
       }
@@ -1475,7 +1444,10 @@
     }
 
     function shouldUseSceneRenderImage(body) {
-      return Boolean(body) && body.type !== 'Moon' && body.surfaceStyle !== 'nibiru';
+      return Boolean(body)
+        && body.type !== 'Moon'
+        && body.surfaceStyle !== 'nibiru'
+        && body.id !== 'planet:Saturn';
     }
 
     function preloadWikipediaRenderImages() {
