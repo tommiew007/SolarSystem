@@ -1321,6 +1321,65 @@
       };
     }
 
+    function createSceneRenderImage(body, image, subjectBounds = null) {
+      const crop = getBodyRenderImageCrop(body, image, { subjectBounds });
+      const renderSize = clamp(Math.round(Math.min(Math.max(crop.sourceSize, 256), 1024)), 256, 1024);
+      const buffer = createBufferCanvas(renderSize, renderSize);
+      const bufferCtx = buffer.getContext('2d', { willReadFrequently: true });
+      if (!bufferCtx) {
+        return null;
+      }
+
+      bufferCtx.clearRect(0, 0, renderSize, renderSize);
+      bufferCtx.imageSmoothingEnabled = true;
+      bufferCtx.imageSmoothingQuality = 'high';
+      bufferCtx.drawImage(
+        image,
+        crop.sourceX,
+        crop.sourceY,
+        crop.sourceSize,
+        crop.sourceSize,
+        0,
+        0,
+        renderSize,
+        renderSize
+      );
+
+      let imageData;
+      try {
+        imageData = bufferCtx.getImageData(0, 0, renderSize, renderSize);
+      } catch (error) {
+        return buffer;
+      }
+
+      const data = imageData.data;
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        const alpha = data[i + 3];
+        if (alpha < 10) {
+          data[i + 3] = 0;
+          continue;
+        }
+
+        const brightness = (r + g + b) / 3;
+        const maxChannel = Math.max(r, g, b);
+        if (maxChannel < 10 && brightness < 8) {
+          data[i + 3] = 0;
+          continue;
+        }
+
+        if (maxChannel < 26 && brightness < 20) {
+          const fade = clamp((maxChannel - 10) / 16, 0, 1);
+          data[i + 3] = Math.round(alpha * fade);
+        }
+      }
+
+      bufferCtx.putImageData(imageData, 0, 0);
+      return buffer;
+    }
+
     async function loadWikipediaImageForBody(body) {
       if (!body) {
         return;
@@ -1361,6 +1420,9 @@
             image,
             subjectBounds: detectImageSubjectBounds(image)
           };
+          if (shouldUseSceneRenderImage(body)) {
+            foundImage.renderImage = createSceneRenderImage(body, image, foundImage.subjectBounds);
+          }
           break;
         }
 
@@ -1417,7 +1479,7 @@
 
     function adjustTimeFactor(stepDirection) {
       speedFactor = normalizeTimeFactor(speedFactor + (TIME_FACTOR_STEP * stepDirection));
-      updateOverlay();
+      updateTimeFactorIndicators();
       showTransientTimeFactorToast();
     }
 
@@ -2588,13 +2650,12 @@
     }
 
     function drawWikipediaImageBody(body, imageState, simDays = 0, lightOrigin = null) {
-      const image = imageState?.image;
+      const image = imageState?.renderImage || imageState?.image;
       if (!image) {
         return false;
       }
 
       const radiusPx = body.radiusPx;
-      const { sourceSize, sourceX, sourceY } = getBodyRenderImageCrop(body, image, imageState);
 
       if (body.type === 'Star') {
         drawCircle(body.x, body.y, radiusPx * 1.1, 'rgba(255, 209, 92, 0.14)');
@@ -2608,10 +2669,16 @@
       ctx.clip();
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(image, sourceX, sourceY, sourceSize, sourceSize, -radiusPx, -radiusPx, radiusPx * 2, radiusPx * 2);
+      if (imageState?.renderImage) {
+        ctx.drawImage(image, -radiusPx, -radiusPx, radiusPx * 2, radiusPx * 2);
+      } else {
+        const { sourceSize, sourceX, sourceY } = getBodyRenderImageCrop(body, image, imageState);
+        ctx.drawImage(image, sourceX, sourceY, sourceSize, sourceSize, -radiusPx, -radiusPx, radiusPx * 2, radiusPx * 2);
+      }
 
       if (body.type !== 'Star' && lightOrigin) {
         const lightVector = getBodyLightVector(body, lightOrigin);
+        ctx.globalCompositeOperation = 'source-atop';
         const lightGradient = ctx.createLinearGradient(
           -lightVector.x * radiusPx,
           -lightVector.y * radiusPx,
@@ -2636,6 +2703,7 @@
         );
         ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
         ctx.fill();
+        ctx.globalCompositeOperation = 'source-over';
       }
 
       if (body.type === 'Star') {
@@ -2804,12 +2872,21 @@
         ctx.lineJoin = 'round';
         ctx.strokeStyle = planet.trailColor || planet.color || '#ffffff';
         ctx.lineWidth = clamp(planet.radiusPx * 0.05, 0.7 / scale, 2 / scale);
+        ctx.globalAlpha = 0.18;
+        ctx.beginPath();
+        ctx.moveTo(trail[0].x, trail[0].y);
         for (let i = 1; i < trail.length; i++) {
-          ctx.globalAlpha = (i / trail.length) * 0.32;
-          ctx.beginPath();
-          ctx.moveTo(trail[i - 1].x, trail[i - 1].y);
           ctx.lineTo(trail[i].x, trail[i].y);
-          ctx.stroke();
+        }
+        ctx.stroke();
+
+        const latestPoint = trail[trail.length - 1];
+        if (latestPoint) {
+          ctx.globalAlpha = 0.36;
+          ctx.fillStyle = planet.trailColor || planet.color || '#ffffff';
+          ctx.beginPath();
+          ctx.arc(latestPoint.x, latestPoint.y, Math.max(ctx.lineWidth * 0.9, 1 / scale), 0, Math.PI * 2);
+          ctx.fill();
         }
         ctx.restore();
       }
@@ -3584,7 +3661,7 @@
       requestAnimationFrame(drawScene);
     }
 
-    function updateOverlay() {
+    function updateTimeFactorIndicators() {
       const timeFactorDisplay = document.getElementById('timeFactorDisplay');
       timeFactorDisplay.textContent = `Time Factor: ${formatTimeFactor(speedFactor)}`;
       timeFactorDisplay.className = speedFactor > 0
@@ -3593,6 +3670,14 @@
           ? 'time-factor-negative'
           : 'time-factor-neutral';
       document.getElementById('timeScaleDisplay').textContent = getTimeScaleDescription();
+      if (!timeFactorToast.classList.contains('is-hidden')) {
+        timeFactorToast.textContent = `Time Factor: ${formatTimeFactor(speedFactor)}`;
+      }
+    }
+
+    function updateOverlay(options = {}) {
+      const { persist = true, syncResponsive = true } = options;
+      updateTimeFactorIndicators();
       document.getElementById('musicDisplay').textContent = musicUnavailable
         ? 'Music: Unavailable'
         : `Music: ${musicEnabled ? (musicResumePending ? 'On (resume on input)' : 'On') : 'Off'}`;
@@ -3603,11 +3688,12 @@
       document.getElementById('motionDisplay').textContent = showNibiru
         ? 'Model: Compact layout, relative speeds + Nibiru'
         : 'Model: Compact layout, relative speeds';
-      if (!timeFactorToast.classList.contains('is-hidden')) {
-        timeFactorToast.textContent = `Time Factor: ${formatTimeFactor(speedFactor)}`;
+      if (syncResponsive) {
+        updateResponsiveUI();
       }
-      updateResponsiveUI();
-      persistSessionState();
+      if (persist) {
+        persistSessionState();
+      }
     }
 
     window.addEventListener('keydown', e => {
