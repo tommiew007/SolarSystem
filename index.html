@@ -329,9 +329,6 @@
     const LEGACY_V3_SIM_DAYS_PER_SECOND_PER_TIME_FACTOR = DAYS_PER_EARTH_MONTH * DISPLAY_TIME_FACTOR_MULTIPLIER;
     const TRAIL_SAMPLE_ANGLE_STEP = Math.PI / 120;
     const MAX_TRAIL_POINTS = 240;
-    const ROTATION_FRAME_COUNT = 16;
-    const ROTATION_FRAME_SIZE_PX = 448;
-
     const SUN_INFO = {
       id: 'sun',
       name: 'Sun',
@@ -560,30 +557,8 @@
     };
 
     const BODY_RENDER_IMAGE_OPTIONS = {
-      'planet:Mercury': {
-        useRotationFrames: false
-      },
-      'planet:Venus': {
-        useRotationFrames: false
-      },
-      'planet:Earth': {
-        useRotationFrames: false
-      },
-      'planet:Mars': {
-        useRotationFrames: false
-      },
-      'planet:Jupiter': {
-        useRotationFrames: false
-      },
       'planet:Saturn': {
-        cropScale: 0.42,
-        useRotationFrames: false
-      },
-      'planet:Uranus': {
-        useRotationFrames: false
-      },
-      'planet:Neptune': {
-        useRotationFrames: false
+        cropScale: 0.42
       }
     };
 
@@ -1043,111 +1018,6 @@
       };
     }
 
-    function wrapUnitInterval(value) {
-      return ((value % 1) + 1) % 1;
-    }
-
-    function canUseRotationFrames(body) {
-      const options = getBodyRenderImageOptions(body);
-      return Boolean(
-        body
-        && body.type === 'Planet'
-        && Number.isFinite(body.rotationPeriodDays)
-        && body.rotationPeriodDays !== 0
-        && options?.useRotationFrames === true
-      );
-    }
-
-    function buildRotationFramesForBody(body, image) {
-      if (!canUseRotationFrames(body) || !image) {
-        return [];
-      }
-
-      const frameSize = ROTATION_FRAME_SIZE_PX;
-      const frontCanvas = createBufferCanvas(frameSize, frameSize);
-      const frontCtx = frontCanvas.getContext('2d', { willReadFrequently: true });
-      if (!frontCtx) {
-        return [];
-      }
-
-      const { sourceSize, sourceX, sourceY } = getBodyRenderImageCrop(body, image);
-      frontCtx.imageSmoothingEnabled = true;
-      frontCtx.imageSmoothingQuality = 'high';
-      frontCtx.clearRect(0, 0, frameSize, frameSize);
-      frontCtx.drawImage(image, sourceX, sourceY, sourceSize, sourceSize, 0, 0, frameSize, frameSize);
-
-      const wrapCanvas = createBufferCanvas(frameSize * 2, frameSize);
-      const wrapCtx = wrapCanvas.getContext('2d');
-      if (!wrapCtx) {
-        return [];
-      }
-
-      wrapCtx.imageSmoothingEnabled = true;
-      wrapCtx.imageSmoothingQuality = 'high';
-      wrapCtx.clearRect(0, 0, wrapCanvas.width, wrapCanvas.height);
-      wrapCtx.save();
-      wrapCtx.translate(frameSize, 0);
-      wrapCtx.scale(-1, 1);
-      wrapCtx.drawImage(frontCanvas, 0, 0, frameSize, frameSize);
-      wrapCtx.restore();
-      wrapCtx.drawImage(frontCanvas, frameSize, 0, frameSize, frameSize);
-
-      const frames = [];
-      const radius = frameSize / 2;
-
-      for (let frameIndex = 0; frameIndex < ROTATION_FRAME_COUNT; frameIndex++) {
-        const frameCanvas = createBufferCanvas(frameSize, frameSize);
-        const frameCtx = frameCanvas.getContext('2d');
-        if (!frameCtx) {
-          continue;
-        }
-
-        frameCtx.imageSmoothingEnabled = true;
-        frameCtx.imageSmoothingQuality = 'high';
-        const phase = frameIndex / ROTATION_FRAME_COUNT;
-
-        for (let x = 0; x < frameSize; x++) {
-          const nx = ((x + 0.5) - radius) / radius;
-          if (Math.abs(nx) >= 1) {
-            continue;
-          }
-
-          const hemisphereHeight = Math.sqrt(Math.max(0, 1 - nx * nx)) * frameSize;
-          const destY = (frameSize - hemisphereHeight) / 2;
-          const longitude = (Math.asin(clamp(nx, -1, 1)) / (Math.PI * 2)) + 0.5 + phase;
-          const sourceColumnX = wrapUnitInterval(longitude) * (wrapCanvas.width - 2);
-
-          frameCtx.drawImage(
-            wrapCanvas,
-            sourceColumnX,
-            0,
-            2,
-            frameSize,
-            x - 0.2,
-            destY,
-            1.4,
-            hemisphereHeight
-          );
-        }
-
-        frames.push(frameCanvas);
-      }
-
-      return frames;
-    }
-
-    function getBodyRotationFrame(imageState, body, simDays) {
-      const frames = imageState?.rotationFrames;
-      if (!frames || frames.length === 0 || !canUseRotationFrames(body)) {
-        return null;
-      }
-
-      const rotationTurns = (simDays / body.rotationPeriodDays) + (body.rotationPhase || 0);
-      const wrappedTurns = wrapUnitInterval(rotationTurns);
-      const frameIndex = Math.floor(wrappedTurns * frames.length) % frames.length;
-      return frames[frameIndex] || null;
-    }
-
     async function loadWikipediaImageForBody(body) {
       if (!body) {
         return;
@@ -1186,15 +1056,8 @@
             url,
             title: payload?.title || body.name,
             image,
-            subjectBounds: detectImageSubjectBounds(image),
-            rotationFrames: []
+            subjectBounds: detectImageSubjectBounds(image)
           };
-
-          try {
-            foundImage.rotationFrames = buildRotationFramesForBody(body, image);
-          } catch (frameError) {
-            foundImage.rotationFrames = [];
-          }
           break;
         }
 
@@ -2170,7 +2033,6 @@
 
       const radiusPx = body.radiusPx;
       const { sourceSize, sourceX, sourceY } = getBodyRenderImageCrop(body, image, imageState);
-      const rotationFrame = getBodyRotationFrame(imageState, body, simDays);
 
       if (body.type === 'Star') {
         drawCircle(body.x, body.y, radiusPx * 1.1, 'rgba(255, 209, 92, 0.14)');
@@ -2184,12 +2046,7 @@
       ctx.clip();
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
-
-      if (rotationFrame) {
-        ctx.drawImage(rotationFrame, -radiusPx, -radiusPx, radiusPx * 2, radiusPx * 2);
-      } else {
-        ctx.drawImage(image, sourceX, sourceY, sourceSize, sourceSize, -radiusPx, -radiusPx, radiusPx * 2, radiusPx * 2);
-      }
+      ctx.drawImage(image, sourceX, sourceY, sourceSize, sourceSize, -radiusPx, -radiusPx, radiusPx * 2, radiusPx * 2);
 
       if (body.type !== 'Star' && lightOrigin) {
         const lightVector = getBodyLightVector(body, lightOrigin);
