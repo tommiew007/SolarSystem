@@ -3311,6 +3311,7 @@
           type: planet.orbitalClass,
           seed: planet.seed,
           surfaceStyle: planet.surfaceStyle,
+          rings: planet.rings,
           rotationPeriodDays: planet.rotationPeriodDays,
           rotationPhase: planet.rotationPhase,
           x: planet.x,
@@ -3366,13 +3367,57 @@
       return sceneBodies.find(body => body.id === id) || null;
     }
 
+    function getEllipseMetric(dx, dy, radiusX, radiusY) {
+      if (radiusX <= 0 || radiusY <= 0) {
+        return Infinity;
+      }
+      return (dx * dx) / (radiusX * radiusX) + (dy * dy) / (radiusY * radiusY);
+    }
+
+    function isSceneBodyHit(body, screenX, screenY) {
+      const dx = screenX - body.screenX;
+      const dy = screenY - body.screenY;
+      const bodyRadius = Math.max(body.radiusPx * scale, 7);
+      if ((dx * dx) + (dy * dy) <= bodyRadius * bodyRadius) {
+        return true;
+      }
+
+      if (!body.rings || !body.rings.bands || body.rings.bands.length === 0) {
+        const hitRadius = Math.max(body.screenHitRadiusPx || 0, 7);
+        return (dx * dx) + (dy * dy) <= hitRadius * hitRadius;
+      }
+
+      const tilt = body.rings.tilt || 0;
+      const cosTilt = Math.cos(tilt);
+      const sinTilt = Math.sin(tilt);
+      const localX = dx * cosTilt + dy * sinTilt;
+      const localY = -dx * sinTilt + dy * cosTilt;
+      const baseRingPadding = Math.max(2, Math.min(6, 2 + scale * 0.6));
+      const isUranus = body.id === 'planet:Uranus';
+      const ringPadding = isUranus ? Math.max(1.1, baseRingPadding * 0.42) : baseRingPadding;
+      const outerVerticalPadding = isUranus ? ringPadding * 0.28 : ringPadding * 0.6;
+      const innerHorizontalPadding = isUranus ? ringPadding * 0.18 : ringPadding * 0.5;
+      const innerVerticalPadding = isUranus ? ringPadding * 0.12 : ringPadding * 0.3;
+
+      for (const band of body.rings.bands) {
+        const outerRadiusX = body.radiusPx * band.outerFactor * scale + ringPadding;
+        const outerRadiusY = outerRadiusX * body.rings.flatten + outerVerticalPadding;
+        const innerRadiusX = Math.max(body.radiusPx * band.innerFactor * scale - innerHorizontalPadding, 0);
+        const innerRadiusY = Math.max(innerRadiusX * body.rings.flatten - innerVerticalPadding, 0);
+        const outerMetric = getEllipseMetric(localX, localY, outerRadiusX, outerRadiusY);
+        const innerMetric = getEllipseMetric(localX, localY, innerRadiusX, innerRadiusY);
+        if (outerMetric <= 1 && innerMetric >= 1) {
+          return true;
+        }
+      }
+
+      return false;
+    }
+
     function findSceneBodyAt(screenX, screenY) {
       for (let i = sceneBodies.length - 1; i >= 0; i--) {
         const body = sceneBodies[i];
-        const hitRadius = Math.max(body.screenHitRadiusPx || 0, 7);
-        const dx = screenX - body.screenX;
-        const dy = screenY - body.screenY;
-        if ((dx * dx) + (dy * dy) <= hitRadius * hitRadius) {
+        if (isSceneBodyHit(body, screenX, screenY)) {
           return body;
         }
       }
