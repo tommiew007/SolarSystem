@@ -847,6 +847,9 @@
     };
 
     const BODY_RENDER_IMAGE_OPTIONS = {
+      sun: {
+        cropScale: 0.84
+      },
       'planet:Saturn': {
         cropScale: 0.42
       }
@@ -1475,17 +1478,18 @@
             const localImage = await loadImageElement(localUrl);
             const isSunAsset = body.id === 'sun';
             const subjectBounds = detectImageSubjectBounds(localImage);
+            const renderImage = isSunAsset
+              ? (createSceneRenderImage(body, localImage, subjectBounds) || localImage)
+              : shouldUseSceneRenderImage(body)
+                ? createSceneRenderImage(body, localImage, subjectBounds)
+                : localImage;
             wikiImageCache.set(body.id, {
               status: 'ready',
               url: localUrl,
               title: body.name,
               image: localImage,
-              subjectBounds: isSunAsset ? null : subjectBounds,
-              renderImage: isSunAsset
-                ? localImage
-                : shouldUseSceneRenderImage(body)
-                ? createSceneRenderImage(body, localImage, subjectBounds)
-                : localImage,
+              subjectBounds,
+              renderImage,
               sourceType: 'local'
             });
             if (isActiveInfoBody(body.id)) {
