@@ -446,7 +446,7 @@
     const EARTH_ORBITAL_SPEED_KMS = 29.78;
     const EARTH_ORBIT_RADIUS_KM = 149_598_262;
     const MIN_SCALE = 0.05;
-    const MAX_SCALE = 120;
+    const MAX_SCALE = 1200;
     const HAS_WEB_AUDIO = Boolean(window.AudioContext || window.webkitAudioContext);
     const STORAGE_KEY = 'solar-system-session-state-v1';
     const SESSION_STATE_VERSION = 7;
@@ -915,6 +915,8 @@
     const activeTouchPoints = new Map();
     let musicEngine = null;
     const LOCAL_IMAGE_CACHE_KEY = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const MILKY_WAY_BACKGROUND_URL = `images/milky-way-panorama.jpg?v=${LOCAL_IMAGE_CACHE_KEY}`;
+    let milkyWayBackgroundImage = null;
 
     // Zoom & pan state
     let scale = 1.0;
@@ -946,6 +948,59 @@
         });
       }
       return out;
+    }
+
+    function drawMilkyWayBackground() {
+      if (!milkyWayBackgroundImage) {
+        return;
+      }
+
+      const imageWidth = milkyWayBackgroundImage.naturalWidth || milkyWayBackgroundImage.width || 1;
+      const imageHeight = milkyWayBackgroundImage.naturalHeight || milkyWayBackgroundImage.height || 1;
+      if (imageWidth <= 0 || imageHeight <= 0) {
+        return;
+      }
+
+      const imageAspect = imageWidth / imageHeight;
+      let drawWidth = canvas.width;
+      let drawHeight = drawWidth / imageAspect;
+      if (drawHeight < canvas.height) {
+        drawHeight = canvas.height;
+        drawWidth = drawHeight * imageAspect;
+      }
+
+      const offsetX = (canvas.width - drawWidth) / 2;
+      const offsetY = (canvas.height - drawHeight) / 2 + canvas.height * 0.02;
+
+      ctx.save();
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.globalAlpha = canvas.width / Math.max(canvas.height, 1) > 1.7 ? 0.34 : 0.42;
+      ctx.drawImage(milkyWayBackgroundImage, offsetX, offsetY, drawWidth, drawHeight);
+
+      const vignette = ctx.createRadialGradient(
+        canvas.width * 0.5,
+        canvas.height * 0.52,
+        Math.min(canvas.width, canvas.height) * 0.06,
+        canvas.width * 0.5,
+        canvas.height * 0.52,
+        Math.max(canvas.width, canvas.height) * 0.72
+      );
+      vignette.addColorStop(0, 'rgba(255, 255, 255, 0.03)');
+      vignette.addColorStop(0.42, 'rgba(0, 0, 0, 0)');
+      vignette.addColorStop(1, 'rgba(0, 0, 0, 0.32)');
+      ctx.fillStyle = vignette;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const topBottomFade = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      topBottomFade.addColorStop(0, 'rgba(0, 0, 0, 0.54)');
+      topBottomFade.addColorStop(0.2, 'rgba(0, 0, 0, 0.14)');
+      topBottomFade.addColorStop(0.5, 'rgba(0, 0, 0, 0)');
+      topBottomFade.addColorStop(0.8, 'rgba(0, 0, 0, 0.16)');
+      topBottomFade.addColorStop(1, 'rgba(0, 0, 0, 0.56)');
+      ctx.fillStyle = topBottomFade;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.restore();
     }
 
     function resizeCanvas() {
@@ -1199,6 +1254,16 @@
         image.onerror = () => reject(new Error(`Unable to load image: ${url}`));
         image.src = url;
       });
+    }
+
+    function loadMilkyWayBackground() {
+      loadImageElement(MILKY_WAY_BACKGROUND_URL)
+        .then(image => {
+          milkyWayBackgroundImage = image;
+        })
+        .catch(() => {
+          milkyWayBackgroundImage = null;
+        });
     }
 
     function createBufferCanvas(width, height) {
@@ -3525,6 +3590,8 @@
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+      drawMilkyWayBackground();
+
       // Draw the background starfield in screen space.
       for (const s of stars) {
         const twinkle = 0.78 + Math.sin(timestamp * s.twinkleSpeed + s.twinkleOffset) * 0.22;
@@ -4141,6 +4208,7 @@
     updateFollowUI();
     updateCreatorInfoVisibility();
     updateInfoCard();
+    loadMilkyWayBackground();
     preloadWikipediaRenderImages();
     requestAnimationFrame(drawScene);
   </script>
