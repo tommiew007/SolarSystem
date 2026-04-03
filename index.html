@@ -37,6 +37,20 @@
     #overlay span {
       display: block;
     }
+    #overlay .overlay-section {
+      margin-top: 8px;
+      padding-top: 7px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    #overlay .overlay-heading {
+      display: block;
+      margin: 0 0 5px;
+      color: rgba(255, 255, 255, 0.72);
+      font-size: 0.9em;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
     #timeFactorDisplay {
       font-weight: 700;
     }
@@ -378,18 +392,25 @@
   <div id="creatorPanel" class="is-hidden">Info: Created by Tom Wellborn, 2026</div>
   <div id="overlay">
     <span id="timeFactorDisplay" class="time-factor-neutral">Time Factor: 0.00</span>
-    <span id="primaryControlsHelp">Zoom: wheel, Ctrl+wheel, or +/-</span>
-    <span id="navigationHelp">Pan: drag, double-click center, arrows move</span>
-    <span id="pauseHelp">Pause: Space or P</span>
-    <span id="speedHelp">Speed: tap W / S by 1, hold to ramp (1 = 1 Earth hour/sec)</span>
-    <span>Reset: R | Defaults: Shift+R | Clear hover: Esc</span>
-    <span>Toggles: F follow, L labels, I info, M music, Shift+N Nibiru, H/? help</span>
-    <span id="timeScaleDisplay">Rate: Paused</span>
-    <span id="musicDisplay">Music: Off</span>
-    <span id="yearsDisplay">Earth Years: 0.00</span>
-    <span id="labelDisplay">Labels: Off</span>
-    <span id="followDisplay">Follow: Free camera</span>
-    <span id="motionDisplay">Model: Compact layout, relative speeds</span>
+    <div class="overlay-section">
+      <strong class="overlay-heading">Controls</strong>
+      <span id="primaryControlsHelp">Zoom: wheel, Ctrl+wheel, or +/-</span>
+      <span id="navigationHelp">Pan: drag, double-click center, arrows move</span>
+      <span id="pauseHelp">Pause: Space or P</span>
+      <span id="speedHelp">Speed: tap W / S by 1, hold to ramp (1 = 1 Earth hour/sec)</span>
+      <span id="resetHelp">Reset: R | Defaults: Shift+R | Clear hover: Esc</span>
+      <span id="toggleHelp">Toggles: F follow, C cards, L labels, I info, M music, Shift+N Nibiru, H/? help</span>
+    </div>
+    <div class="overlay-section">
+      <strong class="overlay-heading">Telemetry</strong>
+      <span id="timeScaleDisplay">Rate: Paused</span>
+      <span id="musicDisplay">Music: Off</span>
+      <span id="yearsDisplay">Earth Years: 0.00</span>
+      <span id="labelDisplay">Labels: Off</span>
+      <span id="cardsDisplay">Cards: On</span>
+      <span id="followDisplay">Follow: Free camera</span>
+      <span id="motionDisplay">Model: Compact layout, relative speeds</span>
+    </div>
     <button id="clearSettingsButton" type="button">Clear Saved Settings</button>
   </div>
   <div id="timeFactorToast" class="is-hidden">Time Factor: 0.00</div>
@@ -428,6 +449,9 @@
     const navigationHelp = document.getElementById('navigationHelp');
     const pauseHelp = document.getElementById('pauseHelp');
     const speedHelp = document.getElementById('speedHelp');
+    const resetHelp = document.getElementById('resetHelp');
+    const toggleHelp = document.getElementById('toggleHelp');
+    const cardsDisplay = document.getElementById('cardsDisplay');
     const touchSlowerButton = document.getElementById('touchSlowerButton');
     const touchPauseButton = document.getElementById('touchPauseButton');
     const touchFasterButton = document.getElementById('touchFasterButton');
@@ -456,6 +480,9 @@
     const FROST_LINE_OUTER_KM = EARTH_ORBIT_RADIUS_KM * 2.95;
     const HOVER_INFO_DELAY_MS = 500;
     const HOVER_CARD_HIDE_DELAY_MS = 5000;
+    const FOLLOW_FLIGHT_DURATION_MS = 3600;
+    const FOLLOW_FLIGHT_OUTBOUND_PORTION = 0.48;
+    const FOLLOW_FLIGHT_PAN_PORTION = 0.24;
     const DISPLAY_TIME_FACTOR_MULTIPLIER = 100_000;
     const DAYS_PER_EARTH_MONTH = EARTH_ORBITAL_PERIOD_DAYS / 12;
     const DISPLAY_REFERENCE_EARTH_DAYS = 1 / 24;
@@ -880,6 +907,7 @@
     let paused = false;
     let showLabels = false;
     let showHelp = true;
+    let showCards = true;
     let showCreatorInfo = false;
     let showNibiru = false;
     let showFollowChooser = false;
@@ -917,6 +945,7 @@
     const wikiImageCache = new Map();
     const activeTouchPoints = new Map();
     let musicEngine = null;
+    let cameraFlight = null;
     const LOCAL_IMAGE_CACHE_KEY = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const ASSET_CACHE_SUFFIX = window.location.protocol === 'file:' ? '' : `?v=${LOCAL_IMAGE_CACHE_KEY}`;
     const MILKY_WAY_BACKGROUND_URL = `images/milky-way-panorama.jpg${ASSET_CACHE_SUFFIX}`;
@@ -1556,6 +1585,13 @@
     }
 
     function adjustTimeFactor(stepDirection) {
+      if (cameraFlight?.resumeState) {
+        cameraFlight.resumeState.speedFactor = normalizeTimeFactor(
+          cameraFlight.resumeState.speedFactor + (TIME_FACTOR_STEP * stepDirection)
+        );
+        return;
+      }
+
       speedFactor = normalizeTimeFactor(speedFactor + (TIME_FACTOR_STEP * stepDirection));
       updateTimeFactorIndicators();
       showTransientTimeFactorToast();
@@ -1678,6 +1714,10 @@
       speedHelp.textContent = touchLayout
         ? 'Speed: touch Time +/- or hold W / S to ramp (1 = 1 Earth hour/sec)'
         : 'Speed: tap W / S by 1, hold to ramp (1 = 1 Earth hour/sec)';
+      resetHelp.textContent = 'Reset: R | Defaults: Shift+R | Clear hover: Esc';
+      toggleHelp.textContent = touchLayout
+        ? 'Toolbar: Follow, Labels, Music, Help • keyboard C cards, I info, Shift+N Nibiru'
+        : 'Toggles: F follow, C cards, L labels, I info, M music, Shift+N Nibiru, H/? help';
 
       touchPauseButton.textContent = paused ? 'Play' : 'Pause';
       touchPauseButton.classList.toggle('is-active', paused);
@@ -2119,6 +2159,7 @@
         panY,
         showLabels,
         showHelp,
+        showCards,
         showCreatorInfo,
         showNibiru,
         followTargetId,
@@ -2185,6 +2226,7 @@
         panY = Number.isFinite(state.panY) ? state.panY : panY;
         showLabels = typeof state.showLabels === 'boolean' ? state.showLabels : showLabels;
         showHelp = typeof state.showHelp === 'boolean' ? state.showHelp : showHelp;
+        showCards = typeof state.showCards === 'boolean' ? state.showCards : showCards;
         showCreatorInfo = typeof state.showCreatorInfo === 'boolean' ? state.showCreatorInfo : showCreatorInfo;
         showNibiru = typeof state.showNibiru === 'boolean' ? state.showNibiru : showNibiru;
         syncNibiruPlanetSet();
@@ -3042,6 +3084,7 @@
       trailLastTimestamp = 0;
       followTargetId = null;
       followNeedsZoom = false;
+      clearCameraFlight(false);
       showFollowChooser = false;
       applyDefaultView();
     }
@@ -3086,6 +3129,7 @@
       resetSimulationView();
       showLabels = false;
       showHelp = true;
+      showCards = true;
       showCreatorInfo = false;
       clearHoverArtifacts(false);
       dragState = null;
@@ -3138,6 +3182,191 @@
       return clamp(targetDiameter / (focusRadius * 2), MIN_SCALE, MAX_SCALE);
     }
 
+    function easeOutCubic(value) {
+      return 1 - Math.pow(1 - value, 3);
+    }
+
+    function easeInOutCubic(value) {
+      return value < 0.5
+        ? 4 * value * value * value
+        : 1 - Math.pow(-2 * value + 2, 3) / 2;
+    }
+
+    function getCameraCenter(scaleValue = scale, panXValue = panX, panYValue = panY) {
+      return {
+        x: (canvas.width / 2 - panXValue) / scaleValue,
+        y: (canvas.height / 2 - panYValue) / scaleValue
+      };
+    }
+
+    function getViewStateFromPan(scaleValue, panXValue, panYValue) {
+      const center = getCameraCenter(scaleValue, panXValue, panYValue);
+      return {
+        centerX: center.x,
+        centerY: center.y,
+        scale: scaleValue
+      };
+    }
+
+    function applyViewState(viewState) {
+      scale = viewState.scale;
+      panX = canvas.width / 2 - viewState.centerX * scale;
+      panY = canvas.height / 2 - viewState.centerY * scale;
+    }
+
+    function getSystemMaxRadius(layout = getLayout()) {
+      const { orbitRadii } = computePlanetOrbitRadii(layout);
+      return PLANETS.reduce((maxValue, planet, index) => {
+        const bodyRadius = planet.rings
+          ? planet.radiusPx * getRingOuterFactor(planet.rings)
+          : planet.radiusPx;
+        return Math.max(maxValue, orbitRadii[index] + bodyRadius);
+      }, layout.sunRadPx);
+    }
+
+    function getSystemFitScaleForCenter(centerX, centerY, layout = getLayout(), maxRadius = getSystemMaxRadius(layout)) {
+      const margin = 36;
+      const horizontalHalfSpan = Math.abs(centerX - layout.sunCenterX) + maxRadius;
+      const verticalHalfSpan = Math.abs(centerY - layout.sunCenterY) + maxRadius;
+      return clamp(
+        Math.min(
+          (canvas.width - margin * 2) / (horizontalHalfSpan * 2),
+          (canvas.height - margin * 2) / (verticalHalfSpan * 2)
+        ),
+        MIN_SCALE,
+        MAX_SCALE
+      );
+    }
+
+    function restoreCameraFlightMotion(flight = cameraFlight) {
+      if (!flight?.resumeState) {
+        return;
+      }
+
+      speedFactor = flight.resumeState.speedFactor;
+      paused = flight.resumeState.paused;
+      updateOverlay();
+    }
+
+    function clearCameraFlight(restoreMotion = true) {
+      const activeFlight = cameraFlight;
+      cameraFlight = null;
+      if (restoreMotion) {
+        restoreCameraFlightMotion(activeFlight);
+      }
+    }
+
+    function beginFollowFlight(bodyId) {
+      const targetBody = findSceneBodyById(bodyId);
+      if (!targetBody) {
+        clearCameraFlight();
+        followNeedsZoom = true;
+        return;
+      }
+
+      const resumeState = cameraFlight?.resumeState || {
+        speedFactor,
+        paused
+      };
+      clearCameraFlight(false);
+      const startView = getViewStateFromPan(scale, panX, panY);
+      const targetView = {
+        centerX: targetBody.x,
+        centerY: targetBody.y,
+        scale: getFollowScale(targetBody)
+      };
+      const layout = getLayout();
+      const maxRadius = getSystemMaxRadius(layout);
+      const midpointView = {
+        centerX: lerp(startView.centerX, targetView.centerX, 0.5),
+        centerY: lerp(startView.centerY, targetView.centerY, 0.5)
+      };
+      const overviewScale = Math.min(
+        startView.scale,
+        getSystemFitScaleForCenter(midpointView.centerX, midpointView.centerY, layout, maxRadius)
+      );
+      midpointView.scale = overviewScale;
+      const outboundView = {
+        centerX: midpointView.centerX,
+        centerY: midpointView.centerY,
+        scale: overviewScale
+      };
+      const panView = {
+        centerX: targetView.centerX,
+        centerY: targetView.centerY,
+        scale: overviewScale
+      };
+
+      cameraFlight = {
+        targetId: bodyId,
+        startTime: performance.now(),
+        durationMs: FOLLOW_FLIGHT_DURATION_MS,
+        resumeState,
+        startView,
+        outboundView,
+        panView,
+        targetView
+      };
+      speedFactor = 0;
+      followNeedsZoom = false;
+      updateOverlay();
+    }
+
+    function updateFollowFlight(followBody, timestamp) {
+      if (!cameraFlight || cameraFlight.targetId !== followBody.id) {
+        return false;
+      }
+
+      const progress = clamp((timestamp - cameraFlight.startTime) / cameraFlight.durationMs, 0, 1);
+      const outboundPortion = clamp(FOLLOW_FLIGHT_OUTBOUND_PORTION, 0.2, 0.7);
+      const panPortion = clamp(FOLLOW_FLIGHT_PAN_PORTION, 0.1, 0.4);
+      const zoomInStart = clamp(outboundPortion + panPortion, 0.3, 0.92);
+      const updatedTargetView = {
+        centerX: followBody.x,
+        centerY: followBody.y,
+        scale: getFollowScale(followBody)
+      };
+      const updatedPanView = {
+        centerX: updatedTargetView.centerX,
+        centerY: updatedTargetView.centerY,
+        scale: cameraFlight.outboundView.scale
+      };
+      cameraFlight.panView = updatedPanView;
+      cameraFlight.targetView = updatedTargetView;
+
+      if (progress < outboundPortion) {
+        const phaseProgress = easeInOutCubic(progress / outboundPortion);
+        applyViewState({
+          centerX: lerp(cameraFlight.startView.centerX, cameraFlight.outboundView.centerX, phaseProgress),
+          centerY: lerp(cameraFlight.startView.centerY, cameraFlight.outboundView.centerY, phaseProgress),
+          scale: lerp(cameraFlight.startView.scale, cameraFlight.outboundView.scale, phaseProgress)
+        });
+      } else if (progress < zoomInStart) {
+        const phaseProgress = easeInOutCubic((progress - outboundPortion) / panPortion);
+        applyViewState({
+          centerX: lerp(cameraFlight.outboundView.centerX, updatedPanView.centerX, phaseProgress),
+          centerY: lerp(cameraFlight.outboundView.centerY, updatedPanView.centerY, phaseProgress),
+          scale: cameraFlight.outboundView.scale
+        });
+      } else {
+        const phaseProgress = easeInOutCubic((progress - zoomInStart) / (1 - zoomInStart));
+        applyViewState({
+          centerX: updatedTargetView.centerX,
+          centerY: updatedTargetView.centerY,
+          scale: lerp(updatedPanView.scale, updatedTargetView.scale, phaseProgress)
+        });
+      }
+
+      if (progress >= 1) {
+        const finishedFlight = cameraFlight;
+        cameraFlight = null;
+        applyViewState(updatedTargetView);
+        restoreCameraFlightMotion(finishedFlight);
+      }
+
+      return true;
+    }
+
     function getFollowLabel() {
       const option = getFollowOptions().find(entry => entry.id === followTargetId);
       return option ? option.label : 'Free camera';
@@ -3146,6 +3375,7 @@
     function stopFollowing() {
       followTargetId = null;
       followNeedsZoom = false;
+      clearCameraFlight();
       updateFollowUI();
     }
 
@@ -3159,6 +3389,7 @@
       if (selectBody) {
         selectedBodyId = bodyId;
       }
+      beginFollowFlight(bodyId);
       updateFollowUI();
       updateOverlay();
       updateInfoCard(true);
@@ -3301,6 +3532,9 @@
       panX = screenX - worldX * newScale;
       panY = screenY - worldY * newScale;
       scale = newScale;
+      if (followTargetId) {
+        clearCameraFlight();
+      }
     }
 
     function zoomAtViewportCenter(factor) {
@@ -3473,6 +3707,7 @@
       const renderKey = [
         activeBody ? activeBody.id : 'none',
         showHelp ? 'help-on' : 'help-off',
+        showCards ? 'cards-on' : 'cards-off',
         selectedBodyId ? 'selected' : 'hover',
         activeBody && activeBody.id === followTargetId ? 'following' : 'not-following',
         imageState.status,
@@ -3484,10 +3719,11 @@
       }
 
       infoCardRenderKey = renderKey;
+      const cardsVisible = !showHelp || showCards;
 
       if (!activeBody) {
-        infoCard.classList.toggle('is-hidden', !showHelp);
-        if (!showHelp) {
+        infoCard.classList.toggle('is-hidden', !showHelp || !showCards);
+        if (!showHelp || !showCards) {
           infoCard.innerHTML = '';
           return;
         }
@@ -3498,6 +3734,12 @@
           <p class="fact">Move over a planet, moon, or the Sun to inspect scaled size, orbital timing, and a quick fact.</p>
           <p class="hint">Click to pin a card in place. Click empty space to clear it.</p>
         `;
+        return;
+      }
+
+      if (!cardsVisible) {
+        infoCard.classList.add('is-hidden');
+        infoCard.innerHTML = '';
         return;
       }
 
@@ -3627,12 +3869,19 @@
       const followBody = followTargetId ? worldBodyMap.get(followTargetId) : null;
 
       if (followBody) {
-        if (followNeedsZoom) {
+        if (updateFollowFlight(followBody, timestamp)) {
+          // Flight animation updates pan/scale while the target moves.
+        } else if (followNeedsZoom) {
           scale = getFollowScale(followBody);
           followNeedsZoom = false;
+          panX = canvas.width / 2 - followBody.x * scale;
+          panY = canvas.height / 2 - followBody.y * scale;
+        } else {
+          panX = canvas.width / 2 - followBody.x * scale;
+          panY = canvas.height / 2 - followBody.y * scale;
         }
-        panX = canvas.width / 2 - followBody.x * scale;
-        panY = canvas.height / 2 - followBody.y * scale;
+      } else {
+        clearCameraFlight();
       }
 
       ctx.setTransform(scale, 0, 0, scale, panX, panY);
@@ -3733,6 +3982,7 @@
       const simDays = simTimeMs / 1000;
       document.getElementById('yearsDisplay').textContent = `Earth Years: ${(simDays / EARTH_ORBITAL_PERIOD_DAYS).toFixed(2)}`;
       document.getElementById('labelDisplay').textContent = `Labels: ${showLabels ? 'On' : 'Off'}`;
+      cardsDisplay.textContent = `Cards: ${showCards ? 'On' : 'Off'}`;
       document.getElementById('followDisplay').textContent = `Follow: ${getFollowLabel()}`;
       document.getElementById('motionDisplay').textContent = showNibiru
         ? 'Model: Compact layout, relative speeds + Nibiru'
@@ -3783,6 +4033,15 @@
       if (key === 'i') {
         showCreatorInfo = !showCreatorInfo;
         updateCreatorInfoVisibility();
+      }
+      if (key === 'c' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        if (!showHelp) {
+          return;
+        }
+        e.preventDefault();
+        showCards = !showCards;
+        updateOverlay();
+        updateInfoCard(true);
       }
       if (key === 'h' || key === '?') {
         showHelp = !showHelp;
