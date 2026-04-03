@@ -1176,6 +1176,14 @@
       return `https://en.wikipedia.org/wiki/${encodeURIComponent(primaryTitle.replaceAll(' ', '_'))}`;
     }
 
+    function getLocalImageUrl(body) {
+      if (!body?.id) {
+        return null;
+      }
+      const fileName = `${body.id.toLowerCase().replaceAll(':', '--')}.png`;
+      return `images/${fileName}`;
+    }
+
     function isActiveInfoBody(bodyId) {
       return bodyId === selectedBodyId || bodyId === hoveredBodyId;
     }
@@ -1396,6 +1404,31 @@
       }
 
       try {
+        const localUrl = getLocalImageUrl(body);
+        if (localUrl) {
+          try {
+            const localImage = await loadImageElement(localUrl);
+            const subjectBounds = detectImageSubjectBounds(localImage);
+            wikiImageCache.set(body.id, {
+              status: 'ready',
+              url: localUrl,
+              title: body.name,
+              image: localImage,
+              subjectBounds,
+              renderImage: shouldUseSceneRenderImage(body)
+                ? createSceneRenderImage(body, localImage, subjectBounds)
+                : localImage,
+              sourceType: 'local'
+            });
+            if (isActiveInfoBody(body.id)) {
+              updateInfoCard(true);
+            }
+            return;
+          } catch (error) {
+            // Fall through to remote lookup when no local asset exists yet.
+          }
+        }
+
         const titleCandidates = getWikipediaImageTitleCandidates(body);
         let foundImage = null;
 
@@ -1418,7 +1451,8 @@
             url,
             title: payload?.title || body.name,
             image,
-            subjectBounds: detectImageSubjectBounds(image)
+            subjectBounds: detectImageSubjectBounds(image),
+            sourceType: 'remote'
           };
           if (shouldUseSceneRenderImage(body)) {
             foundImage.renderImage = createSceneRenderImage(body, image, foundImage.subjectBounds);
@@ -1445,6 +1479,7 @@
     }
 
     function preloadWikipediaRenderImages() {
+      void loadWikipediaImageForBody(SUN_INFO);
       for (const body of getRenderableBodies()) {
         if (!shouldUseSceneRenderImage(body)) {
           continue;
@@ -2537,77 +2572,6 @@
       ctx.restore();
     }
 
-    function drawSunspots(body, simDays) {
-      const visibleRadiusPx = body.radiusPx * scale;
-      if (visibleRadiusPx < 38) {
-        return;
-      }
-
-      // Sunspots are derived from simulated days, so higher time factors make them evolve faster in real time.
-      const cadenceDays = 9;
-      const maxLifetimeDays = 54;
-      const firstSlot = Math.floor((simDays - maxLifetimeDays) / cadenceDays) - 1;
-      const lastSlot = Math.floor(simDays / cadenceDays) + 1;
-
-      for (let slot = firstSlot; slot <= lastSlot; slot++) {
-        const groupCount = Math.floor(noiseFromSeed(body.seed, slot, 90) * 3);
-        for (let group = 0; group < groupCount; group++) {
-          const birthDay = slot * cadenceDays + noiseFromSeed(body.seed, slot, group, 91) * cadenceDays * 0.84;
-          const lifetimeDays = lerp(18, 54, noiseFromSeed(body.seed, slot, group, 92));
-          const age = (simDays - birthDay) / lifetimeDays;
-          if (age < 0 || age > 1) {
-            continue;
-          }
-
-          const fade = Math.sin(age * Math.PI);
-          const latitude = lerp(-0.48, 0.48, noiseFromSeed(body.seed, slot, group, 93));
-          const travelSpan = Math.sqrt(Math.max(0, 1 - latitude * latitude)) * 0.94;
-          const longitudeOffset = (noiseFromSeed(body.seed, slot, group, 94) - 0.5) * 0.16;
-          const longitude = lerp(-travelSpan, travelSpan, age) + longitudeOffset;
-          const centerDistSq = longitude * longitude + latitude * latitude;
-          if (centerDistSq >= 0.96) {
-            continue;
-          }
-
-          const limbFactor = Math.sqrt(Math.max(0, 1 - centerDistSq / 0.96));
-          const rotation = noiseFromSeed(body.seed, slot, group, 95) * Math.PI;
-          const clusterCount = 1 + Math.floor(noiseFromSeed(body.seed, slot, group, 96) * 3);
-          const baseSize = body.radiusPx * lerp(0.018, 0.05, noiseFromSeed(body.seed, slot, group, 97));
-
-          for (let clusterIndex = 0; clusterIndex < clusterCount; clusterIndex++) {
-            const offsetRadius = baseSize * lerp(0.08, 0.55, noiseFromSeed(body.seed, slot, group, clusterIndex + 98));
-            const offsetAngle = noiseFromSeed(body.seed, slot, group, clusterIndex + 102) * Math.PI * 2;
-            const localLongitude = longitude + (Math.cos(offsetAngle) * offsetRadius) / body.radiusPx;
-            const localLatitude = latitude + (Math.sin(offsetAngle) * offsetRadius * 0.82) / body.radiusPx;
-            const localDistSq = localLongitude * localLongitude + localLatitude * localLatitude;
-            if (localDistSq >= 0.97) {
-              continue;
-            }
-
-            const localLimb = Math.sqrt(Math.max(0, 1 - localDistSq / 0.97));
-            const spotX = localLongitude * body.radiusPx;
-            const spotY = localLatitude * body.radiusPx;
-            const sizeScale = lerp(0.72, 1.15, noiseFromSeed(body.seed, slot, group, clusterIndex + 108));
-            const penumbraX = baseSize * sizeScale * (0.72 + localLimb * 0.55);
-            const penumbraY = penumbraX * lerp(0.54, 0.86, noiseFromSeed(body.seed, slot, group, clusterIndex + 114));
-            const umbraX = penumbraX * lerp(0.44, 0.63, noiseFromSeed(body.seed, slot, group, clusterIndex + 120));
-            const umbraY = penumbraY * lerp(0.42, 0.6, noiseFromSeed(body.seed, slot, group, clusterIndex + 126));
-            const opacity = fade * (0.18 + localLimb * 0.24) * (0.85 + limbFactor * 0.15);
-
-            ctx.beginPath();
-            ctx.ellipse(spotX, spotY, penumbraX, penumbraY, rotation, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(108, 58, 24, ${opacity.toFixed(3)})`;
-            ctx.fill();
-
-            ctx.beginPath();
-            ctx.ellipse(spotX, spotY, umbraX, umbraY, rotation, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(42, 18, 8, ${(opacity * 1.4).toFixed(3)})`;
-            ctx.fill();
-          }
-        }
-      }
-    }
-
     function drawStarBody(body, timestamp, simDays) {
       const visibleRadiusPx = body.radiusPx * scale;
       drawCircle(body.x, body.y, body.radiusPx * 1.1, 'rgba(255, 209, 92, 0.14)');
@@ -2638,8 +2602,6 @@
           { x: Math.cos(angle + 0.15) * inner, y: Math.sin(angle + 0.15) * inner }
         ], 'rgba(255, 226, 132, 0.12)');
       }
-
-      drawSunspots(body, simDays);
 
       ctx.beginPath();
       ctx.arc(0, 0, body.radiusPx, 0, Math.PI * 2);
@@ -2706,10 +2668,6 @@
         ctx.globalCompositeOperation = 'source-over';
       }
 
-      if (body.type === 'Star') {
-        drawSunspots(body, simDays);
-      }
-
       ctx.beginPath();
       ctx.arc(0, 0, radiusPx, 0, Math.PI * 2);
       ctx.strokeStyle = body.type === 'Star' ? 'rgba(255, 255, 255, 0.16)' : 'rgba(255, 255, 255, 0.04)';
@@ -2720,11 +2678,6 @@
     }
 
     function drawBody(body, fillStyle, lightOrigin, timestamp = 0, simDays = 0) {
-      if (body.type === 'Star') {
-        drawStarBody(body, timestamp, simDays);
-        return;
-      }
-
       if (body.surfaceStyle === 'nibiru') {
         drawCircle(body.x, body.y, body.radiusPx * 1.14, 'rgba(217, 108, 69, 0.10)', 14 / scale);
       }
@@ -2736,6 +2689,11 @@
         } else if (imageState.status === 'ready' && drawWikipediaImageBody(body, imageState, simDays, lightOrigin)) {
           return;
         }
+      }
+
+      if (body.type === 'Star') {
+        drawStarBody(body, timestamp, simDays);
+        return;
       }
 
       drawLowPolyBody(body, fillStyle, lightOrigin, timestamp);
@@ -3462,10 +3420,11 @@
 
       let imageMarkup = '';
       if (imageState.status === 'ready') {
+        const imageSourceLabel = imageState.sourceType === 'local' ? 'Local image asset' : 'Wikipedia image';
         imageMarkup = `
           <figure>
             <img src="${escapeHtml(imageState.url)}" alt="${escapeHtml(`Wikipedia image of ${activeBody.name}`)}" loading="lazy" referrerpolicy="no-referrer">
-            <figcaption>Wikipedia image: ${escapeHtml(imageState.title || activeBody.name)}</figcaption>
+            <figcaption>${escapeHtml(imageSourceLabel)}: ${escapeHtml(imageState.title || activeBody.name)}</figcaption>
           </figure>
         `;
       } else if (imageState.status === 'loading' || imageState.status === 'idle') {
