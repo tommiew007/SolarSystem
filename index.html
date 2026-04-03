@@ -33,6 +33,18 @@
     #overlay span {
       display: block;
     }
+    #timeFactorDisplay {
+      font-weight: 700;
+    }
+    #timeFactorDisplay.time-factor-positive {
+      color: #7ee67a;
+    }
+    #timeFactorDisplay.time-factor-negative {
+      color: #ff7b7b;
+    }
+    #timeFactorDisplay.time-factor-neutral {
+      color: #ffffff;
+    }
     #overlay button {
       display: block;
       width: 100%;
@@ -251,6 +263,7 @@
   </div>
   <div id="creatorPanel" class="is-hidden">Info: Created by Tom Wellborn, 2026</div>
   <div id="overlay">
+    <span id="timeFactorDisplay" class="time-factor-neutral">Time Factor: 0.00</span>
     <span>Mouse wheel, Ctrl+wheel, or +/- zooms</span>
     <span>Drag background with either mouse button, double-click to center, or use arrows to pan</span>
     <span>SPACE pauses or resumes</span>
@@ -263,7 +276,6 @@
     <span>M toggles music</span>
     <span>? or H toggles help</span>
     <span>Shift+R clears saved settings</span>
-    <span id="timeFactorDisplay">Time Factor: 0.00</span>
     <span id="timeScaleDisplay">Rate: Paused</span>
     <span>Reference: 0.01 = 1 Earth day/sec</span>
     <span id="musicDisplay">Music: Off</span>
@@ -2483,7 +2495,13 @@
     }
 
     function updateOverlay() {
-      document.getElementById('timeFactorDisplay').textContent = `Time Factor: ${formatTimeFactor(speedFactor)}`;
+      const timeFactorDisplay = document.getElementById('timeFactorDisplay');
+      timeFactorDisplay.textContent = `Time Factor: ${formatTimeFactor(speedFactor)}`;
+      timeFactorDisplay.className = speedFactor > 0
+        ? 'time-factor-positive'
+        : speedFactor < 0
+          ? 'time-factor-negative'
+          : 'time-factor-neutral';
       document.getElementById('timeScaleDisplay').textContent = getTimeScaleDescription();
       document.getElementById('musicDisplay').textContent = musicUnavailable
         ? 'Music: Unavailable'
