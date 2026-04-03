@@ -53,6 +53,8 @@
     }
     #timeFactorDisplay {
       font-weight: 700;
+      cursor: pointer;
+      user-select: none;
     }
     #timeFactorDisplay.time-factor-positive {
       color: #7ee67a;
@@ -421,13 +423,14 @@
   </div>
   <div id="creatorPanel" class="is-hidden">Info: Created by Tom Wellborn, 2026</div>
   <div id="overlay">
-    <span id="timeFactorDisplay" class="time-factor-neutral">Time Factor: 0.00</span>
+    <span id="timeFactorDisplay" class="time-factor-neutral" role="button" tabindex="0" title="Click to enter a time factor">Time Factor: 0.00</span>
     <div class="overlay-section">
       <strong class="overlay-heading">Controls</strong>
       <span id="primaryControlsHelp">Zoom: wheel, Ctrl+wheel, or +/-</span>
       <span id="navigationHelp">Pan: drag, double-click center, arrows move</span>
       <span id="pauseHelp">Pause: Space or P</span>
       <span id="speedHelp">Speed: tap W / S by 1, hold to ramp (1 = 1 Earth day/sec)</span>
+      <span id="moonHelp">Moon Motion: [ / ] adjusts moon speed</span>
       <span id="resetHelp">Reset: R | Defaults: Shift+R | Clear hover: Esc</span>
       <span id="toggleHelp">Toggles: F follow, C cards, L labels, I info, M music, Shift+N Nibiru, H/? help</span>
     </div>
@@ -436,6 +439,7 @@
       <span id="timeScaleDisplay">Rate: Paused</span>
       <span id="musicDisplay">Music: Off</span>
       <span id="yearsDisplay">Earth Years: 0.00</span>
+      <span id="moonMotionDisplay">Moon Motion: 1.00x</span>
       <span id="labelDisplay">Labels: Off</span>
       <span id="cardsDisplay">Cards: On</span>
       <span id="followDisplay">Follow: Free camera</span>
@@ -449,6 +453,8 @@
     <button id="touchSlowerButton" type="button" aria-label="Slow time">-Time</button>
     <button id="touchPauseButton" type="button" aria-label="Pause or resume">Pause</button>
     <button id="touchFasterButton" type="button" aria-label="Speed time">+Time</button>
+    <button id="touchMoonSlowerButton" type="button" aria-label="Slow moon motion">-Moon</button>
+    <button id="touchMoonFasterButton" type="button" aria-label="Speed moon motion">+Moon</button>
     <button id="touchZoomOutButton" type="button" aria-label="Zoom out">Zoom-</button>
     <button id="touchZoomInButton" type="button" aria-label="Zoom in">Zoom+</button>
     <button id="touchCenterButton" type="button" aria-label="Center on the Sun">Center</button>
@@ -472,6 +478,7 @@
     const infoCard = document.getElementById('infoCard');
     const followPanel = document.getElementById('followPanel');
     const creatorPanel = document.getElementById('creatorPanel');
+    const timeFactorDisplay = document.getElementById('timeFactorDisplay');
     const timeFactorToast = document.getElementById('timeFactorToast');
     const statusToast = document.getElementById('statusToast');
     const followSelect = document.getElementById('followSelect');
@@ -481,12 +488,16 @@
     const navigationHelp = document.getElementById('navigationHelp');
     const pauseHelp = document.getElementById('pauseHelp');
     const speedHelp = document.getElementById('speedHelp');
+    const moonHelp = document.getElementById('moonHelp');
     const resetHelp = document.getElementById('resetHelp');
     const toggleHelp = document.getElementById('toggleHelp');
+    const moonMotionDisplay = document.getElementById('moonMotionDisplay');
     const cardsDisplay = document.getElementById('cardsDisplay');
     const touchSlowerButton = document.getElementById('touchSlowerButton');
     const touchPauseButton = document.getElementById('touchPauseButton');
     const touchFasterButton = document.getElementById('touchFasterButton');
+    const touchMoonSlowerButton = document.getElementById('touchMoonSlowerButton');
+    const touchMoonFasterButton = document.getElementById('touchMoonFasterButton');
     const touchZoomOutButton = document.getElementById('touchZoomOutButton');
     const touchZoomInButton = document.getElementById('touchZoomInButton');
     const touchCenterButton = document.getElementById('touchCenterButton');
@@ -513,6 +524,10 @@
     const HOVER_INFO_DELAY_MS = 500;
     const HOVER_CARD_HIDE_DELAY_MS = 5000;
     const FOLLOW_FLIGHT_DURATION_MS = 4200;
+    const MIN_MOON_MOTION_MULTIPLIER = 0;
+    const MAX_MOON_MOTION_MULTIPLIER = 25;
+    const MOON_MOTION_MULTIPLIER_STEP = 0.25;
+    const MAX_DISPLAY_TIME_FACTOR = 10_000;
     const DISPLAY_TIME_FACTOR_MULTIPLIER = 100_000;
     const DAYS_PER_EARTH_MONTH = EARTH_ORBITAL_PERIOD_DAYS / 12;
     const DISPLAY_REFERENCE_EARTH_DAYS = 1;
@@ -934,6 +949,7 @@
 
     let stars = [];
     let speedFactor = 0.0;
+    let moonMotionMultiplier = 1;
     let simTimeMs = 0;
     let lastTimestamp = null;
     let paused = false;
@@ -1143,6 +1159,27 @@
 
     function formatNumber(value) {
       return value.toLocaleString('en-US');
+    }
+
+    function formatApproxDistanceKm(value) {
+      if (!Number.isFinite(value)) {
+        return 'N/A';
+      }
+      const absValue = Math.abs(value);
+      if (absValue >= 1_000_000_000) {
+        return `${(value / 1_000_000_000).toLocaleString('en-US', { maximumFractionDigits: 2 })} billion km`;
+      }
+      if (absValue >= 1_000_000) {
+        return `${(value / 1_000_000).toLocaleString('en-US', { maximumFractionDigits: 2 })} million km`;
+      }
+      return `${Math.round(value).toLocaleString('en-US')} km`;
+    }
+
+    function formatOrbitalSpeed(value) {
+      if (!Number.isFinite(value)) {
+        return 'N/A';
+      }
+      return `${value.toLocaleString('en-US', { minimumFractionDigits: value < 10 ? 2 : 1, maximumFractionDigits: value < 10 ? 2 : 1 })} km/s`;
     }
 
     function parseCssColor(color) {
@@ -1610,7 +1647,86 @@
 
     function normalizeTimeFactor(value) {
       const normalized = Math.round((Number.isFinite(value) ? value : 0) * 100000) / 100000;
-      return Math.abs(normalized) < 0.0000001 ? 0 : normalized;
+      const capped = clamp(normalized, -MAX_DISPLAY_TIME_FACTOR / DISPLAY_TIME_FACTOR_MULTIPLIER, MAX_DISPLAY_TIME_FACTOR / DISPLAY_TIME_FACTOR_MULTIPLIER);
+      return Math.abs(capped) < 0.0000001 ? 0 : capped;
+    }
+
+    function normalizeDisplayedTimeFactor(value) {
+      const normalized = Math.round((Number.isFinite(value) ? value : 0) * 100000) / 100000;
+      return clamp(normalized, -MAX_DISPLAY_TIME_FACTOR, MAX_DISPLAY_TIME_FACTOR);
+    }
+
+    function normalizeMoonMotionMultiplier(value) {
+      const normalized = Math.round((Number.isFinite(value) ? value : 1) * 100) / 100;
+      return clamp(normalized, MIN_MOON_MOTION_MULTIPLIER, MAX_MOON_MOTION_MULTIPLIER);
+    }
+
+    function formatMoonMotionMultiplier(value = moonMotionMultiplier) {
+      return `${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}x`;
+    }
+
+    function getDisplayedTimeFactor(value = speedFactor) {
+      return value * DISPLAY_TIME_FACTOR_MULTIPLIER;
+    }
+
+    function adjustMoonMotionMultiplier(stepDirection) {
+      moonMotionMultiplier = normalizeMoonMotionMultiplier(moonMotionMultiplier + (MOON_MOTION_MULTIPLIER_STEP * stepDirection));
+      updateOverlay();
+      if (!showHelp) {
+        showTransientStatusMessage(`Moon motion: ${formatMoonMotionMultiplier(moonMotionMultiplier)}`);
+      }
+    }
+
+    function setDisplayedTimeFactor(nextDisplayedFactor, options = {}) {
+      const { showStatus = true } = options;
+      const cappedDisplayedFactor = normalizeDisplayedTimeFactor(nextDisplayedFactor);
+      const wasCapped = Math.abs(cappedDisplayedFactor - nextDisplayedFactor) > 0.000001;
+      const normalizedSpeedFactor = normalizeTimeFactor(cappedDisplayedFactor / DISPLAY_TIME_FACTOR_MULTIPLIER);
+
+      if (cameraFlight?.resumeState) {
+        cameraFlight.resumeState.speedFactor = normalizedSpeedFactor;
+      } else {
+        speedFactor = normalizedSpeedFactor;
+      }
+
+      updateOverlay();
+      showTransientTimeFactorToast();
+
+      if (showStatus && wasCapped) {
+        showTransientStatusMessage(`Time factor capped at ${MAX_DISPLAY_TIME_FACTOR.toLocaleString('en-US')} for stability.`);
+      }
+
+      return cappedDisplayedFactor;
+    }
+
+    function promptForTimeFactor() {
+      const currentDisplayedFactor = getDisplayedTimeFactor();
+      const response = window.prompt(
+        `Enter a time factor between -${MAX_DISPLAY_TIME_FACTOR.toLocaleString('en-US')} and ${MAX_DISPLAY_TIME_FACTOR.toLocaleString('en-US')}.\n1 = 1 Earth day/sec.`,
+        currentDisplayedFactor.toLocaleString('en-US', {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 5,
+          useGrouping: false
+        })
+      );
+
+      if (response === null) {
+        return;
+      }
+
+      const normalizedResponse = response.replace(/,/g, '').trim();
+      if (!normalizedResponse) {
+        showTransientStatusMessage('Time factor entry cancelled.');
+        return;
+      }
+
+      const parsedValue = Number(normalizedResponse);
+      if (!Number.isFinite(parsedValue)) {
+        showTransientStatusMessage('Enter a valid positive or negative number.');
+        return;
+      }
+
+      setDisplayedTimeFactor(parsedValue);
     }
 
     function isTouchUILayout() {
@@ -1773,6 +1889,9 @@
       speedHelp.textContent = touchLayout
         ? 'Speed: touch Time +/- or hold W / S to ramp (1 = 1 Earth day/sec)'
         : 'Speed: tap W / S by 1, hold to ramp (1 = 1 Earth day/sec)';
+      moonHelp.textContent = touchLayout
+        ? 'Moon Motion: tap Moon +/- or press [ / ]'
+        : 'Moon Motion: [ / ] adjusts moon speed';
       resetHelp.textContent = 'Reset: R | Defaults: Shift+R | Clear hover: Esc';
       toggleHelp.textContent = touchLayout
         ? 'Toolbar: Follow, Labels, Music, Help • keyboard C cards, I info, Shift+N Nibiru'
@@ -1780,6 +1899,11 @@
 
       touchPauseButton.textContent = paused ? 'Play' : 'Pause';
       touchPauseButton.classList.toggle('is-active', paused);
+      touchMoonSlowerButton.textContent = '-Moon';
+      touchMoonFasterButton.textContent = '+Moon';
+      const moonMotionAdjusted = Math.abs(moonMotionMultiplier - 1) > 0.001;
+      touchMoonSlowerButton.classList.toggle('is-active', moonMotionAdjusted && moonMotionMultiplier < 1);
+      touchMoonFasterButton.classList.toggle('is-active', moonMotionAdjusted && moonMotionMultiplier > 1);
       touchFollowButton.textContent = showFollowChooser ? 'Close Follow' : 'Follow';
       touchFollowButton.classList.toggle('is-active', showFollowChooser || Boolean(followTargetId));
       touchLabelsButton.textContent = showLabels ? 'Labels On' : 'Labels';
@@ -2211,6 +2335,7 @@
       return {
         version: SESSION_STATE_VERSION,
         speedFactor,
+        moonMotionMultiplier,
         simTimeMs,
         paused,
         scale,
@@ -2286,6 +2411,9 @@
           const legacySpeedFactor = Number.isFinite(state.speedFactor) ? state.speedFactor : speedFactor;
           speedFactor = normalizeTimeFactor(legacySpeedFactor / SIM_DAYS_PER_SECOND_PER_TIME_FACTOR);
         }
+        moonMotionMultiplier = normalizeMoonMotionMultiplier(
+          Number.isFinite(state.moonMotionMultiplier) ? state.moonMotionMultiplier : moonMotionMultiplier
+        );
         simTimeMs = Number.isFinite(state.simTimeMs) ? state.simTimeMs : simTimeMs;
         paused = typeof state.paused === 'boolean' ? state.paused : paused;
         scale = clamp(Number.isFinite(state.scale) ? state.scale : scale, MIN_SCALE, MAX_SCALE);
@@ -3198,6 +3326,7 @@
       showHelp = true;
       showCards = true;
       showCreatorInfo = false;
+      moonMotionMultiplier = 1;
       clearHoverArtifacts(false);
       dragState = null;
       suppressCanvasClick = false;
@@ -3625,7 +3754,9 @@
           y: layout.sunCenterY,
           radiusPx: layout.sunRadPx,
           hitRadiusPx: layout.sunRadPx,
-          planetCount: PLANETS.filter(planet => planet.orbitalClass === 'Planet').length
+          planetCount: PLANETS.filter(planet => planet.orbitalClass === 'Planet').length,
+          orbitalSpeedKmS: null,
+          approxDistanceFromSunKm: 0
         }
       ];
 
@@ -3650,15 +3781,20 @@
           hitRadiusPx: planetHitRadius,
           diameterKm: planet.diameterKm,
           orbitalPeriodDays: planet.orbitalPeriodDays,
+          orbitalSpeedKmS: planet.orbitalSpeedKmS,
+          approxDistanceFromSunKm: planet.semiMajorAxisKm,
           moonCount: planet.moons.length,
           fact: planet.fact
         });
 
         for (const moon of planet.moons) {
           const moonOrbitRadiusPx = mapMoonOrbitRadius(moon, planet.moons, planet.radiusPx);
-          const moonAngle = moon.phase + (simDays / moon.orbitalPeriodDays) * Math.PI * 2;
+          const moonAngle = moon.phase + ((simDays * moonMotionMultiplier) / moon.orbitalPeriodDays) * Math.PI * 2;
           const moonX = planet.x + Math.cos(moonAngle) * moonOrbitRadiusPx;
           const moonY = planet.y + Math.sin(moonAngle) * moonOrbitRadiusPx;
+          const moonOrbitalSpeedKmS = moon.orbitalPeriodDays
+            ? (Math.PI * 2 * moon.orbitRadiusKm) / (moon.orbitalPeriodDays * 86400)
+            : null;
 
           bodies.push({
             id: `moon:${planet.name}:${moon.name}`,
@@ -3673,6 +3809,8 @@
             hitRadiusPx: Math.max(moon.radiusPx, 7 / scale),
             diameterKm: moon.diameterKm,
             orbitalPeriodDays: moon.orbitalPeriodDays,
+            orbitalSpeedKmS: moonOrbitalSpeedKmS,
+            approxDistanceFromSunKm: (planet.semiMajorAxisKm || 0) + moon.orbitRadiusKm,
             moonCount: 0,
             fact: getMoonFact(planet.name, moon)
           });
@@ -3822,6 +3960,8 @@
       const countValue = activeBody.type === 'Star'
         ? (activeBody.planetCount ?? 'N/A')
         : (activeBody.moonCount === null || activeBody.moonCount === undefined ? 'N/A' : activeBody.moonCount);
+      const orbitalSpeedValue = formatOrbitalSpeed(activeBody.orbitalSpeedKmS);
+      const approxDistanceFromSunValue = formatApproxDistanceKm(activeBody.approxDistanceFromSunKm);
       const isFollowingActiveBody = activeBody.id === followTargetId;
       const wikipediaUrl = getWikipediaArticleUrl(activeBody);
       const actionMarkup = `
@@ -3841,6 +3981,10 @@
           <dd>${formatNumber(Math.round(activeBody.diameterKm))} km</dd>
           <dt>Orbital Period</dt>
           <dd>${formatOrbitalPeriod(activeBody.orbitalPeriodDays)}</dd>
+          <dt>Orbital Speed</dt>
+          <dd>${orbitalSpeedValue}</dd>
+          <dt>Approx Sun Distance</dt>
+          <dd>${approxDistanceFromSunValue}</dd>
           <dt>${countLabel}</dt>
           <dd>${countValue}</dd>
         </dl>
@@ -4021,7 +4165,6 @@
     }
 
     function updateTimeFactorIndicators() {
-      const timeFactorDisplay = document.getElementById('timeFactorDisplay');
       timeFactorDisplay.textContent = `Time Factor: ${formatTimeFactor(speedFactor)}`;
       timeFactorDisplay.className = speedFactor > 0
         ? 'time-factor-positive'
@@ -4042,6 +4185,7 @@
         : `Music: ${musicEnabled ? (musicResumePending ? 'On (resume on input)' : 'On') : 'Off'}`;
       const simDays = simTimeMs / 1000;
       document.getElementById('yearsDisplay').textContent = `Earth Years: ${(simDays / EARTH_ORBITAL_PERIOD_DAYS).toFixed(2)}`;
+      moonMotionDisplay.textContent = `Moon Motion: ${formatMoonMotionMultiplier()}`;
       document.getElementById('labelDisplay').textContent = `Labels: ${showLabels ? 'On' : 'Off'}`;
       cardsDisplay.textContent = `Cards: ${showCards ? 'On' : 'Off'}`;
       document.getElementById('followDisplay').textContent = `Follow: ${getFollowLabel()}`;
@@ -4082,6 +4226,14 @@
           adjustTimeFactor(-1);
         }
         syncHeldTimeFactorState();
+      }
+      if (e.key === '[' || e.key === '{') {
+        e.preventDefault();
+        adjustMoonMotionMultiplier(-1);
+      }
+      if (e.key === ']' || e.key === '}') {
+        e.preventDefault();
+        adjustMoonMotionMultiplier(1);
       }
       if (e.key === ' ' || key === 'p') {
         e.preventDefault();
@@ -4186,6 +4338,18 @@
       void clearSavedSettings();
     });
 
+    timeFactorDisplay.addEventListener('click', () => {
+      promptForTimeFactor();
+    });
+
+    timeFactorDisplay.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        e.stopPropagation();
+        promptForTimeFactor();
+      }
+    });
+
     touchSlowerButton.addEventListener('click', () => {
       void restoreMusicOnGesture();
       adjustTimeFactor(-1);
@@ -4199,6 +4363,16 @@
     touchFasterButton.addEventListener('click', () => {
       void restoreMusicOnGesture();
       adjustTimeFactor(1);
+    });
+
+    touchMoonSlowerButton.addEventListener('click', () => {
+      void restoreMusicOnGesture();
+      adjustMoonMotionMultiplier(-1);
+    });
+
+    touchMoonFasterButton.addEventListener('click', () => {
+      void restoreMusicOnGesture();
+      adjustMoonMotionMultiplier(1);
     });
 
     touchZoomOutButton.addEventListener('click', () => {
