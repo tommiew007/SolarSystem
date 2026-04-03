@@ -120,7 +120,7 @@
     .hidden-ui {
       display: none !important;
     }
-    #infoCard, #legend, #followPanel, #creatorPanel {
+    #infoCard, #legend, #followPanel, #creatorPanel, #aboutPanel {
       position: absolute;
       background: rgba(5, 10, 20, 0.74);
       border: 1px solid rgba(255, 255, 255, 0.12);
@@ -310,6 +310,51 @@
       text-align: center;
       z-index: 11;
     }
+    #aboutPanel {
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: clamp(340px, 42vw, 640px);
+      max-width: calc(100vw - 20px);
+      max-height: min(76vh, calc(100dvh - 24px));
+      padding: clamp(14px, 0.95vw, 22px) clamp(16px, 1.1vw, 24px);
+      font-size: clamp(13px, 0.78vw, 16px);
+      line-height: 1.48;
+      z-index: 13;
+    }
+    #aboutPanel h2 {
+      margin: 0 0 10px;
+      font-size: clamp(20px, 1.35vw, 28px);
+      line-height: 1.12;
+    }
+    #aboutPanel p {
+      margin: 0 0 10px;
+      color: rgba(255, 255, 255, 0.88);
+    }
+    #aboutPanel ul {
+      margin: 0 0 14px 18px;
+      padding: 0;
+    }
+    #aboutPanel li {
+      margin: 0 0 8px;
+      color: rgba(255, 255, 255, 0.88);
+    }
+    #aboutPanel .about-close {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 6px;
+      padding: 10px 14px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      font: inherit;
+      cursor: pointer;
+    }
+    #aboutPanel .about-close:hover {
+      background: rgba(255, 255, 255, 0.16);
+    }
     .is-hidden {
       display: none !important;
     }
@@ -410,6 +455,14 @@
         top: max(10px, env(safe-area-inset-top));
         width: calc(100vw - 20px);
       }
+      #aboutPanel {
+        left: max(10px, env(safe-area-inset-left));
+        right: max(10px, env(safe-area-inset-right));
+        top: 50%;
+        width: auto;
+        transform: translateY(-50%);
+        max-height: min(82vh, calc(100dvh - 24px));
+      }
     }
   </style>
 </head>
@@ -422,6 +475,22 @@
     <select id="followSelect"></select>
   </div>
   <div id="creatorPanel" class="is-hidden">Info: Created by Tom Wellborn, 2026</div>
+  <div id="aboutPanel" class="is-hidden">
+    <h2>About This Simulation</h2>
+    <p><strong>Developed and created by Tom Wellborn, 2026.</strong></p>
+    <p>This is a compact, interactive solar system experience designed to make the major motions and scale relationships readable on a normal screen without losing the feeling of space.</p>
+    <p>You can move freely through the scene, follow planets and moons, inspect objects, and change time so you can watch the system evolve from calm real-time motion to accelerated orbital choreography.</p>
+    <ul>
+      <li>Planet and moon sizes are drawn from a shared size scale relative to the Sun, so body diameters stay visually meaningful.</li>
+      <li>Planet positions now follow date-based JPL approximate heliocentric positions, letting the model reflect where the planets should be for the chosen simulation date and time.</li>
+      <li>Moons orbit their parent planets with independent motion controls so fast systems like Jupiter can still be explored comfortably.</li>
+      <li>Hover and click cards show object facts, distances, orbital timing, follow actions, and quick links to learn more.</li>
+      <li>Camera controls support drag, zoom, follow mode, recentering, and touch-friendly navigation on phones and tablets.</li>
+      <li>The simulation remembers your preferred view, speed, labels, music, units, and other settings between sessions unless you clear them.</li>
+    </ul>
+    <p>Some parts remain intentionally simplified for readability: orbit spacing is compressed to fit the screen, and Pluto stays on the simplified model path.</p>
+    <button id="closeAboutButton" class="about-close" type="button">Close About</button>
+  </div>
   <div id="overlay">
     <span id="timeFactorDisplay" class="time-factor-neutral" role="button" tabindex="0" title="Click to enter a time factor">Time Factor: 0.00</span>
     <div class="overlay-section">
@@ -429,22 +498,26 @@
       <span id="primaryControlsHelp">Zoom: wheel, Ctrl+wheel, or +/-</span>
       <span id="navigationHelp">Pan: drag, double-click center, arrows move</span>
       <span id="pauseHelp">Pause: Space or P</span>
-      <span id="speedHelp">Speed: tap W / S by 1, hold to ramp (1 = 1 Earth day/sec)</span>
+      <span id="speedHelp">Speed: tap W / S by 1, hold to ramp (1 = 1 Earth hour/sec)</span>
       <span id="moonHelp">Moon Motion: [ / ] adjusts moon speed</span>
-      <span id="resetHelp">Reset: R | Defaults: Shift+R | Clear hover: Esc</span>
-      <span id="toggleHelp">Toggles: F follow, C cards, L labels, I info, M music, Shift+N Nibiru, H/? help</span>
+      <span id="unitsHelp">Units: U toggles metric / English</span>
+      <span id="resetHelp">Reset: R | Defaults: Shift+R | Live: Live Now button | Clear hover: Esc</span>
+      <span id="toggleHelp">Toggles: F follow, C cards, L labels, I info, A about, M cycles music, Shift+N Nibiru, H/? help</span>
     </div>
     <div class="overlay-section">
       <strong class="overlay-heading">Telemetry</strong>
       <span id="timeScaleDisplay">Rate: Paused</span>
-      <span id="musicDisplay">Music: Off</span>
+      <span id="musicDisplay">Music: Celestial Drift</span>
       <span id="yearsDisplay">Earth Years: 0.00</span>
+      <span id="simulationDateDisplay" role="button" tabindex="0" title="Click to enter a simulation date/time">Date: --</span>
       <span id="moonMotionDisplay">Moon Motion: 1.00x</span>
+      <span id="unitsDisplay">Units: Metric</span>
       <span id="labelDisplay">Labels: Off</span>
       <span id="cardsDisplay">Cards: On</span>
       <span id="followDisplay">Follow: Free camera</span>
-      <span id="motionDisplay">Model: Compact layout, relative speeds</span>
+      <span id="motionDisplay">Model: Compact layout, JPL date-based planets; Pluto simplified</span>
     </div>
+    <button id="liveNowButton" type="button">Live Now</button>
     <button id="clearSettingsButton" type="button">Clear Saved Settings</button>
   </div>
   <div id="timeFactorToast" class="is-hidden">Time Factor: 0.00</div>
@@ -461,14 +534,17 @@
     <button id="touchFollowButton" type="button" aria-label="Follow chooser">Follow</button>
     <button id="touchLabelsButton" type="button" aria-label="Toggle labels">Labels</button>
     <button id="touchNibiruButton" type="button" aria-label="Toggle Nibiru">Nibiru</button>
-    <button id="touchMusicButton" type="button" aria-label="Toggle music">Music</button>
+    <button id="touchMusicButton" type="button" aria-label="Cycle music tracks">Track 1</button>
+    <button id="touchUnitsButton" type="button" aria-label="Toggle measurement units">Metric</button>
+    <button id="touchLiveNowButton" type="button" aria-label="Sync simulation to the current real date and time">Live</button>
+    <button id="touchAboutButton" type="button" aria-label="Open about panel">About</button>
     <button id="touchHelpButton" type="button" aria-label="Toggle help">Help</button>
   </div>
   <div id="legend">
     <strong>Scale Guide</strong>
     <span>Planet and moon diameters are drawn from the same size scale relative to the Sun.</span>
     <span>Planet spacing is compacted to fit the screen and adjusts evenly with window width.</span>
-    <span>Orbital motion keeps real relative speed differences even though orbit spacing is compressed.</span>
+    <span>Planet positions follow JPL approximate heliocentric date/time positions while orbit spacing stays compressed.</span>
     <span>Green marks the habitable zone and blue marks the frost-line region.</span>
   </div>
 
@@ -478,10 +554,13 @@
     const infoCard = document.getElementById('infoCard');
     const followPanel = document.getElementById('followPanel');
     const creatorPanel = document.getElementById('creatorPanel');
+    const aboutPanel = document.getElementById('aboutPanel');
+    const closeAboutButton = document.getElementById('closeAboutButton');
     const timeFactorDisplay = document.getElementById('timeFactorDisplay');
     const timeFactorToast = document.getElementById('timeFactorToast');
     const statusToast = document.getElementById('statusToast');
     const followSelect = document.getElementById('followSelect');
+    const liveNowButton = document.getElementById('liveNowButton');
     const clearSettingsButton = document.getElementById('clearSettingsButton');
     const touchToolbar = document.getElementById('touchToolbar');
     const primaryControlsHelp = document.getElementById('primaryControlsHelp');
@@ -489,9 +568,12 @@
     const pauseHelp = document.getElementById('pauseHelp');
     const speedHelp = document.getElementById('speedHelp');
     const moonHelp = document.getElementById('moonHelp');
+    const unitsHelp = document.getElementById('unitsHelp');
     const resetHelp = document.getElementById('resetHelp');
     const toggleHelp = document.getElementById('toggleHelp');
     const moonMotionDisplay = document.getElementById('moonMotionDisplay');
+    const simulationDateDisplay = document.getElementById('simulationDateDisplay');
+    const unitsDisplay = document.getElementById('unitsDisplay');
     const cardsDisplay = document.getElementById('cardsDisplay');
     const touchSlowerButton = document.getElementById('touchSlowerButton');
     const touchPauseButton = document.getElementById('touchPauseButton');
@@ -505,6 +587,9 @@
     const touchLabelsButton = document.getElementById('touchLabelsButton');
     const touchNibiruButton = document.getElementById('touchNibiruButton');
     const touchMusicButton = document.getElementById('touchMusicButton');
+    const touchUnitsButton = document.getElementById('touchUnitsButton');
+    const touchLiveNowButton = document.getElementById('touchLiveNowButton');
+    const touchAboutButton = document.getElementById('touchAboutButton');
     const touchHelpButton = document.getElementById('touchHelpButton');
 
     const SUN_DIAMETER_KM = 1_391_000;
@@ -512,11 +597,16 @@
     const EARTH_ORBITAL_PERIOD_DAYS = 365.256;
     const EARTH_ORBITAL_SPEED_KMS = 29.78;
     const EARTH_ORBIT_RADIUS_KM = 149_598_262;
+    const ASTRONOMICAL_UNIT_KM = 149_597_870.7;
+    const MS_PER_DAY = 86_400_000;
+    const JULIAN_DATE_UNIX_EPOCH = 2_440_587.5;
+    const KM_TO_MILES = 0.621371192237334;
+    const KMS_TO_MPH = KM_TO_MILES * 3600;
     const MIN_SCALE = 0.05;
     const MAX_SCALE = 1200;
     const HAS_WEB_AUDIO = Boolean(window.AudioContext || window.webkitAudioContext);
     const STORAGE_KEY = 'solar-system-session-state-v1';
-    const SESSION_STATE_VERSION = 9;
+    const SESSION_STATE_VERSION = 10;
     const HABITABLE_ZONE_INNER_KM = EARTH_ORBIT_RADIUS_KM * 0.95;
     const HABITABLE_ZONE_OUTER_KM = EARTH_ORBIT_RADIUS_KM * 1.67;
     const FROST_LINE_INNER_KM = EARTH_ORBIT_RADIUS_KM * 2.55;
@@ -525,14 +615,16 @@
     const HOVER_CARD_HIDE_DELAY_MS = 5000;
     const FOLLOW_FLIGHT_DURATION_MS = 4200;
     const MIN_MOON_MOTION_MULTIPLIER = 0;
-    const MAX_MOON_MOTION_MULTIPLIER = 25;
+    const MAX_MOON_MOTION_MULTIPLIER = 1;
     const MOON_MOTION_MULTIPLIER_STEP = 0.25;
     const MAX_DISPLAY_TIME_FACTOR = 10_000;
     const DISPLAY_TIME_FACTOR_MULTIPLIER = 100_000;
     const DAYS_PER_EARTH_MONTH = EARTH_ORBITAL_PERIOD_DAYS / 12;
-    const DISPLAY_REFERENCE_EARTH_DAYS = 1;
+    const DISPLAY_REFERENCE_EARTH_DAYS = 1 / 24;
+    const REAL_TIME_DISPLAY_FACTOR = 1 / 3600;
     const TIME_FACTOR_STEP = 1 / DISPLAY_TIME_FACTOR_MULTIPLIER;
     const SIM_DAYS_PER_SECOND_PER_TIME_FACTOR = DISPLAY_REFERENCE_EARTH_DAYS * DISPLAY_TIME_FACTOR_MULTIPLIER;
+    const LEGACY_V9_SIM_DAYS_PER_SECOND_PER_TIME_FACTOR = DISPLAY_TIME_FACTOR_MULTIPLIER;
     const LEGACY_V8_SIM_DAYS_PER_SECOND_PER_TIME_FACTOR = DAYS_PER_EARTH_MONTH * DISPLAY_TIME_FACTOR_MULTIPLIER;
     const LEGACY_V7_SIM_DAYS_PER_SECOND_PER_TIME_FACTOR = (1 / 24) * DISPLAY_TIME_FACTOR_MULTIPLIER;
     const LEGACY_V6_SIM_DAYS_PER_SECOND_PER_TIME_FACTOR = EARTH_ORBITAL_PERIOD_DAYS * 0.5 * DISPLAY_TIME_FACTOR_MULTIPLIER;
@@ -541,6 +633,399 @@
     const LEGACY_V3_SIM_DAYS_PER_SECOND_PER_TIME_FACTOR = DAYS_PER_EARTH_MONTH * DISPLAY_TIME_FACTOR_MULTIPLIER;
     const TRAIL_SAMPLE_ANGLE_STEP = Math.PI / 120;
     const MAX_TRAIL_POINTS = 240;
+    const MUSIC_TRACKS = [
+      {
+        name: 'Celestial Drift',
+        progression: [[50, 57, 62, 69], [48, 55, 60, 67], [43, 50, 57, 64], [45, 52, 57, 64]],
+        stepMs: 7000,
+        filterFrequency: 980,
+        filterQ: 0.35,
+        dryGain: 0.92,
+        delayTime: 0.48,
+        feedbackGain: 0.34,
+        echoGain: 0.23,
+        shimmerType: 'sine',
+        shimmerGain: 0.0028,
+        lfoType: 'sine',
+        lfoFrequency: 0.05,
+        lfoAmount: 180,
+        masterGain: 1,
+        fadeInTime: 2.4,
+        shimmerOffset: 12,
+        shimmerTimeConstant: 1.1,
+        voiceOffsets: [-12, 0, 0, 0],
+        voiceTimeConstants: [2.8, 2.4, 2.1, 1.9],
+        voiceSettings: [
+          { type: 'triangle', gain: 0.022 },
+          { type: 'sine', gain: 0.017 },
+          { type: 'triangle', gain: 0.0115 },
+          { type: 'sine', gain: 0.007 }
+        ]
+      },
+      {
+        name: 'Lunar Hush',
+        progression: [[45, 52, 57, 64], [43, 50, 55, 62], [40, 47, 52, 59], [38, 45, 50, 57]],
+        stepMs: 7600,
+        filterFrequency: 820,
+        filterQ: 0.26,
+        dryGain: 0.9,
+        delayTime: 0.62,
+        feedbackGain: 0.39,
+        echoGain: 0.29,
+        shimmerType: 'sine',
+        shimmerGain: 0.0018,
+        lfoType: 'sine',
+        lfoFrequency: 0.032,
+        lfoAmount: 120,
+        masterGain: 0.96,
+        fadeInTime: 3.1,
+        shimmerOffset: 19,
+        shimmerTimeConstant: 1.6,
+        voiceOffsets: [-12, 0, 0, 0],
+        voiceTimeConstants: [3.1, 2.8, 2.5, 2.2],
+        voiceSettings: [
+          { type: 'triangle', gain: 0.019 },
+          { type: 'sine', gain: 0.014 },
+          { type: 'sine', gain: 0.0105 },
+          { type: 'triangle', gain: 0.0058 }
+        ]
+      },
+      {
+        name: 'Aurora Sleep',
+        progression: [[52, 59, 64, 71], [50, 57, 62, 69], [47, 54, 59, 66], [45, 52, 57, 64]],
+        stepMs: 6800,
+        filterFrequency: 1120,
+        filterQ: 0.38,
+        dryGain: 0.94,
+        delayTime: 0.41,
+        feedbackGain: 0.31,
+        echoGain: 0.2,
+        shimmerType: 'triangle',
+        shimmerGain: 0.0022,
+        lfoType: 'sine',
+        lfoFrequency: 0.058,
+        lfoAmount: 210,
+        masterGain: 0.98,
+        fadeInTime: 2.1,
+        shimmerOffset: 24,
+        shimmerTimeConstant: 0.95,
+        voiceOffsets: [-12, 0, 0, 0],
+        voiceTimeConstants: [2.2, 1.9, 1.7, 1.5],
+        voiceSettings: [
+          { type: 'triangle', gain: 0.021 },
+          { type: 'sine', gain: 0.016 },
+          { type: 'triangle', gain: 0.0108 },
+          { type: 'sine', gain: 0.0065 }
+        ]
+      },
+      {
+        name: 'Deep Field',
+        progression: [[38, 45, 50, 57], [36, 43, 48, 55], [33, 40, 45, 52], [31, 38, 43, 50]],
+        stepMs: 8400,
+        filterFrequency: 700,
+        filterQ: 0.22,
+        dryGain: 0.88,
+        delayTime: 0.74,
+        feedbackGain: 0.43,
+        echoGain: 0.32,
+        shimmerType: 'sine',
+        shimmerGain: 0.0011,
+        lfoType: 'triangle',
+        lfoFrequency: 0.026,
+        lfoAmount: 90,
+        masterGain: 0.93,
+        fadeInTime: 3.4,
+        shimmerOffset: 12,
+        shimmerTimeConstant: 1.8,
+        voiceOffsets: [-12, 0, 0, 0],
+        voiceTimeConstants: [3.4, 3.0, 2.7, 2.4],
+        voiceSettings: [
+          { type: 'sine', gain: 0.018 },
+          { type: 'triangle', gain: 0.0135 },
+          { type: 'sine', gain: 0.0092 },
+          { type: 'triangle', gain: 0.0053 }
+        ]
+      },
+      {
+        name: 'Quiet Rings',
+        progression: [[47, 54, 59, 66], [45, 52, 57, 64], [42, 49, 54, 61], [40, 47, 52, 59]],
+        stepMs: 7200,
+        filterFrequency: 900,
+        filterQ: 0.3,
+        dryGain: 0.91,
+        delayTime: 0.56,
+        feedbackGain: 0.36,
+        echoGain: 0.25,
+        shimmerType: 'triangle',
+        shimmerGain: 0.0016,
+        lfoType: 'sine',
+        lfoFrequency: 0.041,
+        lfoAmount: 150,
+        masterGain: 0.97,
+        fadeInTime: 2.7,
+        shimmerOffset: 17,
+        shimmerTimeConstant: 1.25,
+        voiceOffsets: [-12, 0, 0, 0],
+        voiceTimeConstants: [2.7, 2.3, 2.0, 1.8],
+        voiceSettings: [
+          { type: 'triangle', gain: 0.02 },
+          { type: 'triangle', gain: 0.0145 },
+          { type: 'sine', gain: 0.0098 },
+          { type: 'sine', gain: 0.0059 }
+        ]
+      },
+      {
+        name: 'Blue Marble Night',
+        progression: [[43, 50, 57, 62], [45, 52, 57, 64], [48, 55, 60, 67], [50, 57, 62, 69]],
+        stepMs: 6600,
+        filterFrequency: 1040,
+        filterQ: 0.33,
+        dryGain: 0.93,
+        delayTime: 0.44,
+        feedbackGain: 0.29,
+        echoGain: 0.18,
+        shimmerType: 'sine',
+        shimmerGain: 0.0024,
+        lfoType: 'sine',
+        lfoFrequency: 0.061,
+        lfoAmount: 205,
+        masterGain: 1,
+        fadeInTime: 2.0,
+        shimmerOffset: 24,
+        shimmerTimeConstant: 1.0,
+        voiceOffsets: [-12, 0, 0, 0],
+        voiceTimeConstants: [2.1, 1.8, 1.6, 1.4],
+        voiceSettings: [
+          { type: 'triangle', gain: 0.0215 },
+          { type: 'sine', gain: 0.0162 },
+          { type: 'triangle', gain: 0.0112 },
+          { type: 'sine', gain: 0.0067 }
+        ]
+      },
+      {
+        name: 'Comet Dream',
+        progression: [[45, 50, 57, 62], [43, 48, 55, 60], [40, 45, 52, 57], [38, 43, 50, 55]],
+        stepMs: 7350,
+        filterFrequency: 860,
+        filterQ: 0.27,
+        dryGain: 0.89,
+        delayTime: 0.69,
+        feedbackGain: 0.41,
+        echoGain: 0.31,
+        shimmerType: 'triangle',
+        shimmerGain: 0.0014,
+        lfoType: 'triangle',
+        lfoFrequency: 0.035,
+        lfoAmount: 110,
+        masterGain: 0.95,
+        fadeInTime: 3.0,
+        shimmerOffset: 12,
+        shimmerTimeConstant: 1.45,
+        voiceOffsets: [-12, 0, 0, 0],
+        voiceTimeConstants: [2.9, 2.6, 2.3, 2.0],
+        voiceSettings: [
+          { type: 'sine', gain: 0.0188 },
+          { type: 'triangle', gain: 0.0138 },
+          { type: 'triangle', gain: 0.0096 },
+          { type: 'sine', gain: 0.0055 }
+        ]
+      },
+      {
+        name: 'Kuiper Calm',
+        progression: [[33, 40, 45, 52], [35, 42, 47, 54], [38, 45, 50, 57], [40, 47, 52, 59]],
+        stepMs: 8800,
+        filterFrequency: 760,
+        filterQ: 0.24,
+        dryGain: 0.87,
+        delayTime: 0.78,
+        feedbackGain: 0.45,
+        echoGain: 0.34,
+        shimmerType: 'sine',
+        shimmerGain: 0.001,
+        lfoType: 'sine',
+        lfoFrequency: 0.022,
+        lfoAmount: 85,
+        masterGain: 0.9,
+        fadeInTime: 3.8,
+        shimmerOffset: 19,
+        shimmerTimeConstant: 1.9,
+        voiceOffsets: [-12, 0, 0, 0],
+        voiceTimeConstants: [3.6, 3.2, 2.9, 2.5],
+        voiceSettings: [
+          { type: 'sine', gain: 0.017 },
+          { type: 'triangle', gain: 0.0128 },
+          { type: 'sine', gain: 0.0088 },
+          { type: 'triangle', gain: 0.0048 }
+        ]
+      },
+      {
+        name: 'Eventide Orbit',
+        progression: [[48, 55, 60, 65], [46, 53, 58, 63], [43, 50, 55, 60], [41, 48, 53, 58]],
+        stepMs: 6900,
+        filterFrequency: 940,
+        filterQ: 0.31,
+        dryGain: 0.9,
+        delayTime: 0.52,
+        feedbackGain: 0.33,
+        echoGain: 0.24,
+        shimmerType: 'triangle',
+        shimmerGain: 0.0019,
+        lfoType: 'sine',
+        lfoFrequency: 0.047,
+        lfoAmount: 165,
+        masterGain: 0.97,
+        fadeInTime: 2.5,
+        shimmerOffset: 17,
+        shimmerTimeConstant: 1.15,
+        voiceOffsets: [-12, 0, 0, 0],
+        voiceTimeConstants: [2.5, 2.2, 1.9, 1.7],
+        voiceSettings: [
+          { type: 'triangle', gain: 0.0205 },
+          { type: 'sine', gain: 0.015 },
+          { type: 'triangle', gain: 0.0104 },
+          { type: 'sine', gain: 0.0061 }
+        ]
+      },
+      {
+        name: 'Polar Dawn',
+        progression: [[52, 57, 64, 69], [50, 55, 62, 67], [47, 52, 59, 64], [45, 50, 57, 62]],
+        stepMs: 6400,
+        filterFrequency: 1180,
+        filterQ: 0.4,
+        dryGain: 0.95,
+        delayTime: 0.38,
+        feedbackGain: 0.27,
+        echoGain: 0.17,
+        shimmerType: 'sine',
+        shimmerGain: 0.0026,
+        lfoType: 'triangle',
+        lfoFrequency: 0.072,
+        lfoAmount: 220,
+        masterGain: 1,
+        fadeInTime: 1.9,
+        shimmerOffset: 24,
+        shimmerTimeConstant: 0.88,
+        voiceOffsets: [-12, 0, 0, 0],
+        voiceTimeConstants: [1.9, 1.7, 1.5, 1.3],
+        voiceSettings: [
+          { type: 'triangle', gain: 0.0222 },
+          { type: 'triangle', gain: 0.0165 },
+          { type: 'sine', gain: 0.0113 },
+          { type: 'sine', gain: 0.0069 }
+        ]
+      },
+      {
+        name: 'Nebula Rest',
+        progression: [[40, 45, 52, 57], [38, 43, 50, 55], [35, 40, 47, 52], [33, 38, 45, 50]],
+        stepMs: 8100,
+        filterFrequency: 780,
+        filterQ: 0.25,
+        dryGain: 0.88,
+        delayTime: 0.66,
+        feedbackGain: 0.4,
+        echoGain: 0.3,
+        shimmerType: 'sine',
+        shimmerGain: 0.0012,
+        lfoType: 'sine',
+        lfoFrequency: 0.029,
+        lfoAmount: 102,
+        masterGain: 0.92,
+        fadeInTime: 3.2,
+        shimmerOffset: 12,
+        shimmerTimeConstant: 1.6,
+        voiceOffsets: [-12, 0, 0, 0],
+        voiceTimeConstants: [3.1, 2.8, 2.5, 2.2],
+        voiceSettings: [
+          { type: 'sine', gain: 0.0182 },
+          { type: 'triangle', gain: 0.0132 },
+          { type: 'sine', gain: 0.0091 },
+          { type: 'triangle', gain: 0.0052 }
+        ]
+      }
+    ];
+    const DEFAULT_MUSIC_TRACK_INDEX = 0;
+    const JPL_APPROX_PLANET_ELEMENTS = {
+      Mercury: {
+        a: [0.38709843, 0.00000000],
+        e: [0.20563661, 0.00002123],
+        I: [7.00559432, -0.00590158],
+        L: [252.25166724, 149472.67486623],
+        longPeri: [77.45771895, 0.15940013],
+        longNode: [48.33961819, -0.12214182]
+      },
+      Venus: {
+        a: [0.72332102, -0.00000026],
+        e: [0.00676399, -0.00005107],
+        I: [3.39777545, 0.00043494],
+        L: [181.97970850, 58517.81560260],
+        longPeri: [131.76755713, 0.05679648],
+        longNode: [76.67261496, -0.27274174]
+      },
+      Earth: {
+        a: [1.00000018, -0.00000003],
+        e: [0.01673163, -0.00003661],
+        I: [-0.00054346, -0.01337178],
+        L: [100.46691572, 35999.37306329],
+        longPeri: [102.93005885, 0.31795260],
+        longNode: [-5.11260389, -0.24123856]
+      },
+      Mars: {
+        a: [1.52371243, 0.00000097],
+        e: [0.09336511, 0.00009149],
+        I: [1.85181869, -0.00724757],
+        L: [-4.56813164, 19140.29934243],
+        longPeri: [-23.91744784, 0.45223625],
+        longNode: [49.71320984, -0.26852431]
+      },
+      Jupiter: {
+        a: [5.20248019, -0.00002864],
+        e: [0.04853590, 0.00018026],
+        I: [1.29861416, -0.00322699],
+        L: [34.33479152, 3034.90371757],
+        longPeri: [14.27495244, 0.18199196],
+        longNode: [100.29282654, 0.13024619],
+        b: -0.00012452,
+        c: 0.06064060,
+        s: -0.35635438,
+        f: 38.35125000
+      },
+      Saturn: {
+        a: [9.54149883, -0.00003065],
+        e: [0.05550825, -0.00032044],
+        I: [2.49424102, 0.00451969],
+        L: [50.07571329, 1222.11494724],
+        longPeri: [92.86136063, 0.54179478],
+        longNode: [113.63998702, -0.25015002],
+        b: 0.00025899,
+        c: -0.13434469,
+        s: 0.87320147,
+        f: 38.35125000
+      },
+      Uranus: {
+        a: [19.18797948, -0.00020455],
+        e: [0.04685740, -0.00001550],
+        I: [0.77298127, -0.00180155],
+        L: [314.20276625, 428.49512595],
+        longPeri: [172.43404441, 0.09266985],
+        longNode: [73.96250215, 0.05739699],
+        b: 0.00058331,
+        c: -0.97731848,
+        s: 0.17689245,
+        f: 7.67025000
+      },
+      Neptune: {
+        a: [30.06952752, 0.00006447],
+        e: [0.00895439, 0.00000818],
+        I: [1.77005520, 0.00022400],
+        L: [304.22289287, 218.46515314],
+        longPeri: [46.68158724, 0.01009938],
+        longNode: [131.78635853, -0.00606302],
+        b: -0.00041348,
+        c: 0.68346318,
+        s: -0.10162547,
+        f: 7.67025000
+      }
+    };
     const SUN_INFO = {
       id: 'sun',
       name: 'Sun',
@@ -950,6 +1435,8 @@
     let stars = [];
     let speedFactor = 0.0;
     let moonMotionMultiplier = 1;
+    let measurementSystem = 'metric';
+    let simulationReferenceMs = Date.now();
     let simTimeMs = 0;
     let lastTimestamp = null;
     let paused = false;
@@ -957,11 +1444,13 @@
     let showHelp = true;
     let showCards = true;
     let showCreatorInfo = false;
+    let showAboutInfo = false;
     let showNibiru = false;
     let showFollowChooser = false;
     let followTargetId = null;
     let followNeedsZoom = false;
     let musicEnabled = true;
+    let currentMusicTrackIndex = DEFAULT_MUSIC_TRACK_INDEX;
     let musicResumePending = true;
     let musicUnavailable = false;
     let sceneBodies = [];
@@ -1161,25 +1650,256 @@
       return value.toLocaleString('en-US');
     }
 
+    function normalizeMeasurementSystem(value) {
+      return value === 'english' ? 'english' : 'metric';
+    }
+
+    function getMeasurementSystemLabel() {
+      return measurementSystem === 'english' ? 'English' : 'Metric';
+    }
+
+    function formatDiameter(valueKm) {
+      if (!Number.isFinite(valueKm)) {
+        return 'N/A';
+      }
+      if (measurementSystem === 'english') {
+        return `${Math.round(valueKm * KM_TO_MILES).toLocaleString('en-US')} mi`;
+      }
+      return `${Math.round(valueKm).toLocaleString('en-US')} km`;
+    }
+
     function formatApproxDistanceKm(value) {
       if (!Number.isFinite(value)) {
         return 'N/A';
       }
-      const absValue = Math.abs(value);
+      const convertedValue = measurementSystem === 'english' ? value * KM_TO_MILES : value;
+      const absValue = Math.abs(convertedValue);
+      const unit = measurementSystem === 'english' ? 'mi' : 'km';
       if (absValue >= 1_000_000_000) {
-        return `${(value / 1_000_000_000).toLocaleString('en-US', { maximumFractionDigits: 2 })} billion km`;
+        return `${(convertedValue / 1_000_000_000).toLocaleString('en-US', { maximumFractionDigits: 2 })} billion ${unit}`;
       }
       if (absValue >= 1_000_000) {
-        return `${(value / 1_000_000).toLocaleString('en-US', { maximumFractionDigits: 2 })} million km`;
+        return `${(convertedValue / 1_000_000).toLocaleString('en-US', { maximumFractionDigits: 2 })} million ${unit}`;
       }
-      return `${Math.round(value).toLocaleString('en-US')} km`;
+      return `${Math.round(convertedValue).toLocaleString('en-US')} ${unit}`;
     }
 
     function formatOrbitalSpeed(value) {
       if (!Number.isFinite(value)) {
         return 'N/A';
       }
+      if (measurementSystem === 'english') {
+        const mphValue = value * KMS_TO_MPH;
+        return `${mphValue.toLocaleString('en-US', {
+          minimumFractionDigits: mphValue < 100 ? 1 : 0,
+          maximumFractionDigits: mphValue < 100 ? 1 : 0
+        })} mph`;
+      }
       return `${value.toLocaleString('en-US', { minimumFractionDigits: value < 10 ? 2 : 1, maximumFractionDigits: value < 10 ? 2 : 1 })} km/s`;
+    }
+
+    function degToRad(value) {
+      return (value * Math.PI) / 180;
+    }
+
+    function normalizeDegrees(value) {
+      let normalized = value % 360;
+      if (normalized < 0) {
+        normalized += 360;
+      }
+      return normalized;
+    }
+
+    function normalizeDegreesSigned(value) {
+      const normalized = normalizeDegrees(value);
+      return normalized > 180 ? normalized - 360 : normalized;
+    }
+
+    function getJulianDateFromUnixMs(unixMs) {
+      return (unixMs / MS_PER_DAY) + JULIAN_DATE_UNIX_EPOCH;
+    }
+
+    function getCurrentSimulationDateMs() {
+      return simulationReferenceMs + (simTimeMs / 1000) * MS_PER_DAY;
+    }
+
+    function formatSimulationDateTime(unixMs = getCurrentSimulationDateMs()) {
+      const date = new Date(unixMs);
+      if (Number.isNaN(date.getTime())) {
+        return 'Invalid date';
+      }
+      return date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit'
+      });
+    }
+
+    function parseSimulationDateTimeInput(value) {
+      if (typeof value !== 'string') {
+        return null;
+      }
+      const trimmed = value.trim();
+      if (!trimmed) {
+        return null;
+      }
+
+      const normalized = trimmed.replace(/\s+/, 'T');
+      const match = normalized.match(/^(-?\d{1,6})-(\d{2})-(\d{2})(?:T(\d{2})(?::(\d{2})(?::(\d{2}))?)?)?$/);
+      if (!match) {
+        const fallback = new Date(trimmed);
+        return Number.isFinite(fallback.getTime()) ? fallback.getTime() : null;
+      }
+
+      const [, yearText, monthText, dayText, hourText = '00', minuteText = '00', secondText = '00'] = match;
+      const year = Number(yearText);
+      const month = Number(monthText);
+      const day = Number(dayText);
+      const hour = Number(hourText);
+      const minute = Number(minuteText);
+      const second = Number(secondText);
+      if (![year, month, day, hour, minute, second].every(Number.isFinite)) {
+        return null;
+      }
+
+      const candidate = new Date(year, month - 1, day, hour, minute, second, 0);
+      if (
+        candidate.getFullYear() !== year
+        || candidate.getMonth() !== month - 1
+        || candidate.getDate() !== day
+        || candidate.getHours() !== hour
+        || candidate.getMinutes() !== minute
+        || candidate.getSeconds() !== second
+      ) {
+        return null;
+      }
+
+      return candidate.getTime();
+    }
+
+    function promptForSimulationDateTime() {
+      const response = window.prompt(
+        'Enter a local simulation date/time as YYYY-MM-DD HH:MM.\nExample: 2026-04-03 14:30',
+        (() => {
+          const date = new Date(getCurrentSimulationDateMs());
+          const pad = value => String(value).padStart(2, '0');
+          return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+        })()
+      );
+
+      if (response === null) {
+        return;
+      }
+
+      const parsedUnixMs = parseSimulationDateTimeInput(response);
+      if (!Number.isFinite(parsedUnixMs)) {
+        showTransientStatusMessage('Date/time format not recognized.');
+        return;
+      }
+
+      simulationReferenceMs = parsedUnixMs - (simTimeMs / 1000) * MS_PER_DAY;
+      bodyTrails.clear();
+      trailLastTimestamp = 0;
+      updateOverlay();
+      updateInfoCard(true);
+      showTransientStatusMessage(`Simulation date: ${formatSimulationDateTime(parsedUnixMs)}`);
+    }
+
+    function solveKeplerDegrees(meanAnomalyDegrees, eccentricity, toleranceDegrees = 1e-6) {
+      const eccentricityDegrees = eccentricity * (180 / Math.PI);
+      let eccentricAnomaly = meanAnomalyDegrees + eccentricityDegrees * Math.sin(degToRad(meanAnomalyDegrees));
+
+      for (let i = 0; i < 15; i++) {
+        const deltaMeanAnomaly = meanAnomalyDegrees - (eccentricAnomaly - eccentricityDegrees * Math.sin(degToRad(eccentricAnomaly)));
+        const deltaEccentricAnomaly = deltaMeanAnomaly / (1 - eccentricity * Math.cos(degToRad(eccentricAnomaly)));
+        eccentricAnomaly += deltaEccentricAnomaly;
+        if (Math.abs(deltaEccentricAnomaly) <= toleranceDegrees) {
+          break;
+        }
+      }
+
+      return eccentricAnomaly;
+    }
+
+    function getApproxPlanetHeliocentricPosition(planetName, julianDate) {
+      const elements = JPL_APPROX_PLANET_ELEMENTS[planetName];
+      if (!elements || !Number.isFinite(julianDate)) {
+        return null;
+      }
+
+      const centuriesSinceJ2000 = (julianDate - 2451545.0) / 36525;
+      const semiMajorAxisAu = elements.a[0] + elements.a[1] * centuriesSinceJ2000;
+      const eccentricity = elements.e[0] + elements.e[1] * centuriesSinceJ2000;
+      const inclinationDegrees = elements.I[0] + elements.I[1] * centuriesSinceJ2000;
+      const meanLongitudeDegrees = elements.L[0] + elements.L[1] * centuriesSinceJ2000;
+      const longitudeOfPerihelionDegrees = elements.longPeri[0] + elements.longPeri[1] * centuriesSinceJ2000;
+      const longitudeOfAscendingNodeDegrees = elements.longNode[0] + elements.longNode[1] * centuriesSinceJ2000;
+      const argumentOfPerihelionDegrees = longitudeOfPerihelionDegrees - longitudeOfAscendingNodeDegrees;
+      const meanAnomalyDegrees = normalizeDegreesSigned(
+        meanLongitudeDegrees
+        - longitudeOfPerihelionDegrees
+        + (elements.b || 0) * centuriesSinceJ2000 * centuriesSinceJ2000
+        + (elements.c || 0) * Math.cos(degToRad((elements.f || 0) * centuriesSinceJ2000))
+        + (elements.s || 0) * Math.sin(degToRad((elements.f || 0) * centuriesSinceJ2000))
+      );
+      const eccentricAnomalyDegrees = solveKeplerDegrees(meanAnomalyDegrees, eccentricity);
+      const eccentricAnomalyRadians = degToRad(eccentricAnomalyDegrees);
+      const xPrime = semiMajorAxisAu * (Math.cos(eccentricAnomalyRadians) - eccentricity);
+      const yPrime = semiMajorAxisAu * Math.sqrt(1 - eccentricity * eccentricity) * Math.sin(eccentricAnomalyRadians);
+      const cosOmega = Math.cos(degToRad(longitudeOfAscendingNodeDegrees));
+      const sinOmega = Math.sin(degToRad(longitudeOfAscendingNodeDegrees));
+      const cosInclination = Math.cos(degToRad(inclinationDegrees));
+      const sinInclination = Math.sin(degToRad(inclinationDegrees));
+      const cosArgumentOfPerihelion = Math.cos(degToRad(argumentOfPerihelionDegrees));
+      const sinArgumentOfPerihelion = Math.sin(degToRad(argumentOfPerihelionDegrees));
+      const xEcliptic = (cosArgumentOfPerihelion * cosOmega - sinArgumentOfPerihelion * sinOmega * cosInclination) * xPrime
+        + (-sinArgumentOfPerihelion * cosOmega - cosArgumentOfPerihelion * sinOmega * cosInclination) * yPrime;
+      const yEcliptic = (cosArgumentOfPerihelion * sinOmega + sinArgumentOfPerihelion * cosOmega * cosInclination) * xPrime
+        + (-sinArgumentOfPerihelion * sinOmega + cosArgumentOfPerihelion * cosOmega * cosInclination) * yPrime;
+      const zEcliptic = (sinArgumentOfPerihelion * sinInclination) * xPrime
+        + (cosArgumentOfPerihelion * sinInclination) * yPrime;
+      const planarDistanceAu = Math.hypot(xEcliptic, yEcliptic);
+      const heliocentricDistanceAu = Math.hypot(xEcliptic, yEcliptic, zEcliptic);
+
+      return {
+        xAu: xEcliptic,
+        yAu: yEcliptic,
+        zAu: zEcliptic,
+        planarDistanceKm: planarDistanceAu * ASTRONOMICAL_UNIT_KM,
+        heliocentricDistanceKm: heliocentricDistanceAu * ASTRONOMICAL_UNIT_KM,
+        screenAngle: Math.atan2(-yEcliptic, xEcliptic)
+      };
+    }
+
+    function normalizeMusicTrackIndex(value) {
+      const numericValue = Number.isFinite(value) ? Math.round(value) : DEFAULT_MUSIC_TRACK_INDEX;
+      return clamp(numericValue, 0, MUSIC_TRACKS.length - 1);
+    }
+
+    function getCurrentMusicTrack() {
+      return MUSIC_TRACKS[normalizeMusicTrackIndex(currentMusicTrackIndex)];
+    }
+
+    function getMusicStatusLabel() {
+      if (musicUnavailable) {
+        return 'Music: Unavailable';
+      }
+      if (!musicEnabled) {
+        return 'Music: Muted';
+      }
+      return `Music: ${getCurrentMusicTrack().name}${musicResumePending ? ' (resume on input)' : ''}`;
+    }
+
+    function getTouchMusicButtonLabel() {
+      if (musicUnavailable) {
+        return 'Music ?';
+      }
+      if (!musicEnabled) {
+        return 'Muted';
+      }
+      return `Track ${currentMusicTrackIndex + 1}`;
     }
 
     function parseCssColor(color) {
@@ -1662,6 +2382,9 @@
     }
 
     function formatMoonMotionMultiplier(value = moonMotionMultiplier) {
+      if (Math.abs(value - 1) < 0.001) {
+        return 'Default (1.00x)';
+      }
       return `${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}x`;
     }
 
@@ -1675,6 +2398,13 @@
       if (!showHelp) {
         showTransientStatusMessage(`Moon motion: ${formatMoonMotionMultiplier(moonMotionMultiplier)}`);
       }
+    }
+
+    function toggleMeasurementSystem() {
+      measurementSystem = measurementSystem === 'english' ? 'metric' : 'english';
+      updateOverlay();
+      updateInfoCard(true);
+      showTransientStatusMessage(`Units: ${getMeasurementSystemLabel()}`);
     }
 
     function setDisplayedTimeFactor(nextDisplayedFactor, options = {}) {
@@ -1702,7 +2432,7 @@
     function promptForTimeFactor() {
       const currentDisplayedFactor = getDisplayedTimeFactor();
       const response = window.prompt(
-        `Enter a time factor between -${MAX_DISPLAY_TIME_FACTOR.toLocaleString('en-US')} and ${MAX_DISPLAY_TIME_FACTOR.toLocaleString('en-US')}.\n1 = 1 Earth day/sec.`,
+        `Enter a time factor between -${MAX_DISPLAY_TIME_FACTOR.toLocaleString('en-US')} and ${MAX_DISPLAY_TIME_FACTOR.toLocaleString('en-US')}.\n1 = 1 Earth hour/sec.`,
         currentDisplayedFactor.toLocaleString('en-US', {
           minimumFractionDigits: 0,
           maximumFractionDigits: 5,
@@ -1729,8 +2459,52 @@
       setDisplayedTimeFactor(parsedValue);
     }
 
+    function getRealTimeDisplayedFactorLabel() {
+      return REAL_TIME_DISPLAY_FACTOR.toLocaleString('en-US', {
+        minimumFractionDigits: 5,
+        maximumFractionDigits: 5,
+        useGrouping: false
+      });
+    }
+
     function confirmDestructiveAction(message) {
       return window.confirm(message);
+    }
+
+    async function syncSimulationToLiveNow() {
+      const realTimeFactorLabel = getRealTimeDisplayedFactorLabel();
+      const nowMs = Date.now();
+      const currentDateLabel = formatSimulationDateTime(nowMs);
+      const confirmed = confirmDestructiveAction(
+        `Switch the simulation to the current real date/time?\n\nThis will jump the model to ${currentDateLabel}, clear existing trails, and set Time Factor to ${realTimeFactorLabel} so the simulation advances in real time.`
+      );
+
+      if (!confirmed) {
+        return;
+      }
+
+      clearCameraFlight(false);
+      simulationReferenceMs = nowMs;
+      simTimeMs = 0;
+      speedFactor = normalizeTimeFactor(REAL_TIME_DISPLAY_FACTOR / DISPLAY_TIME_FACTOR_MULTIPLIER);
+      paused = false;
+      bodyTrails.clear();
+      trailLastTimestamp = 0;
+      lastTimestamp = null;
+      followNeedsZoom = false;
+
+      if (musicEngine) {
+        try {
+          await musicEngine.setPaused(false);
+        } catch (error) {
+          // Ignore audio resume failures so the simulation still switches modes.
+        }
+      }
+
+      updateOverlay();
+      updateInfoCard(true);
+      updateCanvasCursor();
+      showTransientStatusMessage(`Live now: ${formatSimulationDateTime()} • Time Factor ${realTimeFactorLabel}`);
     }
 
     function isTouchUILayout() {
@@ -1780,12 +2554,21 @@
     }
 
     function getHeldTimeFactorInterval(elapsedMs) {
-      if (elapsedMs < 280) {
+      if (elapsedMs < 220) {
         return Infinity;
       }
 
-      const ramp = clamp((elapsedMs - 280) / 1800, 0, 1);
-      return lerp(150, 28, Math.pow(ramp, 0.82));
+      const ramp = clamp((elapsedMs - 220) / 2000, 0, 1);
+      return lerp(145, 16, 1 - Math.exp(-4.4 * ramp));
+    }
+
+    function getHeldTimeFactorStepMultiplier(elapsedMs) {
+      if (elapsedMs < 520) {
+        return 1;
+      }
+
+      const ramp = clamp((elapsedMs - 520) / 2200, 0, 1);
+      return clamp(Math.round(Math.pow(2, ramp * 3.2)), 1, 9);
     }
 
     function updateHeldTimeFactor(timestamp) {
@@ -1801,7 +2584,7 @@
 
       while (timestamp - timeFactorHoldLastStepAt >= intervalMs) {
         timeFactorHoldLastStepAt += intervalMs;
-        adjustTimeFactor(timeFactorHoldDirection);
+        adjustTimeFactor(timeFactorHoldDirection * getHeldTimeFactorStepMultiplier(elapsedMs));
       }
     }
 
@@ -1891,31 +2674,38 @@
         ? 'Pause: touch Pause or press Space / P'
         : 'Pause: Space or P';
       speedHelp.textContent = touchLayout
-        ? 'Speed: touch Time +/- or hold W / S to ramp (1 = 1 Earth day/sec)'
-        : 'Speed: tap W / S by 1, hold to ramp (1 = 1 Earth day/sec)';
+        ? 'Speed: touch Time +/- or hold W / S to ramp (1 = 1 Earth hour/sec)'
+        : 'Speed: tap W / S by 1, hold to ramp (1 = 1 Earth hour/sec)';
       moonHelp.textContent = touchLayout
-        ? 'Moon Motion: tap Moon +/- or press [ / ]'
-        : 'Moon Motion: [ / ] adjusts moon speed';
-      resetHelp.textContent = 'Reset: R | Defaults: Shift+R | Clear hover: Esc';
+        ? 'Moon Motion: -Moon slows, +Moon returns to default'
+        : 'Moon Motion: [ slows moons, ] returns to default';
+      unitsHelp.textContent = touchLayout
+        ? 'Units: tap Metric / English or press U'
+        : 'Units: U toggles metric / English';
+      resetHelp.textContent = 'Reset: R | Defaults: Shift+R | Live: Live Now button | Clear hover: Esc';
       toggleHelp.textContent = touchLayout
-        ? 'Toolbar: Follow, Labels, Music, Help • keyboard C cards, I info, Shift+N Nibiru'
-        : 'Toggles: F follow, C cards, L labels, I info, M music, Shift+N Nibiru, H/? help';
+        ? 'Toolbar: Follow, Labels, Music cycle, Units, About, Help • keyboard C cards, I info, Shift+N Nibiru'
+        : 'Toggles: F follow, C cards, L labels, U units, I info, A about, M cycles music, Shift+N Nibiru, H/? help';
 
       touchPauseButton.textContent = paused ? 'Play' : 'Pause';
       touchPauseButton.classList.toggle('is-active', paused);
       touchMoonSlowerButton.textContent = '-Moon';
       touchMoonFasterButton.textContent = '+Moon';
       const moonMotionAdjusted = Math.abs(moonMotionMultiplier - 1) > 0.001;
-      touchMoonSlowerButton.classList.toggle('is-active', moonMotionAdjusted && moonMotionMultiplier < 1);
-      touchMoonFasterButton.classList.toggle('is-active', moonMotionAdjusted && moonMotionMultiplier > 1);
+      touchMoonSlowerButton.classList.toggle('is-active', moonMotionAdjusted);
+      touchMoonFasterButton.classList.toggle('is-active', moonMotionMultiplier < 1);
       touchFollowButton.textContent = showFollowChooser ? 'Close Follow' : 'Follow';
       touchFollowButton.classList.toggle('is-active', showFollowChooser || Boolean(followTargetId));
       touchLabelsButton.textContent = showLabels ? 'Labels On' : 'Labels';
       touchLabelsButton.classList.toggle('is-active', showLabels);
       touchNibiruButton.textContent = showNibiru ? 'Nibiru On' : 'Nibiru';
       touchNibiruButton.classList.toggle('is-active', showNibiru);
-      touchMusicButton.textContent = musicEnabled ? 'Music On' : 'Music Off';
-      touchMusicButton.classList.toggle('is-active', musicEnabled);
+      touchMusicButton.textContent = getTouchMusicButtonLabel();
+      touchMusicButton.classList.toggle('is-active', musicEnabled && !musicUnavailable);
+      touchUnitsButton.textContent = getMeasurementSystemLabel();
+      touchUnitsButton.classList.toggle('is-active', measurementSystem === 'english');
+      touchAboutButton.textContent = showAboutInfo ? 'About On' : 'About';
+      touchAboutButton.classList.toggle('is-active', showAboutInfo);
       touchHelpButton.textContent = showHelp ? 'Hide Help' : 'Help';
       touchHelpButton.classList.toggle('is-active', showHelp);
     }
@@ -1925,6 +2715,57 @@
         minimumFractionDigits: 2,
         maximumFractionDigits: 5
       });
+    }
+
+    function formatRateMagnitude(value) {
+      const rounded = Math.abs(value - Math.round(value)) < 0.005
+        ? Math.round(value)
+        : Number(value.toLocaleString('en-US', {
+          minimumFractionDigits: value < 10 ? 0 : 0,
+          maximumFractionDigits: value < 10 ? 2 : 1,
+          useGrouping: false
+        }));
+      return rounded.toLocaleString('en-US', {
+        minimumFractionDigits: Number.isInteger(rounded) ? 0 : (rounded < 10 ? 2 : 1),
+        maximumFractionDigits: Number.isInteger(rounded) ? 0 : (rounded < 10 ? 2 : 1)
+      });
+    }
+
+    function formatDisplayedTimeRate(value = speedFactor) {
+      if (Math.abs(value) < 0.0000001) {
+        return 'Paused';
+      }
+
+      const absoluteHoursPerSecond = Math.abs(getDisplayedTimeFactor(value));
+      const absoluteDaysPerSecond = absoluteHoursPerSecond / 24;
+      const absoluteMinutesPerSecond = absoluteHoursPerSecond * 60;
+      const absoluteSecondsPerSecond = absoluteMinutesPerSecond * 60;
+      let magnitude = absoluteHoursPerSecond;
+      let unit = 'Earth hour';
+
+      if (absoluteDaysPerSecond >= 365) {
+        magnitude = absoluteDaysPerSecond / EARTH_ORBITAL_PERIOD_DAYS;
+        unit = 'Earth year';
+      } else if (absoluteDaysPerSecond >= 30) {
+        magnitude = absoluteDaysPerSecond / DAYS_PER_EARTH_MONTH;
+        unit = 'Earth month';
+      } else if (absoluteDaysPerSecond >= 7) {
+        magnitude = absoluteDaysPerSecond / 7;
+        unit = 'Earth week';
+      } else if (absoluteHoursPerSecond >= 24) {
+        magnitude = absoluteDaysPerSecond;
+        unit = 'Earth day';
+      } else if (absoluteMinutesPerSecond >= 1) {
+        magnitude = absoluteMinutesPerSecond;
+        unit = 'Earth minute';
+      } else {
+        magnitude = absoluteSecondsPerSecond;
+        unit = 'Earth second';
+      }
+
+      const directionPrefix = value < 0 ? 'Reverse ' : '';
+      const pluralSuffix = Math.abs(magnitude - 1) < 0.005 ? '' : 's';
+      return `${directionPrefix}${formatRateMagnitude(magnitude)} ${unit}${pluralSuffix}/sec`;
     }
 
     function getSimulatedDaysPerSecond(timeFactor = speedFactor) {
@@ -2085,10 +2926,11 @@
 
     function getTimeScaleDescription() {
       if (speedFactor === 0) {
-        return 'Rate: Paused • 1 = 1 Earth day/sec';
+        return 'Rate: Paused • 1 = 1 Earth hour/sec';
       }
 
       const direction = speedFactor > 0 ? '' : 'Reverse ';
+      const formattedTimeRate = formatDisplayedTimeRate(speedFactor);
       const simDaysPerSecond = Math.abs(getSimulatedDaysPerSecond());
       const earthYearsPerSecond = Math.abs(getEarthYearsPerSecond());
       const realSecondsPerEarthYear = 1 / earthYearsPerSecond;
@@ -2100,6 +2942,13 @@
 
       if (earthYearsPerSecond >= 1) {
         return `Rate: ${direction}${earthYearsEachSecond} Earth years/sec • 1 Earth year in ${formatDuration(realSecondsPerEarthYear)} (${multipleOfRealTime.toLocaleString('en-US', { maximumFractionDigits: 0 })}x real time)`;
+      }
+
+      if (multipleOfRealTime <= 24) {
+        return `Rate: ${formattedTimeRate} (${multipleOfRealTime.toLocaleString('en-US', {
+          minimumFractionDigits: multipleOfRealTime < 10 ? 2 : 1,
+          maximumFractionDigits: multipleOfRealTime < 10 ? 2 : 1
+        })}x real time)`;
       }
 
       const simDaysEachSecond = simDaysPerSecond.toLocaleString('en-US', { maximumFractionDigits: 3 });
@@ -2181,18 +3030,6 @@
       const lfoGain = context.createGain();
 
       musicGain.gain.value = 0;
-      filter.type = 'lowpass';
-      filter.frequency.value = 980;
-      filter.Q.value = 0.35;
-      dryGain.gain.value = 0.92;
-      delay.delayTime.value = 0.48;
-      feedback.gain.value = 0.34;
-      echoGain.gain.value = 0.23;
-      shimmerOsc.type = 'sine';
-      shimmerGain.gain.value = 0.0028;
-      lfo.type = 'sine';
-      lfo.frequency.value = 0.05;
-      lfoGain.gain.value = 180;
 
       musicGain.connect(filter);
       filter.connect(dryGain);
@@ -2207,18 +3044,11 @@
       shimmerOsc.connect(shimmerGain);
       shimmerGain.connect(musicGain);
 
-      const voiceSettings = [
-        { type: 'triangle', gain: 0.022 },
-        { type: 'sine', gain: 0.017 },
-        { type: 'triangle', gain: 0.0115 },
-        { type: 'sine', gain: 0.007 }
-      ];
-
-      const voices = voiceSettings.map(setting => {
+      const voices = new Array(4).fill(null).map(() => {
         const osc = context.createOscillator();
         const gain = context.createGain();
-        osc.type = setting.type;
-        gain.gain.value = setting.gain;
+        osc.type = 'sine';
+        gain.gain.value = 0;
         osc.connect(gain);
         gain.connect(musicGain);
         osc.start();
@@ -2228,32 +3058,77 @@
       shimmerOsc.start();
       lfo.start();
 
-      const progression = [
-        [50, 57, 62, 69],
-        [48, 55, 60, 67],
-        [43, 50, 57, 64],
-        [45, 52, 57, 64]
-      ];
+      let currentTrackIndex = DEFAULT_MUSIC_TRACK_INDEX;
+      let currentPreset = MUSIC_TRACKS[currentTrackIndex];
       let progressionIndex = 0;
+      let progressionTimer = null;
       let suspendToken = 0;
       let engineEnabled = false;
       let enginePaused = false;
 
-      function applyChord(chord) {
-        const now = context.currentTime;
-        voices[0].osc.frequency.setTargetAtTime(midiToHz(chord[0] - 12), now, 2.8);
-        voices[1].osc.frequency.setTargetAtTime(midiToHz(chord[1]), now, 2.4);
-        voices[2].osc.frequency.setTargetAtTime(midiToHz(chord[2]), now, 2.1);
-        voices[3].osc.frequency.setTargetAtTime(midiToHz(chord[3]), now, 1.9);
-        shimmerOsc.frequency.setTargetAtTime(midiToHz(chord[3] + 12), now, 1.1);
+      function clearProgressionTimer() {
+        if (progressionTimer) {
+          window.clearInterval(progressionTimer);
+          progressionTimer = null;
+        }
       }
 
-      applyChord(progression[progressionIndex]);
+      function applyChord(chord = currentPreset.progression[progressionIndex]) {
+        const now = context.currentTime;
+        const voiceOffsets = currentPreset.voiceOffsets || [-12, 0, 0, 0];
+        const voiceTimeConstants = currentPreset.voiceTimeConstants || [2.8, 2.4, 2.1, 1.9];
+        voices.forEach((voice, index) => {
+          const note = chord[Math.min(index, chord.length - 1)] + (voiceOffsets[index] || 0);
+          voice.osc.frequency.setTargetAtTime(midiToHz(note), now, voiceTimeConstants[index] || 2);
+        });
+        shimmerOsc.frequency.setTargetAtTime(
+          midiToHz(chord[chord.length - 1] + (currentPreset.shimmerOffset || 12)),
+          now,
+          currentPreset.shimmerTimeConstant || 1.1
+        );
+      }
 
-      const progressionTimer = window.setInterval(() => {
-        progressionIndex = (progressionIndex + 1) % progression.length;
-        applyChord(progression[progressionIndex]);
-      }, 7000);
+      function restartProgressionTimer() {
+        clearProgressionTimer();
+        progressionTimer = window.setInterval(() => {
+          progressionIndex = (progressionIndex + 1) % currentPreset.progression.length;
+          applyChord(currentPreset.progression[progressionIndex]);
+        }, currentPreset.stepMs || 7000);
+      }
+
+      function applyPreset(trackIndex, options = {}) {
+        const { resetProgression = true } = options;
+        currentTrackIndex = normalizeMusicTrackIndex(trackIndex);
+        currentPreset = MUSIC_TRACKS[currentTrackIndex];
+        const now = context.currentTime;
+
+        filter.type = 'lowpass';
+        filter.frequency.setTargetAtTime(currentPreset.filterFrequency, now, 1.2);
+        filter.Q.setTargetAtTime(currentPreset.filterQ, now, 1.2);
+        dryGain.gain.setTargetAtTime(currentPreset.dryGain, now, 1.2);
+        delay.delayTime.setTargetAtTime(currentPreset.delayTime, now, 1.2);
+        feedback.gain.setTargetAtTime(currentPreset.feedbackGain, now, 1.2);
+        echoGain.gain.setTargetAtTime(currentPreset.echoGain, now, 1.2);
+        shimmerOsc.type = currentPreset.shimmerType;
+        shimmerGain.gain.setTargetAtTime(currentPreset.shimmerGain, now, 1.2);
+        lfo.type = currentPreset.lfoType;
+        lfo.frequency.setTargetAtTime(currentPreset.lfoFrequency, now, 1.2);
+        lfoGain.gain.setTargetAtTime(currentPreset.lfoAmount, now, 1.2);
+
+        voices.forEach((voice, index) => {
+          const setting = currentPreset.voiceSettings[index] || currentPreset.voiceSettings[currentPreset.voiceSettings.length - 1];
+          voice.osc.type = setting.type;
+          voice.gain.gain.setTargetAtTime(setting.gain, now, 1.2);
+        });
+
+        if (resetProgression) {
+          progressionIndex = 0;
+        } else {
+          progressionIndex = progressionIndex % currentPreset.progression.length;
+        }
+        applyChord(currentPreset.progression[progressionIndex]);
+        restartProgressionTimer();
+      }
 
       async function applyAudioState() {
         suspendToken += 1;
@@ -2262,9 +3137,9 @@
 
         if (engineEnabled && !enginePaused) {
           await context.resume();
-          applyChord(progression[progressionIndex]);
+          applyChord(currentPreset.progression[progressionIndex]);
           musicGain.gain.cancelScheduledValues(context.currentTime);
-          musicGain.gain.setTargetAtTime(1, context.currentTime, 2.4);
+          musicGain.gain.setTargetAtTime(currentPreset.masterGain || 1, context.currentTime, currentPreset.fadeInTime || 2.4);
           return;
         }
 
@@ -2278,6 +3153,8 @@
         }, 350);
       }
 
+      applyPreset(currentTrackIndex);
+
       return {
         async setEnabled(enabled) {
           engineEnabled = enabled;
@@ -2287,16 +3164,32 @@
           enginePaused = nextPaused;
           await applyAudioState();
         },
+        async setTrack(trackIndex) {
+          applyPreset(trackIndex);
+          if (engineEnabled && !enginePaused) {
+            await applyAudioState();
+          }
+        },
         dispose() {
-          window.clearInterval(progressionTimer);
+          clearProgressionTimer();
           context.close().catch(() => {});
         }
       };
     }
 
-    async function toggleMusic() {
-      const nextEnabled = !musicEnabled;
-      musicEnabled = nextEnabled;
+    async function cycleMusicTrack() {
+      if (musicEnabled) {
+        if (currentMusicTrackIndex < MUSIC_TRACKS.length - 1) {
+          currentMusicTrackIndex += 1;
+        } else {
+          musicEnabled = false;
+        }
+      } else {
+        musicEnabled = true;
+        currentMusicTrackIndex = DEFAULT_MUSIC_TRACK_INDEX;
+      }
+
+      currentMusicTrackIndex = normalizeMusicTrackIndex(currentMusicTrackIndex);
       musicUnavailable = false;
       musicResumePending = false;
       updateOverlay();
@@ -2308,11 +3201,12 @@
         }
         updateOverlay();
         persistSessionState(true);
+        showTransientStatusMessage(musicEnabled ? `Music: ${getCurrentMusicTrack().name}` : 'Music: Muted');
         return;
       }
 
       try {
-        if (musicEnabled && !musicEngine) {
+        if (!musicEngine) {
           musicEngine = createCelestialMusicEngine();
         }
 
@@ -2320,10 +3214,13 @@
           if (!musicEngine) {
             throw new Error('Music engine unavailable');
           }
+          await musicEngine.setTrack(currentMusicTrackIndex);
           await musicEngine.setEnabled(true);
           musicUnavailable = false;
+          showTransientStatusMessage(`Music: ${getCurrentMusicTrack().name}`);
         } else if (musicEngine) {
           await musicEngine.setEnabled(false);
+          showTransientStatusMessage('Music: Muted');
         }
       } catch (error) {
         if (musicEnabled) {
@@ -2340,6 +3237,7 @@
         version: SESSION_STATE_VERSION,
         speedFactor,
         moonMotionMultiplier,
+        simulationReferenceMs,
         simTimeMs,
         paused,
         scale,
@@ -2349,9 +3247,12 @@
         showHelp,
         showCards,
         showCreatorInfo,
+        showAboutInfo,
         showNibiru,
         followTargetId,
-        musicEnabled
+        musicEnabled,
+        currentMusicTrackIndex,
+        measurementSystem
       };
     }
 
@@ -2383,6 +3284,10 @@
 
         if (state.version >= SESSION_STATE_VERSION) {
           speedFactor = normalizeTimeFactor(Number.isFinite(state.speedFactor) ? state.speedFactor : speedFactor);
+        } else if (state.version >= 9) {
+          const legacySpeedFactor = Number.isFinite(state.speedFactor) ? state.speedFactor : speedFactor;
+          const legacySimDaysPerSecond = legacySpeedFactor * LEGACY_V9_SIM_DAYS_PER_SECOND_PER_TIME_FACTOR;
+          speedFactor = normalizeTimeFactor(legacySimDaysPerSecond / SIM_DAYS_PER_SECOND_PER_TIME_FACTOR);
         } else if (state.version >= 8) {
           const legacySpeedFactor = Number.isFinite(state.speedFactor) ? state.speedFactor : speedFactor;
           const legacySimDaysPerSecond = legacySpeedFactor * LEGACY_V8_SIM_DAYS_PER_SECOND_PER_TIME_FACTOR;
@@ -2418,6 +3323,7 @@
         moonMotionMultiplier = normalizeMoonMotionMultiplier(
           Number.isFinite(state.moonMotionMultiplier) ? state.moonMotionMultiplier : moonMotionMultiplier
         );
+        simulationReferenceMs = Number.isFinite(state.simulationReferenceMs) ? state.simulationReferenceMs : simulationReferenceMs;
         simTimeMs = Number.isFinite(state.simTimeMs) ? state.simTimeMs : simTimeMs;
         paused = typeof state.paused === 'boolean' ? state.paused : paused;
         scale = clamp(Number.isFinite(state.scale) ? state.scale : scale, MIN_SCALE, MAX_SCALE);
@@ -2427,10 +3333,13 @@
         showHelp = typeof state.showHelp === 'boolean' ? state.showHelp : showHelp;
         showCards = typeof state.showCards === 'boolean' ? state.showCards : showCards;
         showCreatorInfo = typeof state.showCreatorInfo === 'boolean' ? state.showCreatorInfo : showCreatorInfo;
+        showAboutInfo = typeof state.showAboutInfo === 'boolean' ? state.showAboutInfo : showAboutInfo;
         showNibiru = typeof state.showNibiru === 'boolean' ? state.showNibiru : showNibiru;
         syncNibiruPlanetSet();
         followTargetId = getFollowOptions().some(option => option.id === state.followTargetId) ? state.followTargetId : null;
         musicEnabled = typeof state.musicEnabled === 'boolean' ? state.musicEnabled : musicEnabled;
+        currentMusicTrackIndex = normalizeMusicTrackIndex(state.currentMusicTrackIndex);
+        measurementSystem = normalizeMeasurementSystem(state.measurementSystem);
         musicResumePending = musicEnabled;
         lastPersistedState = raw;
         return true;
@@ -2461,6 +3370,7 @@
           throw new Error('Music engine unavailable');
         }
 
+        await musicEngine.setTrack(currentMusicTrackIndex);
         await musicEngine.setEnabled(true);
         musicUnavailable = false;
       } catch (error) {
@@ -2544,7 +3454,7 @@
 
     function mapDistanceToOrbitRadius(distanceKm, orbitRadii) {
       if (distanceKm <= PLANETS[0].semiMajorAxisKm) {
-        return orbitRadii[0];
+        return lerp(orbitRadii[0] * 0.72, orbitRadii[0], clamp(distanceKm / PLANETS[0].semiMajorAxisKm, 0, 1));
       }
 
       for (let i = 1; i < PLANETS.length; i++) {
@@ -3094,13 +4004,6 @@
       ctx.restore();
     }
 
-    function getTrailPointForPlanetAngle(planet, angle) {
-      return {
-        x: planet.orbitCenterX + Math.cos(angle) * planet.orbitRadiusPx,
-        y: planet.orbitCenterY + Math.sin(angle) * planet.orbitRadiusPx
-      };
-    }
-
     function drawTrails(planetStates) {
       for (const planet of planetStates) {
         const trailState = bodyTrails.get(planet.name);
@@ -3144,53 +4047,49 @@
         if (!existingTrailState) {
           bodyTrails.set(planet.name, {
             points: [{ x: planet.x, y: planet.y }],
-            sampledAngle: planet.angle,
-            direction: 0
+            lastPoint: { x: planet.x, y: planet.y }
           });
           continue;
         }
 
-        const deltaAngle = planet.angle - existingTrailState.sampledAngle;
-        if (!Number.isFinite(deltaAngle) || deltaAngle === 0) {
-          continue;
-        }
-
-        const direction = Math.sign(deltaAngle);
-        if (existingTrailState.direction && direction !== existingTrailState.direction) {
+        const lastPoint = existingTrailState.lastPoint || existingTrailState.points?.[existingTrailState.points.length - 1];
+        if (!lastPoint) {
           bodyTrails.set(planet.name, {
             points: [{ x: planet.x, y: planet.y }],
-            sampledAngle: planet.angle,
-            direction
+            lastPoint: { x: planet.x, y: planet.y }
           });
           continue;
         }
 
-        const sampleCount = Math.floor(Math.abs(deltaAngle) / TRAIL_SAMPLE_ANGLE_STEP);
-        if (sampleCount < 1) {
+        const dx = planet.x - lastPoint.x;
+        const dy = planet.y - lastPoint.y;
+        const distance = Math.hypot(dx, dy);
+        if (!Number.isFinite(distance) || distance === 0) {
           continue;
         }
 
-        if (sampleCount >= MAX_TRAIL_POINTS) {
-          const resetTrail = [];
-          const startAngle = planet.angle - direction * TRAIL_SAMPLE_ANGLE_STEP * (MAX_TRAIL_POINTS - 1);
-          for (let i = 0; i < MAX_TRAIL_POINTS; i++) {
-            const sampleAngle = startAngle + direction * TRAIL_SAMPLE_ANGLE_STEP * i;
-            resetTrail.push(getTrailPointForPlanetAngle(planet, sampleAngle));
-          }
+        const sampleDistancePx = 2.4;
+        if (distance < sampleDistancePx * 0.35) {
+          existingTrailState.lastPoint = { x: planet.x, y: planet.y };
+          continue;
+        }
 
+        const sampleCount = Math.ceil(distance / sampleDistancePx);
+        if (sampleCount >= MAX_TRAIL_POINTS) {
           bodyTrails.set(planet.name, {
-            points: resetTrail,
-            sampledAngle: planet.angle,
-            direction
+            points: [{ x: planet.x, y: planet.y }],
+            lastPoint: { x: planet.x, y: planet.y }
           });
           continue;
         }
 
         const trailPoints = existingTrailState.points ? existingTrailState.points.slice() : [];
-        let sampledAngle = existingTrailState.sampledAngle;
         for (let i = 0; i < sampleCount; i++) {
-          sampledAngle += direction * TRAIL_SAMPLE_ANGLE_STEP;
-          trailPoints.push(getTrailPointForPlanetAngle(planet, sampledAngle));
+          const t = (i + 1) / sampleCount;
+          trailPoints.push({
+            x: lerp(lastPoint.x, planet.x, t),
+            y: lerp(lastPoint.y, planet.y, t)
+          });
           if (trailPoints.length > MAX_TRAIL_POINTS) {
             trailPoints.shift();
           }
@@ -3198,8 +4097,7 @@
 
         bodyTrails.set(planet.name, {
           points: trailPoints,
-          sampledAngle,
-          direction
+          lastPoint: { x: planet.x, y: planet.y }
         });
       }
     }
@@ -3208,17 +4106,29 @@
       const { orbitRadii, surfaceGap } = computePlanetOrbitRadii(layout);
       const earthIndex = PLANETS.findIndex(planet => planet.name === 'Earth');
       const earthOrbitRadiusPx = orbitRadii[earthIndex];
+      const julianDate = getJulianDateFromUnixMs(getCurrentSimulationDateMs());
 
       return PLANETS.map((planet, index) => {
-        const orbitRadiusPx = orbitRadii[index];
-        const angle = getPlanetAngle(planet, orbitRadiusPx, simDays, earthOrbitRadiusPx);
+        const guideOrbitRadiusPx = orbitRadii[index];
+        const approximateEphemeris = getApproxPlanetHeliocentricPosition(planet.name, julianDate);
+        const orbitRadiusPx = approximateEphemeris
+          ? mapDistanceToOrbitRadius(approximateEphemeris.planarDistanceKm, orbitRadii)
+          : guideOrbitRadiusPx;
+        const angle = approximateEphemeris
+          ? approximateEphemeris.screenAngle
+          : getPlanetAngle(planet, orbitRadiusPx, simDays, earthOrbitRadiusPx);
         return {
           ...planet,
           surfaceGap,
           orbitRadiusPx,
+          guideOrbitRadiusPx,
           orbitCenterX: layout.sunCenterX,
           orbitCenterY: layout.sunCenterY,
           angle,
+          positionModel: approximateEphemeris ? 'jpl-approx' : 'synthetic',
+          approxDistanceFromSunKm: approximateEphemeris
+            ? approximateEphemeris.heliocentricDistanceKm
+            : planet.semiMajorAxisKm,
           x: layout.sunCenterX + Math.cos(angle) * orbitRadiusPx,
           y: layout.sunCenterY + Math.sin(angle) * orbitRadiusPx
         };
@@ -3316,6 +4226,7 @@
       updateHelpVisibility();
       updateFollowUI();
       updateCreatorInfoVisibility();
+      updateAboutInfoVisibility();
       updateOverlay();
       updateInfoCard(true);
       updateCanvasCursor();
@@ -3330,7 +4241,10 @@
       showHelp = true;
       showCards = true;
       showCreatorInfo = false;
+      showAboutInfo = false;
       moonMotionMultiplier = 1;
+      measurementSystem = 'metric';
+      simulationReferenceMs = Date.now();
       clearHoverArtifacts(false);
       dragState = null;
       suppressCanvasClick = false;
@@ -3339,6 +4253,7 @@
       clearHoverIntent(false);
       infoCardRenderKey = '';
       musicEnabled = true;
+      currentMusicTrackIndex = DEFAULT_MUSIC_TRACK_INDEX;
       musicResumePending = HAS_WEB_AUDIO;
       musicUnavailable = false;
     }
@@ -3359,6 +4274,7 @@
       updateHelpVisibility();
       updateFollowUI();
       updateOverlay();
+      updateAboutInfoVisibility();
       updateInfoCard(true);
       updateCanvasCursor();
       persistSessionState(true);
@@ -3602,6 +4518,12 @@
       persistSessionState();
     }
 
+    function updateAboutInfoVisibility() {
+      aboutPanel.classList.toggle('is-hidden', !showAboutInfo);
+      updateResponsiveUI();
+      persistSessionState();
+    }
+
     function updateCanvasCursor() {
       if (dragState?.active) {
         canvas.style.cursor = 'grabbing';
@@ -3790,7 +4712,7 @@
           diameterKm: planet.diameterKm,
           orbitalPeriodDays: planet.orbitalPeriodDays,
           orbitalSpeedKmS: planet.orbitalSpeedKmS,
-          approxDistanceFromSunKm: planet.semiMajorAxisKm,
+          approxDistanceFromSunKm: planet.approxDistanceFromSunKm ?? planet.semiMajorAxisKm,
           moonCount: planet.moons.length,
           fact: planet.fact
         });
@@ -3818,7 +4740,7 @@
             diameterKm: moon.diameterKm,
             orbitalPeriodDays: moon.orbitalPeriodDays,
             orbitalSpeedKmS: moonOrbitalSpeedKmS,
-            approxDistanceFromSunKm: (planet.semiMajorAxisKm || 0) + moon.orbitRadiusKm,
+            approxDistanceFromSunKm: (planet.approxDistanceFromSunKm || planet.semiMajorAxisKm || 0) + moon.orbitRadiusKm,
             moonCount: 0,
             fact: getMoonFact(planet.name, moon)
           });
@@ -3986,7 +4908,7 @@
         <span class="type">${escapeHtml(activeBody.type)}${activeBody.parentName ? ` • orbits ${escapeHtml(activeBody.parentName)}` : ''}</span>
         <dl>
           <dt>Diameter</dt>
-          <dd>${formatNumber(Math.round(activeBody.diameterKm))} km</dd>
+          <dd>${formatDiameter(activeBody.diameterKm)}</dd>
           <dt>Orbital Period</dt>
           <dd>${formatOrbitalPeriod(activeBody.orbitalPeriodDays)}</dd>
           <dt>Orbital Speed</dt>
@@ -4076,7 +4998,7 @@
 
       const layout = getLayout();
       const planetStates = buildPlanetStates(simDays, layout);
-      const orbitRadii = planetStates.map(planet => planet.orbitRadiusPx);
+      const orbitRadii = planetStates.map(planet => planet.guideOrbitRadiusPx ?? planet.orbitRadiusPx);
       const worldBodies = buildWorldBodies(layout, planetStates, simDays);
       const worldBodyMap = new Map(worldBodies.map(body => [body.id, body]));
       const followBody = followTargetId ? worldBodyMap.get(followTargetId) : null;
@@ -4122,7 +5044,7 @@
       drawBand(layout.sunCenterX, layout.sunCenterY, frostInnerRadius, frostOuterRadius, 'rgba(118, 176, 255, 0.06)');
 
       for (const planet of planetStates) {
-        drawOrbitGuide(layout.sunCenterX, layout.sunCenterY, planet.orbitRadiusPx, 'rgba(255, 255, 255, 0.06)');
+        drawOrbitGuide(layout.sunCenterX, layout.sunCenterY, planet.guideOrbitRadiusPx ?? planet.orbitRadiusPx, 'rgba(255, 255, 255, 0.06)');
       }
 
       drawTrails(planetStates);
@@ -4173,7 +5095,8 @@
     }
 
     function updateTimeFactorIndicators() {
-      timeFactorDisplay.textContent = `Time Factor: ${formatTimeFactor(speedFactor)}`;
+      const formattedTimeRate = formatDisplayedTimeRate(speedFactor);
+      timeFactorDisplay.textContent = `Time Factor: ${formatTimeFactor(speedFactor)} • ${formattedTimeRate}`;
       timeFactorDisplay.className = speedFactor > 0
         ? 'time-factor-positive'
         : speedFactor < 0
@@ -4181,25 +5104,25 @@
           : 'time-factor-neutral';
       document.getElementById('timeScaleDisplay').textContent = getTimeScaleDescription();
       if (!timeFactorToast.classList.contains('is-hidden')) {
-        timeFactorToast.textContent = `Time Factor: ${formatTimeFactor(speedFactor)}`;
+        timeFactorToast.textContent = `Time Factor: ${formatTimeFactor(speedFactor)} • ${formattedTimeRate}`;
       }
     }
 
     function updateOverlay(options = {}) {
       const { persist = true, syncResponsive = true } = options;
       updateTimeFactorIndicators();
-      document.getElementById('musicDisplay').textContent = musicUnavailable
-        ? 'Music: Unavailable'
-        : `Music: ${musicEnabled ? (musicResumePending ? 'On (resume on input)' : 'On') : 'Off'}`;
+      document.getElementById('musicDisplay').textContent = getMusicStatusLabel();
       const simDays = simTimeMs / 1000;
       document.getElementById('yearsDisplay').textContent = `Earth Years: ${(simDays / EARTH_ORBITAL_PERIOD_DAYS).toFixed(2)}`;
+      simulationDateDisplay.textContent = `Date: ${formatSimulationDateTime()}`;
       moonMotionDisplay.textContent = `Moon Motion: ${formatMoonMotionMultiplier()}`;
+      unitsDisplay.textContent = `Units: ${getMeasurementSystemLabel()}`;
       document.getElementById('labelDisplay').textContent = `Labels: ${showLabels ? 'On' : 'Off'}`;
       cardsDisplay.textContent = `Cards: ${showCards ? 'On' : 'Off'}`;
       document.getElementById('followDisplay').textContent = `Follow: ${getFollowLabel()}`;
       document.getElementById('motionDisplay').textContent = showNibiru
-        ? 'Model: Compact layout, relative speeds + Nibiru'
-        : 'Model: Compact layout, relative speeds';
+        ? 'Model: Compact layout, JPL date-based planets; Pluto/Nibiru simplified'
+        : 'Model: Compact layout, JPL date-based planets; Pluto simplified';
       if (syncResponsive) {
         updateResponsiveUI();
       }
@@ -4255,6 +5178,15 @@
         showCreatorInfo = !showCreatorInfo;
         updateCreatorInfoVisibility();
       }
+      if (key === 'a' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        showAboutInfo = !showAboutInfo;
+        updateAboutInfoVisibility();
+      }
+      if (key === 'u') {
+        e.preventDefault();
+        toggleMeasurementSystem();
+      }
       if (key === 'c' && !e.ctrlKey && !e.metaKey && !e.altKey) {
         if (!showHelp) {
           return;
@@ -4269,7 +5201,7 @@
         updateHelpVisibility();
       }
       if (key === 'm') {
-        toggleMusic();
+        void cycleMusicTrack();
       }
       if (key === 'f') {
         showFollowChooser = !showFollowChooser;
@@ -4350,6 +5282,11 @@
       void clearSavedSettings();
     });
 
+    liveNowButton.addEventListener('click', () => {
+      void restoreMusicOnGesture();
+      void syncSimulationToLiveNow();
+    });
+
     timeFactorDisplay.addEventListener('click', () => {
       promptForTimeFactor();
     });
@@ -4359,6 +5296,18 @@
         e.preventDefault();
         e.stopPropagation();
         promptForTimeFactor();
+      }
+    });
+
+    simulationDateDisplay.addEventListener('click', () => {
+      promptForSimulationDateTime();
+    });
+
+    simulationDateDisplay.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        e.stopPropagation();
+        promptForSimulationDateTime();
       }
     });
 
@@ -4427,13 +5376,34 @@
     });
 
     touchMusicButton.addEventListener('click', () => {
-      void toggleMusic();
+      void cycleMusicTrack();
+    });
+
+    touchUnitsButton.addEventListener('click', () => {
+      void restoreMusicOnGesture();
+      toggleMeasurementSystem();
+    });
+
+    touchLiveNowButton.addEventListener('click', () => {
+      void restoreMusicOnGesture();
+      void syncSimulationToLiveNow();
+    });
+
+    touchAboutButton.addEventListener('click', () => {
+      void restoreMusicOnGesture();
+      showAboutInfo = !showAboutInfo;
+      updateAboutInfoVisibility();
     });
 
     touchHelpButton.addEventListener('click', () => {
       void restoreMusicOnGesture();
       showHelp = !showHelp;
       updateHelpVisibility();
+    });
+
+    closeAboutButton.addEventListener('click', () => {
+      showAboutInfo = false;
+      updateAboutInfoVisibility();
     });
 
     function handlePointerDragMove(e) {
@@ -4719,6 +5689,7 @@
     updateHelpVisibility();
     updateFollowUI();
     updateCreatorInfoVisibility();
+    updateAboutInfoVisibility();
     updateInfoCard();
     loadMilkyWayBackground();
     preloadWikipediaRenderImages();
