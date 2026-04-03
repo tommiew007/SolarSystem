@@ -915,7 +915,8 @@
     const activeTouchPoints = new Map();
     let musicEngine = null;
     const LOCAL_IMAGE_CACHE_KEY = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    const MILKY_WAY_BACKGROUND_URL = `images/milky-way-panorama.jpg?v=${LOCAL_IMAGE_CACHE_KEY}`;
+    const ASSET_CACHE_SUFFIX = window.location.protocol === 'file:' ? '' : `?v=${LOCAL_IMAGE_CACHE_KEY}`;
+    const MILKY_WAY_BACKGROUND_URL = `images/milky-way-panorama.jpg${ASSET_CACHE_SUFFIX}`;
     let milkyWayBackgroundImage = null;
 
     // Zoom & pan state
@@ -1237,7 +1238,7 @@
         return null;
       }
       const fileName = `${body.id.toLowerCase().replaceAll(':', '--')}.png`;
-      return `images/${fileName}?v=${LOCAL_IMAGE_CACHE_KEY}`;
+      return `images/${fileName}${ASSET_CACHE_SUFFIX}`;
     }
 
     function isActiveInfoBody(bodyId) {
