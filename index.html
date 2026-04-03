@@ -14,19 +14,41 @@
     }
     canvas {
       display: block;
+      cursor: grab;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
     }
     #overlay {
       position: absolute;
       bottom: 10px;
       right: 10px;
       background: rgba(0, 0, 0, 0.6);
-      padding: 8px;
-      border-radius: 4px;
-      font-size: 12px;
-      line-height: 1.32;
+      max-width: min(560px, calc(100vw - 20px));
+      padding: clamp(10px, 0.8vw, 16px) clamp(12px, 0.95vw, 18px);
+      border-radius: 12px;
+      font-size: clamp(12px, 0.72vw, 16px);
+      line-height: 1.45;
     }
     #overlay span {
       display: block;
+    }
+    #overlay button {
+      display: block;
+      width: 100%;
+      margin-top: clamp(8px, 0.6vw, 12px);
+      padding: clamp(8px, 0.6vw, 12px) clamp(10px, 0.75vw, 14px);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      font: inherit;
+      font-size: clamp(12px, 0.72vw, 15px);
+      text-align: center;
+      cursor: pointer;
+    }
+    #overlay button:hover {
+      background: rgba(255, 255, 255, 0.16);
     }
     .hidden-ui {
       display: none !important;
@@ -42,21 +64,32 @@
     #infoCard {
       top: 10px;
       left: 10px;
-      width: 270px;
-      padding: 12px 14px;
-      font-size: 13px;
-      line-height: 1.45;
+      width: clamp(300px, 28vw, 420px);
+      max-width: calc(100vw - 20px);
+      padding: clamp(12px, 0.8vw, 18px) clamp(14px, 0.95vw, 20px);
+      font-size: clamp(13px, 0.78vw, 17px);
+      line-height: 1.5;
+      pointer-events: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    #infoCard, #infoCard * {
+      pointer-events: none !important;
+    }
+    #infoCard .card-actions,
+    #infoCard .card-actions * {
+      pointer-events: auto !important;
     }
     #infoCard h2 {
-      margin: 0 0 2px;
-      font-size: 18px;
+      margin: 0 0 4px;
+      font-size: clamp(18px, 1.1vw, 24px);
       line-height: 1.1;
     }
     #infoCard .type {
       display: block;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       color: rgba(255, 255, 255, 0.7);
-      font-size: 11px;
+      font-size: clamp(10px, 0.62vw, 12px);
       letter-spacing: 0.08em;
       text-transform: uppercase;
     }
@@ -64,7 +97,7 @@
       margin: 0;
       display: grid;
       grid-template-columns: auto 1fr;
-      gap: 4px 10px;
+      gap: 8px 14px;
     }
     #infoCard dt {
       color: rgba(255, 255, 255, 0.66);
@@ -79,10 +112,10 @@
     #infoCard .hint {
       margin: 8px 0 0;
       color: rgba(255, 255, 255, 0.54);
-      font-size: 11px;
+      font-size: clamp(11px, 0.66vw, 13px);
     }
     #infoCard figure {
-      margin: 12px 0 0;
+      margin: 14px 0 0;
     }
     #infoCard img {
       display: block;
@@ -96,21 +129,65 @@
     #infoCard figcaption {
       margin-top: 6px;
       color: rgba(255, 255, 255, 0.56);
-      font-size: 10px;
+      font-size: clamp(10px, 0.62vw, 12px);
       line-height: 1.35;
+    }
+    #infoCard .card-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    #infoCard .card-actions button {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #eef6ff;
+      font: inherit;
+      font-size: clamp(12px, 0.72vw, 14px);
+      cursor: pointer;
+      transition: background-color 120ms ease, border-color 120ms ease, opacity 120ms ease;
+    }
+    #infoCard .card-actions a {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #eef6ff;
+      font: inherit;
+      font-size: clamp(12px, 0.72vw, 14px);
+      text-align: center;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background-color 120ms ease, border-color 120ms ease, opacity 120ms ease;
+    }
+    #infoCard .card-actions button:hover {
+      background: rgba(110, 167, 255, 0.2);
+      border-color: rgba(164, 202, 255, 0.3);
+    }
+    #infoCard .card-actions a:hover {
+      background: rgba(110, 167, 255, 0.2);
+      border-color: rgba(164, 202, 255, 0.3);
+    }
+    #infoCard .card-actions button:disabled {
+      opacity: 0.58;
+      cursor: default;
     }
     #legend {
       left: 10px;
       bottom: 10px;
-      width: 270px;
-      padding: 10px 12px;
-      font-size: 12px;
+      width: clamp(340px, 30vw, 460px);
+      max-width: calc(100vw - 20px);
+      padding: clamp(10px, 0.75vw, 16px) clamp(12px, 0.9vw, 18px);
+      font-size: clamp(12px, 0.72vw, 15px);
       line-height: 1.45;
     }
     #legend strong {
       display: block;
       margin-bottom: 6px;
-      font-size: 13px;
+      font-size: clamp(15px, 0.9vw, 19px);
     }
     #legend span {
       display: block;
@@ -119,15 +196,16 @@
     #followPanel {
       top: 10px;
       right: 10px;
-      width: 250px;
-      padding: 10px 12px;
-      font-size: 12px;
-      line-height: 1.4;
+      width: clamp(280px, 24vw, 360px);
+      max-width: calc(100vw - 20px);
+      padding: clamp(10px, 0.75vw, 16px) clamp(12px, 0.9vw, 18px);
+      font-size: clamp(12px, 0.72vw, 15px);
+      line-height: 1.45;
     }
     #followPanel strong {
       display: block;
       margin-bottom: 6px;
-      font-size: 13px;
+      font-size: clamp(15px, 0.9vw, 19px);
     }
     #followPanel p {
       margin: 0 0 8px;
@@ -135,7 +213,7 @@
     }
     #followPanel select {
       width: 100%;
-      padding: 7px 8px;
+      padding: clamp(8px, 0.6vw, 12px) clamp(10px, 0.75vw, 14px);
       border: 1px solid rgba(255, 255, 255, 0.16);
       border-radius: 8px;
       background: rgba(255, 255, 255, 0.07);
@@ -161,27 +239,26 @@
     <select id="followSelect"></select>
   </div>
   <div id="overlay">
-    <span>W increases time factor</span>
-    <span>S decreases time factor</span>
-    <span>SPACE toggles pause/resume</span>
-    <span>ESC resets simulation</span>
+    <span>Mouse wheel, Ctrl+wheel, or +/- zooms</span>
+    <span>Drag background with either mouse button, double-click to center, or use arrows to pan</span>
+    <span>SPACE pauses or resumes</span>
+    <span>W / S change time factor (0.01 = 1 Earth day/sec)</span>
+    <span>R resets the view</span>
+    <span>ESC asks before resetting</span>
+    <span>F follows an object</span>
     <span>L toggles labels</span>
-    <span>H toggles help</span>
     <span>M toggles music</span>
-    <span>F opens follow chooser</span>
-    <span>Z zooms in</span>
-    <span>X zooms out</span>
-    <span>↑ pans up</span>
-    <span>↓ pans down</span>
-    <span>→ pan right</span>
-    <span>← pan left</span>
-    <span id="timeFactorDisplay">Time Factor: 0.0</span>
+    <span>? or H toggles help</span>
+    <span>Shift+R clears saved settings</span>
+    <span id="timeFactorDisplay">Time Factor: 0.00</span>
     <span id="timeScaleDisplay">Rate: Paused</span>
+    <span>Reference: 0.01 = 1 Earth day/sec</span>
     <span id="musicDisplay">Music: Off</span>
     <span id="yearsDisplay">Earth Years: 0.00</span>
     <span id="labelDisplay">Labels: Off</span>
     <span id="followDisplay">Follow: Free camera</span>
     <span id="motionDisplay">Motion: Compact orbits, real relative speeds</span>
+    <button id="clearSettingsButton" type="button">Clear Saved Settings</button>
   </div>
   <div id="legend">
     <strong>Scale Guide</strong>
@@ -197,6 +274,7 @@
     const infoCard = document.getElementById('infoCard');
     const followPanel = document.getElementById('followPanel');
     const followSelect = document.getElementById('followSelect');
+    const clearSettingsButton = document.getElementById('clearSettingsButton');
 
     const SUN_DIAMETER_KM = 1_391_000;
     const SUN_DIAMETER_PX = 2000;
@@ -206,10 +284,17 @@
     const MIN_SCALE = 0.05;
     const MAX_SCALE = 120;
     const HAS_WEB_AUDIO = Boolean(window.AudioContext || window.webkitAudioContext);
+    const STORAGE_KEY = 'solar-system-session-state-v1';
+    const SESSION_STATE_VERSION = 2;
     const HABITABLE_ZONE_INNER_KM = EARTH_ORBIT_RADIUS_KM * 0.95;
     const HABITABLE_ZONE_OUTER_KM = EARTH_ORBIT_RADIUS_KM * 1.67;
     const FROST_LINE_INNER_KM = EARTH_ORBIT_RADIUS_KM * 2.55;
     const FROST_LINE_OUTER_KM = EARTH_ORBIT_RADIUS_KM * 2.95;
+    const HOVER_INFO_DELAY_MS = 500;
+    const HOVER_CARD_HIDE_DELAY_MS = 5000;
+    const TIME_FACTOR_DAY_REFERENCE = 0.01;
+    const TIME_FACTOR_STEP = 0.01;
+    const SIM_DAYS_PER_SECOND_PER_TIME_FACTOR = 1 / TIME_FACTOR_DAY_REFERENCE;
 
     const SUN_INFO = {
       id: 'sun',
@@ -218,6 +303,8 @@
       diameterKm: SUN_DIAMETER_KM,
       orbitalPeriodDays: null,
       moonCount: null,
+      seed: getStableSeed('sun'),
+      surfaceStyle: 'star',
       fact: 'The Sun contains more than 99% of the solar system\'s mass.'
     };
 
@@ -360,6 +447,8 @@
       }
     ].map(planet => ({
       ...planet,
+      seed: getStableSeed(planet.name),
+      surfaceStyle: getSurfaceStyle('planet', planet.name),
       radiusPx: diameterKmToPx(planet.diameterKm) / 2,
       phase: getStablePhase(planet.name),
       moons: planet.moons
@@ -367,6 +456,8 @@
         .sort((a, b) => a.orbitRadiusKm - b.orbitRadiusKm)
         .map((moon, moonIndex, moonArray) => ({
           ...moon,
+          seed: getStableSeed(`${planet.name}-${moon.name}`),
+          surfaceStyle: getSurfaceStyle('moon', moon.name, planet.name),
           radiusPx: diameterKmToPx(moon.diameterKm) / 2,
           phase: moonArray.length === 1 ? getStablePhase(`${planet.name}-${moon.name}`) : getStablePhase(`${planet.name}-${moon.name}`) + (moonIndex / moonArray.length) * 0.2
         }))
@@ -428,13 +519,25 @@
     let showFollowChooser = false;
     let followTargetId = null;
     let followNeedsZoom = false;
-    let musicEnabled = false;
+    let musicEnabled = true;
+    let musicResumePending = true;
     let musicUnavailable = false;
     let sceneBodies = [];
+    let pointerBodyId = null;
     let hoveredBodyId = null;
     let selectedBodyId = null;
     let trailLastTimestamp = 0;
     let infoCardRenderKey = '';
+    let lastPersistedState = '';
+    let lastPersistTimestamp = 0;
+    let dragState = null;
+    let suppressCanvasClick = false;
+    let suppressCanvasContextMenu = false;
+    let hoverIntentBodyId = null;
+    let hoverIntentTimer = null;
+    let hoverHideTimer = null;
+    let lastMouseClientX = null;
+    let lastMouseClientY = null;
 
     const bodyTrails = new Map();
     const wikiImageCache = new Map();
@@ -448,13 +551,25 @@
     function generateStars(count) {
       const out = [];
       for (let i = 0; i < count; i++) {
+        const depth = Math.random();
+        const tintRoll = Math.random();
+        let tint = [255, 255, 255];
+        if (tintRoll > 0.82) {
+          tint = [208, 226, 255];
+        } else if (tintRoll < 0.12) {
+          tint = [255, 240, 214];
+        }
+
         out.push({
           x: Math.random() * canvas.width,
           y: Math.random() * canvas.height,
-          radius: Math.random() * 1.2 + 0.3,
-          opacity: Math.random() * 0.7 + 0.3,
+          radius: 0.2 + Math.pow(Math.random(), 2.1) * 1.65,
+          opacity: 0.18 + Math.random() * 0.54,
           twinkleOffset: Math.random() * Math.PI * 2,
-          twinkleSpeed: Math.random() * 0.004 + 0.001
+          twinkleSpeed: Math.random() * 0.003 + 0.0008,
+          depth,
+          tint,
+          sparkle: Math.random()
         });
       }
       return out;
@@ -463,7 +578,8 @@
     function resizeCanvas() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
-      stars = generateStars(400);
+      const starCount = clamp(Math.round((canvas.width * canvas.height) / 14000), 120, 220);
+      stars = generateStars(starCount);
       bodyTrails.clear();
       trailLastTimestamp = 0;
       if (followTargetId) {
@@ -491,15 +607,140 @@
     }
 
     function getStablePhase(seed) {
+      const hash = getStableSeed(seed);
+      return (hash / 0xffffffff) * Math.PI * 2;
+    }
+
+    function getStableSeed(seed) {
       let hash = 0;
       for (let i = 0; i < seed.length; i++) {
         hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
       }
-      return (hash / 0xffffffff) * Math.PI * 2;
+      return hash || 1;
+    }
+
+    function noiseFromSeed(seed, a = 0, b = 0, c = 0) {
+      const value = Math.sin(seed * 0.0001 + a * 12.9898 + b * 78.233 + c * 37.719) * 43758.5453123;
+      return value - Math.floor(value);
+    }
+
+    function getSurfaceStyle(type, name, parentName = '') {
+      if (type === 'planet') {
+        if (name === 'Venus') return 'cloudy';
+        if (name === 'Earth') return 'earth';
+        if (name === 'Mars') return 'mars';
+        if (name === 'Jupiter' || name === 'Saturn') return 'gas';
+        if (name === 'Uranus' || name === 'Neptune') return 'ice';
+        return 'rocky';
+      }
+
+      if (type === 'moon') {
+        if (name === 'Io') return 'volcanic';
+        if (name === 'Europa' || name === 'Enceladus') return 'ice-moon';
+        if (name === 'Titan') return 'hazy';
+        if (parentName === 'Jupiter' || parentName === 'Saturn') return 'moon';
+        return 'moon';
+      }
+
+      return 'star';
     }
 
     function formatNumber(value) {
       return value.toLocaleString('en-US');
+    }
+
+    function parseCssColor(color) {
+      if (typeof color !== 'string') {
+        return { r: 255, g: 255, b: 255, a: 1 };
+      }
+
+      if (color.startsWith('#')) {
+        const hex = color.slice(1);
+        if (hex.length === 3) {
+          return {
+            r: parseInt(hex[0] + hex[0], 16),
+            g: parseInt(hex[1] + hex[1], 16),
+            b: parseInt(hex[2] + hex[2], 16),
+            a: 1
+          };
+        }
+        if (hex.length === 6) {
+          return {
+            r: parseInt(hex.slice(0, 2), 16),
+            g: parseInt(hex.slice(2, 4), 16),
+            b: parseInt(hex.slice(4, 6), 16),
+            a: 1
+          };
+        }
+      }
+
+      const rgbaMatch = color.match(/rgba?\(([^)]+)\)/i);
+      if (rgbaMatch) {
+        const parts = rgbaMatch[1].split(',').map(part => part.trim());
+        return {
+          r: parseFloat(parts[0]) || 0,
+          g: parseFloat(parts[1]) || 0,
+          b: parseFloat(parts[2]) || 0,
+          a: parts[3] === undefined ? 1 : clamp(parseFloat(parts[3]) || 0, 0, 1)
+        };
+      }
+
+      return { r: 255, g: 255, b: 255, a: 1 };
+    }
+
+    function colorToCss(color, alphaOverride = color.a) {
+      return `rgba(${Math.round(clamp(color.r, 0, 255))}, ${Math.round(clamp(color.g, 0, 255))}, ${Math.round(clamp(color.b, 0, 255))}, ${clamp(alphaOverride, 0, 1).toFixed(3)})`;
+    }
+
+    function tintColor(color, amount, alpha = color.a) {
+      const t = Math.abs(clamp(amount, -1, 1));
+      const toward = amount >= 0 ? 255 : 0;
+      return {
+        r: lerp(color.r, toward, t),
+        g: lerp(color.g, toward, t),
+        b: lerp(color.b, toward, t),
+        a: alpha
+      };
+    }
+
+    function normalizeVector3(x, y, z = 0) {
+      const length = Math.hypot(x, y, z) || 1;
+      return { x: x / length, y: y / length, z: z / length };
+    }
+
+    function drawRoundedRect(x, y, width, height, radius) {
+      const r = Math.min(radius, width / 2, height / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + width, y, x + width, y + height, r);
+      ctx.arcTo(x + width, y + height, x, y + height, r);
+      ctx.arcTo(x, y + height, x, y, r);
+      ctx.arcTo(x, y, x + width, y, r);
+      ctx.closePath();
+    }
+
+    function drawPolygon(points, fillStyle, strokeStyle = null, lineWidth = 1) {
+      if (!points || points.length < 3) {
+        return;
+      }
+
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < points.length; i++) {
+        ctx.lineTo(points[i].x, points[i].y);
+      }
+      ctx.closePath();
+
+      if (fillStyle) {
+        ctx.fillStyle = fillStyle;
+        ctx.fill();
+      }
+
+      if (strokeStyle) {
+        ctx.strokeStyle = strokeStyle;
+        ctx.lineWidth = lineWidth;
+        ctx.stroke();
+      }
     }
 
     function midiToHz(midi) {
@@ -535,6 +776,14 @@
       }
 
       return WIKIPEDIA_TITLES[body.id] || [body.name];
+    }
+
+    function getWikipediaArticleUrl(body) {
+      const [primaryTitle] = getWikipediaTitleCandidates(body);
+      if (!primaryTitle) {
+        return 'https://en.wikipedia.org/';
+      }
+      return `https://en.wikipedia.org/wiki/${encodeURIComponent(primaryTitle.replaceAll(' ', '_'))}`;
     }
 
     async function loadWikipediaImageForBody(body) {
@@ -596,23 +845,195 @@
       return `${hours}h ${minutes}m`;
     }
 
+    function normalizeTimeFactor(value) {
+      const normalized = Math.round((Number.isFinite(value) ? value : 0) * 100000) / 100000;
+      return Math.abs(normalized) < 0.0000001 ? 0 : normalized;
+    }
+
+    function formatTimeFactor(value) {
+      return value.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 5
+      });
+    }
+
+    function getSimulatedDaysPerSecond(timeFactor = speedFactor) {
+      return timeFactor * SIM_DAYS_PER_SECOND_PER_TIME_FACTOR;
+    }
+
+    function getEarthYearsPerSecond(timeFactor = speedFactor) {
+      return getSimulatedDaysPerSecond(timeFactor) / EARTH_ORBITAL_PERIOD_DAYS;
+    }
+
+    function clearHoverIntent(clearVisibleHover = false) {
+      if (hoverIntentTimer !== null) {
+        window.clearTimeout(hoverIntentTimer);
+        hoverIntentTimer = null;
+      }
+      hoverIntentBodyId = null;
+      if (clearVisibleHover) {
+        clearHoverHide(false);
+        hoveredBodyId = null;
+      }
+    }
+
+    function clearHoverHide(clearVisibleHover = false) {
+      if (hoverHideTimer !== null) {
+        window.clearTimeout(hoverHideTimer);
+        hoverHideTimer = null;
+      }
+      if (clearVisibleHover) {
+        hoveredBodyId = null;
+      }
+    }
+
+    function scheduleHoverHide() {
+      if (selectedBodyId || hoverHideTimer !== null || !hoveredBodyId) {
+        return;
+      }
+
+      hoverHideTimer = window.setTimeout(() => {
+        hoverHideTimer = null;
+        if (selectedBodyId || pointerBodyId) {
+          return;
+        }
+
+        hoveredBodyId = null;
+        updateInfoCard();
+      }, HOVER_CARD_HIDE_DELAY_MS);
+    }
+
+    function scheduleHoverPreview(bodyId) {
+      if (!bodyId) {
+        clearHoverIntent(false);
+        if (hoveredBodyId && !selectedBodyId) {
+          scheduleHoverHide();
+        } else if (!hoveredBodyId) {
+          clearHoverHide(false);
+          updateInfoCard();
+        }
+        return;
+      }
+
+      clearHoverHide(false);
+      if (hoveredBodyId === bodyId && hoverIntentBodyId === null) {
+        return;
+      }
+
+      if (hoverIntentBodyId === bodyId) {
+        return;
+      }
+
+      clearHoverIntent(false);
+      if (hoveredBodyId && hoveredBodyId !== bodyId) {
+        hoveredBodyId = null;
+        updateInfoCard();
+      }
+
+      hoverIntentBodyId = bodyId;
+      hoverIntentTimer = window.setTimeout(() => {
+        hoveredBodyId = hoverIntentBodyId;
+        hoverIntentBodyId = null;
+        hoverIntentTimer = null;
+        updateInfoCard();
+      }, HOVER_INFO_DELAY_MS);
+    }
+
+    function clearStoredMousePosition() {
+      lastMouseClientX = null;
+      lastMouseClientY = null;
+    }
+
+    function isPointOverInfoCardAction(clientX, clientY) {
+      const topElement = document.elementFromPoint(clientX, clientY);
+      return topElement instanceof Element
+        && infoCard.contains(topElement)
+        && Boolean(topElement.closest('.card-actions'));
+    }
+
+    function updatePointerHover(clientX, clientY, remember = true) {
+      if (remember) {
+        lastMouseClientX = clientX;
+        lastMouseClientY = clientY;
+      }
+
+      if (dragState?.active) {
+        return;
+      }
+
+      const overInfoCardAction = isPointOverInfoCardAction(clientX, clientY);
+      if (overInfoCardAction) {
+        clearHoverHide(false);
+        updateCanvasCursor();
+        return;
+      }
+
+      const rect = canvas.getBoundingClientRect();
+      const insideCanvas = clientX >= rect.left
+        && clientX <= rect.right
+        && clientY >= rect.top
+        && clientY <= rect.bottom;
+
+      if (!insideCanvas) {
+        if (pointerBodyId || hoveredBodyId || hoverIntentBodyId) {
+          const hadVisibleHover = Boolean(hoveredBodyId);
+          pointerBodyId = null;
+          clearHoverIntent(false);
+          if (hadVisibleHover && !selectedBodyId) {
+            scheduleHoverHide();
+          } else {
+            clearHoverHide(true);
+            updateInfoCard();
+          }
+        }
+        updateCanvasCursor();
+        return;
+      }
+
+      const canvasPoint = {
+        x: clientX - rect.left,
+        y: clientY - rect.top
+      };
+      const hoveredBody = findSceneBodyAt(canvasPoint.x, canvasPoint.y);
+      const nextPointerBodyId = hoveredBody ? hoveredBody.id : null;
+      pointerBodyId = nextPointerBodyId;
+
+      if (nextPointerBodyId || hoveredBodyId || hoverIntentBodyId) {
+        scheduleHoverPreview(nextPointerBodyId);
+      }
+
+      updateCanvasCursor();
+    }
+
+    function refreshPointerHover() {
+      if (lastMouseClientX === null || lastMouseClientY === null) {
+        return;
+      }
+
+      updatePointerHover(lastMouseClientX, lastMouseClientY, false);
+    }
+
     function getTimeScaleDescription() {
       if (speedFactor === 0) {
-        return 'Rate: Paused';
+        return 'Rate: Paused • 0.01 = 1 Earth day/sec';
       }
 
       const direction = speedFactor > 0 ? '' : 'Reverse ';
-      const simDaysPerSecond = Math.abs(speedFactor);
-      const realSecondsPerSimDay = 1 / simDaysPerSecond;
-      const realSecondsPerEarthYear = EARTH_ORBITAL_PERIOD_DAYS / simDaysPerSecond;
+      const simDaysPerSecond = Math.abs(getSimulatedDaysPerSecond());
+      const earthYearsPerSecond = Math.abs(getEarthYearsPerSecond());
+      const realSecondsPerEarthYear = 1 / earthYearsPerSecond;
       const multipleOfRealTime = simDaysPerSecond * 86400;
+      const earthYearsEachSecond = earthYearsPerSecond.toLocaleString('en-US', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+      });
 
-      if (realSecondsPerSimDay >= 1) {
-        return `Rate: ${direction}1 simulated day every ${formatDuration(realSecondsPerSimDay)} (${multipleOfRealTime.toLocaleString('en-US', { maximumFractionDigits: 0 })}x real time)`;
+      if (earthYearsPerSecond >= 1) {
+        return `Rate: ${direction}${earthYearsEachSecond} Earth years/sec • 1 Earth year in ${formatDuration(realSecondsPerEarthYear)} (${multipleOfRealTime.toLocaleString('en-US', { maximumFractionDigits: 0 })}x real time)`;
       }
 
-      const simDaysEachSecond = simDaysPerSecond.toLocaleString('en-US', { maximumFractionDigits: 2 });
-      return `Rate: ${direction}${simDaysEachSecond} simulated days/sec • 1 Earth year in ${formatDuration(realSecondsPerEarthYear)} (${multipleOfRealTime.toLocaleString('en-US', { maximumFractionDigits: 0 })}x real time)`;
+      const simDaysEachSecond = simDaysPerSecond.toLocaleString('en-US', { maximumFractionDigits: 3 });
+      return `Rate: ${direction}1 Earth year every ${formatDuration(realSecondsPerEarthYear)} • ${simDaysEachSecond} simulated days/sec (${multipleOfRealTime.toLocaleString('en-US', { maximumFractionDigits: 0 })}x real time)`;
     }
 
     function createCelestialMusicEngine() {
@@ -737,36 +1158,142 @@
     }
 
     async function toggleMusic() {
-      if (!HAS_WEB_AUDIO) {
-        musicUnavailable = true;
-        musicEnabled = false;
-        updateOverlay();
-        return;
-      }
-
-      if (!musicEngine) {
-        musicEngine = createCelestialMusicEngine();
-      }
-
-      if (!musicEngine) {
-        musicUnavailable = true;
-        musicEnabled = false;
-        updateOverlay();
-        return;
-      }
-
-      musicEnabled = !musicEnabled;
+      const nextEnabled = !musicEnabled;
+      musicEnabled = nextEnabled;
+      musicUnavailable = false;
+      musicResumePending = false;
       updateOverlay();
+      persistSessionState(true);
+
+      if (!HAS_WEB_AUDIO) {
+        if (musicEnabled) {
+          musicUnavailable = true;
+        }
+        updateOverlay();
+        persistSessionState(true);
+        return;
+      }
 
       try {
-        await musicEngine.setEnabled(musicEnabled);
-        musicUnavailable = false;
+        if (musicEnabled && !musicEngine) {
+          musicEngine = createCelestialMusicEngine();
+        }
+
+        if (musicEnabled) {
+          if (!musicEngine) {
+            throw new Error('Music engine unavailable');
+          }
+          await musicEngine.setEnabled(true);
+          musicUnavailable = false;
+        } else if (musicEngine) {
+          await musicEngine.setEnabled(false);
+        }
       } catch (error) {
-        musicEnabled = false;
-        musicUnavailable = true;
+        if (musicEnabled) {
+          musicUnavailable = true;
+        }
       }
 
       updateOverlay();
+      persistSessionState(true);
+    }
+
+    function getPersistedSessionState() {
+      return {
+        version: SESSION_STATE_VERSION,
+        speedFactor,
+        simTimeMs,
+        paused,
+        scale,
+        panX,
+        panY,
+        showLabels,
+        showHelp,
+        followTargetId,
+        musicEnabled
+      };
+    }
+
+    function persistSessionState(force = false) {
+      try {
+        const serialized = JSON.stringify(getPersistedSessionState());
+        if (!force && serialized === lastPersistedState) {
+          return;
+        }
+
+        window.localStorage.setItem(STORAGE_KEY, serialized);
+        lastPersistedState = serialized;
+      } catch (error) {
+        // Ignore storage errors so the simulation remains usable.
+      }
+    }
+
+    function restoreSessionState() {
+      try {
+        const raw = window.localStorage.getItem(STORAGE_KEY);
+        if (!raw) {
+          return false;
+        }
+
+        const state = JSON.parse(raw);
+        if (!state || typeof state !== 'object') {
+          return false;
+        }
+
+        if (state.version >= SESSION_STATE_VERSION) {
+          speedFactor = normalizeTimeFactor(Number.isFinite(state.speedFactor) ? state.speedFactor : speedFactor);
+        } else {
+          const legacySpeedFactor = Number.isFinite(state.speedFactor) ? state.speedFactor : speedFactor;
+          speedFactor = normalizeTimeFactor(legacySpeedFactor / SIM_DAYS_PER_SECOND_PER_TIME_FACTOR);
+        }
+        simTimeMs = Number.isFinite(state.simTimeMs) ? state.simTimeMs : simTimeMs;
+        paused = typeof state.paused === 'boolean' ? state.paused : paused;
+        scale = clamp(Number.isFinite(state.scale) ? state.scale : scale, MIN_SCALE, MAX_SCALE);
+        panX = Number.isFinite(state.panX) ? state.panX : panX;
+        panY = Number.isFinite(state.panY) ? state.panY : panY;
+        showLabels = typeof state.showLabels === 'boolean' ? state.showLabels : showLabels;
+        showHelp = typeof state.showHelp === 'boolean' ? state.showHelp : showHelp;
+        followTargetId = FOLLOW_OPTIONS.some(option => option.id === state.followTargetId) ? state.followTargetId : null;
+        musicEnabled = typeof state.musicEnabled === 'boolean' ? state.musicEnabled : musicEnabled;
+        musicResumePending = musicEnabled;
+        lastPersistedState = raw;
+        return true;
+      } catch (error) {
+        return false;
+      }
+    }
+
+    async function restoreMusicOnGesture() {
+      if (!musicResumePending || !musicEnabled || musicUnavailable) {
+        return;
+      }
+
+      musicResumePending = false;
+      if (!HAS_WEB_AUDIO) {
+        musicUnavailable = true;
+        updateOverlay();
+        persistSessionState(true);
+        return;
+      }
+
+      try {
+        if (!musicEngine) {
+          musicEngine = createCelestialMusicEngine();
+        }
+
+        if (!musicEngine) {
+          throw new Error('Music engine unavailable');
+        }
+
+        await musicEngine.setEnabled(true);
+        musicUnavailable = false;
+      } catch (error) {
+        musicResumePending = true;
+        musicUnavailable = false;
+      }
+
+      updateOverlay();
+      persistSessionState(true);
     }
 
     function getMercuryColor(simTime) {
@@ -910,27 +1437,377 @@
       ctx.restore();
     }
 
-    function drawBody(x, y, radiusPx, fillStyle) {
-      const tinyBody = radiusPx < 1;
-      drawCircle(x, y, Math.max(radiusPx, tinyBody ? 0.75 : radiusPx), fillStyle, tinyBody ? 4 : 0);
+    function getBodyLightVector(body, lightOrigin) {
+      return normalizeVector3(lightOrigin.x - body.x, lightOrigin.y - body.y, 0.82);
     }
 
-    function drawLabel(x, y, radiusPx, text, tint = 'white') {
-      if (!showLabels) {
+    function getFacetShade(points, radiusPx, lightVector, seed, bandIndex, facetIndex) {
+      const centroid = points.reduce((sum, point) => ({
+        x: sum.x + point.x,
+        y: sum.y + point.y
+      }), { x: 0, y: 0 });
+
+      const cx = (centroid.x / points.length) / radiusPx;
+      const cy = (centroid.y / points.length) / radiusPx;
+      const z = Math.sqrt(Math.max(0, 1 - cx * cx - cy * cy));
+      const nx = cx + (noiseFromSeed(seed, bandIndex, facetIndex, 1) - 0.5) * 0.18;
+      const ny = cy + (noiseFromSeed(seed, bandIndex, facetIndex, 2) - 0.5) * 0.18;
+      const normal = normalizeVector3(nx, ny, z + 0.2);
+      const dot = clamp(normal.x * lightVector.x + normal.y * lightVector.y + normal.z * lightVector.z, -1, 1);
+      const shimmer = noiseFromSeed(seed, bandIndex, facetIndex, 3) - 0.5;
+      return clamp(-0.38 + dot * 0.78 + shimmer * 0.18, -0.7, 0.48);
+    }
+
+    function drawTexturePatches(body, radiusPx, visibleRadiusPx, baseColor, timestamp) {
+      const seed = body.seed || 1;
+      const style = body.surfaceStyle || 'rocky';
+
+      if (style === 'gas' || style === 'cloudy' || style === 'ice' || style === 'hazy') {
+        const bandCount = clamp(Math.round(visibleRadiusPx / 26) + 4, 4, 10);
+        for (let i = 0; i < bandCount; i++) {
+          const top = lerp(-radiusPx * 0.88, radiusPx * 0.66, i / bandCount);
+          const bandHeight = radiusPx * lerp(0.12, 0.22, noiseFromSeed(seed, i, 4));
+          const bottom = clamp(top + bandHeight, -radiusPx * 0.95, radiusPx * 0.95);
+          const topExtent = Math.sqrt(Math.max(0, radiusPx * radiusPx - top * top));
+          const bottomExtent = Math.sqrt(Math.max(0, radiusPx * radiusPx - bottom * bottom));
+          const wave = (Math.sin(timestamp * 0.0002 + i + seed) * 0.5 + 0.5) * radiusPx * 0.05;
+          const tintAmount = style === 'ice'
+            ? lerp(-0.16, 0.22, noiseFromSeed(seed, i, 5))
+            : lerp(-0.22, 0.18, noiseFromSeed(seed, i, 5));
+          const fill = colorToCss(tintColor(baseColor, tintAmount, style === 'cloudy' ? 0.22 : 0.26));
+          drawPolygon([
+            { x: -topExtent, y: top + wave },
+            { x: topExtent, y: top - wave * 0.55 },
+            { x: bottomExtent, y: bottom + wave * 0.25 },
+            { x: -bottomExtent, y: bottom - wave * 0.35 }
+          ], fill);
+        }
+
+        if (body.name === 'Jupiter') {
+          ctx.fillStyle = 'rgba(177, 98, 70, 0.45)';
+          ctx.beginPath();
+          ctx.ellipse(radiusPx * 0.22, radiusPx * 0.18, radiusPx * 0.19, radiusPx * 0.11, -0.28, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
         return;
       }
 
-      const labelOffset = Math.max(radiusPx + 6 / scale, 9 / scale);
+      const patchCount = clamp(Math.round(visibleRadiusPx / 24) + 3, 3, 7);
+      for (let i = 0; i < patchCount; i++) {
+        const centerX = (noiseFromSeed(seed, i, 10) - 0.5) * radiusPx * 1.06;
+        const centerY = (noiseFromSeed(seed, i, 11) - 0.5) * radiusPx * 1.02;
+        const sides = 4 + Math.floor(noiseFromSeed(seed, i, 12) * 3);
+        const size = radiusPx * lerp(0.12, 0.26, noiseFromSeed(seed, i, 13));
+        const points = [];
+        for (let side = 0; side < sides; side++) {
+          const angle = (Math.PI * 2 * side) / sides + noiseFromSeed(seed, i, side + 20) * 0.65;
+          const radial = size * lerp(0.62, 1.0, noiseFromSeed(seed, i, side + 30));
+          points.push({
+            x: centerX + Math.cos(angle) * radial,
+            y: centerY + Math.sin(angle) * radial
+          });
+        }
+
+        let tintAmount = lerp(-0.28, 0.14, noiseFromSeed(seed, i, 14));
+        if (style === 'earth') tintAmount = lerp(-0.08, 0.3, noiseFromSeed(seed, i, 14));
+        if (style === 'mars') tintAmount = lerp(-0.26, 0.08, noiseFromSeed(seed, i, 14));
+        if (style === 'volcanic') tintAmount = lerp(-0.3, 0.22, noiseFromSeed(seed, i, 14));
+        if (style === 'ice-moon') tintAmount = lerp(-0.14, 0.24, noiseFromSeed(seed, i, 14));
+
+        let patchBase = baseColor;
+        if (style === 'earth') patchBase = parseCssColor(noiseFromSeed(seed, i, 40) > 0.33 ? '#5caf73' : '#2f8ea2');
+        if (style === 'mars') patchBase = parseCssColor(noiseFromSeed(seed, i, 40) > 0.5 ? '#8e462f' : '#d18e62');
+        if (style === 'volcanic') patchBase = parseCssColor(noiseFromSeed(seed, i, 40) > 0.56 ? '#f3b24b' : '#90513d');
+        if (style === 'ice-moon') patchBase = parseCssColor('#b9dceb');
+        if (style === 'moon') patchBase = parseCssColor(noiseFromSeed(seed, i, 40) > 0.5 ? '#8f939b' : '#c7c9cf');
+
+        drawPolygon(points, colorToCss(tintColor(patchBase, tintAmount, 0.22)));
+      }
+
+      if (style === 'earth') {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.16)';
+        for (let i = 0; i < 3; i++) {
+          const cy = lerp(-radiusPx * 0.45, radiusPx * 0.4, i / 2) + Math.sin(timestamp * 0.00018 + i) * radiusPx * 0.04;
+          const extent = Math.sqrt(Math.max(0, radiusPx * radiusPx - cy * cy));
+          drawPolygon([
+            { x: -extent * 0.72, y: cy - radiusPx * 0.04 },
+            { x: extent * 0.58, y: cy - radiusPx * 0.07 },
+            { x: extent * 0.78, y: cy + radiusPx * 0.01 },
+            { x: -extent * 0.62, y: cy + radiusPx * 0.08 }
+          ], 'rgba(255, 255, 255, 0.12)');
+        }
+      }
+
+      if (style === 'mars') {
+        drawPolygon([
+          { x: -radiusPx * 0.18, y: -radiusPx * 0.86 },
+          { x: radiusPx * 0.05, y: -radiusPx * 0.78 },
+          { x: -radiusPx * 0.02, y: -radiusPx * 0.62 },
+          { x: -radiusPx * 0.24, y: -radiusPx * 0.68 }
+        ], 'rgba(255, 244, 232, 0.48)');
+      }
+    }
+
+    function drawLowPolyBody(body, fillStyle, lightOrigin, timestamp) {
+      const radiusPx = body.radiusPx;
+      const visibleRadiusPx = radiusPx * scale;
+      if (visibleRadiusPx < 2.2) {
+        drawCircle(body.x, body.y, Math.max(radiusPx, 0.75 / scale), fillStyle, 4 / scale);
+        return;
+      }
+
+      const baseColor = parseCssColor(fillStyle);
+      const lightVector = getBodyLightVector(body, lightOrigin);
+      const bandCount = clamp(Math.round(visibleRadiusPx / 28) + 4, 4, 10);
+      const facetColsMax = clamp(Math.round(visibleRadiusPx / 18) + 5, 4, 14);
+
       ctx.save();
-      ctx.font = `${10 / scale}px sans-serif`;
-      ctx.textAlign = 'left';
+      ctx.translate(body.x, body.y);
+      ctx.beginPath();
+      ctx.arc(0, 0, radiusPx, 0, Math.PI * 2);
+      ctx.clip();
+
+      const baseGradient = ctx.createLinearGradient(lightVector.x * -radiusPx, lightVector.y * -radiusPx, lightVector.x * radiusPx, lightVector.y * radiusPx);
+      baseGradient.addColorStop(0, colorToCss(tintColor(baseColor, 0.22)));
+      baseGradient.addColorStop(0.5, colorToCss(baseColor));
+      baseGradient.addColorStop(1, colorToCss(tintColor(baseColor, -0.35)));
+      ctx.fillStyle = baseGradient;
+      ctx.fillRect(-radiusPx, -radiusPx, radiusPx * 2, radiusPx * 2);
+
+      for (let band = 0; band < bandCount; band++) {
+        const y0 = lerp(-radiusPx, radiusPx, band / bandCount);
+        const y1 = lerp(-radiusPx, radiusPx, (band + 1) / bandCount);
+        const topExtent = Math.sqrt(Math.max(0, radiusPx * radiusPx - y0 * y0));
+        const bottomExtent = Math.sqrt(Math.max(0, radiusPx * radiusPx - y1 * y1));
+        const avgExtent = (topExtent + bottomExtent) / 2;
+        const cols = clamp(Math.round(facetColsMax * (avgExtent / radiusPx || 0.2)), 2, facetColsMax);
+
+        for (let col = 0; col < cols; col++) {
+          const t0 = col / cols;
+          const t1 = (col + 1) / cols;
+          const topJitterL = (noiseFromSeed(body.seed, band, col, 10) - 0.5) * radiusPx * 0.05;
+          const topJitterR = (noiseFromSeed(body.seed, band, col, 11) - 0.5) * radiusPx * 0.05;
+          const botJitterL = (noiseFromSeed(body.seed, band, col, 12) - 0.5) * radiusPx * 0.05;
+          const botJitterR = (noiseFromSeed(body.seed, band, col, 13) - 0.5) * radiusPx * 0.05;
+          const points = [
+            { x: lerp(-topExtent, topExtent, t0) + topJitterL, y: y0 },
+            { x: lerp(-topExtent, topExtent, t1) + topJitterR, y: y0 },
+            { x: lerp(-bottomExtent, bottomExtent, t1) + botJitterR, y: y1 },
+            { x: lerp(-bottomExtent, bottomExtent, t0) + botJitterL, y: y1 }
+          ];
+          const shade = getFacetShade(points, radiusPx, lightVector, body.seed, band, col);
+          const fill = colorToCss(tintColor(baseColor, shade, 0.92));
+          const stroke = visibleRadiusPx > 22 ? 'rgba(255, 255, 255, 0.05)' : null;
+          drawPolygon(points, fill, stroke, 0.8 / scale);
+        }
+      }
+
+      drawTexturePatches(body, radiusPx, visibleRadiusPx, baseColor, timestamp);
+
+      const shadowGradient = ctx.createLinearGradient(lightVector.x * radiusPx, lightVector.y * radiusPx, -lightVector.x * radiusPx, -lightVector.y * radiusPx);
+      shadowGradient.addColorStop(0, 'rgba(255, 255, 255, 0.10)');
+      shadowGradient.addColorStop(0.45, 'rgba(255, 255, 255, 0.00)');
+      shadowGradient.addColorStop(1, 'rgba(0, 0, 0, 0.46)');
+      ctx.fillStyle = shadowGradient;
+      ctx.fillRect(-radiusPx, -radiusPx, radiusPx * 2, radiusPx * 2);
+
+      ctx.beginPath();
+      ctx.ellipse(lightVector.x * radiusPx * 0.34, lightVector.y * radiusPx * 0.34, radiusPx * 0.26, radiusPx * 0.18, Math.atan2(lightVector.y, lightVector.x), 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.10)';
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(0, 0, radiusPx, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.14)';
+      ctx.lineWidth = 1 / scale;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawSunspots(body, simDays) {
+      const visibleRadiusPx = body.radiusPx * scale;
+      if (visibleRadiusPx < 38) {
+        return;
+      }
+
+      // Sunspots are derived from simulated days, so higher time factors make them evolve faster in real time.
+      const cadenceDays = 9;
+      const maxLifetimeDays = 54;
+      const firstSlot = Math.floor((simDays - maxLifetimeDays) / cadenceDays) - 1;
+      const lastSlot = Math.floor(simDays / cadenceDays) + 1;
+
+      for (let slot = firstSlot; slot <= lastSlot; slot++) {
+        const groupCount = Math.floor(noiseFromSeed(body.seed, slot, 90) * 3);
+        for (let group = 0; group < groupCount; group++) {
+          const birthDay = slot * cadenceDays + noiseFromSeed(body.seed, slot, group, 91) * cadenceDays * 0.84;
+          const lifetimeDays = lerp(18, 54, noiseFromSeed(body.seed, slot, group, 92));
+          const age = (simDays - birthDay) / lifetimeDays;
+          if (age < 0 || age > 1) {
+            continue;
+          }
+
+          const fade = Math.sin(age * Math.PI);
+          const latitude = lerp(-0.48, 0.48, noiseFromSeed(body.seed, slot, group, 93));
+          const travelSpan = Math.sqrt(Math.max(0, 1 - latitude * latitude)) * 0.94;
+          const longitudeOffset = (noiseFromSeed(body.seed, slot, group, 94) - 0.5) * 0.16;
+          const longitude = lerp(-travelSpan, travelSpan, age) + longitudeOffset;
+          const centerDistSq = longitude * longitude + latitude * latitude;
+          if (centerDistSq >= 0.96) {
+            continue;
+          }
+
+          const limbFactor = Math.sqrt(Math.max(0, 1 - centerDistSq / 0.96));
+          const rotation = noiseFromSeed(body.seed, slot, group, 95) * Math.PI;
+          const clusterCount = 1 + Math.floor(noiseFromSeed(body.seed, slot, group, 96) * 3);
+          const baseSize = body.radiusPx * lerp(0.018, 0.05, noiseFromSeed(body.seed, slot, group, 97));
+
+          for (let clusterIndex = 0; clusterIndex < clusterCount; clusterIndex++) {
+            const offsetRadius = baseSize * lerp(0.08, 0.55, noiseFromSeed(body.seed, slot, group, clusterIndex + 98));
+            const offsetAngle = noiseFromSeed(body.seed, slot, group, clusterIndex + 102) * Math.PI * 2;
+            const localLongitude = longitude + (Math.cos(offsetAngle) * offsetRadius) / body.radiusPx;
+            const localLatitude = latitude + (Math.sin(offsetAngle) * offsetRadius * 0.82) / body.radiusPx;
+            const localDistSq = localLongitude * localLongitude + localLatitude * localLatitude;
+            if (localDistSq >= 0.97) {
+              continue;
+            }
+
+            const localLimb = Math.sqrt(Math.max(0, 1 - localDistSq / 0.97));
+            const spotX = localLongitude * body.radiusPx;
+            const spotY = localLatitude * body.radiusPx;
+            const sizeScale = lerp(0.72, 1.15, noiseFromSeed(body.seed, slot, group, clusterIndex + 108));
+            const penumbraX = baseSize * sizeScale * (0.72 + localLimb * 0.55);
+            const penumbraY = penumbraX * lerp(0.54, 0.86, noiseFromSeed(body.seed, slot, group, clusterIndex + 114));
+            const umbraX = penumbraX * lerp(0.44, 0.63, noiseFromSeed(body.seed, slot, group, clusterIndex + 120));
+            const umbraY = penumbraY * lerp(0.42, 0.6, noiseFromSeed(body.seed, slot, group, clusterIndex + 126));
+            const opacity = fade * (0.18 + localLimb * 0.24) * (0.85 + limbFactor * 0.15);
+
+            ctx.beginPath();
+            ctx.ellipse(spotX, spotY, penumbraX, penumbraY, rotation, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(108, 58, 24, ${opacity.toFixed(3)})`;
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.ellipse(spotX, spotY, umbraX, umbraY, rotation, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(42, 18, 8, ${(opacity * 1.4).toFixed(3)})`;
+            ctx.fill();
+          }
+        }
+      }
+    }
+
+    function drawStarBody(body, timestamp, simDays) {
+      const visibleRadiusPx = body.radiusPx * scale;
+      drawCircle(body.x, body.y, body.radiusPx * 1.1, 'rgba(255, 209, 92, 0.14)');
+      drawCircle(body.x, body.y, body.radiusPx * 1.03, 'rgba(255, 188, 63, 0.12)');
+
+      ctx.save();
+      ctx.translate(body.x, body.y);
+      ctx.beginPath();
+      ctx.arc(0, 0, body.radiusPx, 0, Math.PI * 2);
+      ctx.clip();
+
+      const starBase = parseCssColor('#ffd65c');
+      const starGradient = ctx.createRadialGradient(-body.radiusPx * 0.26, -body.radiusPx * 0.3, body.radiusPx * 0.12, 0, 0, body.radiusPx);
+      starGradient.addColorStop(0, 'rgba(255, 247, 188, 1)');
+      starGradient.addColorStop(0.48, colorToCss(starBase));
+      starGradient.addColorStop(1, 'rgba(222, 138, 34, 1)');
+      ctx.fillStyle = starGradient;
+      ctx.fillRect(-body.radiusPx, -body.radiusPx, body.radiusPx * 2, body.radiusPx * 2);
+
+      const flareCount = clamp(Math.round(visibleRadiusPx / 34) + 4, 5, 12);
+      for (let i = 0; i < flareCount; i++) {
+        const angle = (Math.PI * 2 * i) / flareCount + Math.sin(timestamp * 0.00008 + i) * 0.12;
+        const inner = body.radiusPx * lerp(0.15, 0.32, noiseFromSeed(body.seed, i, 2));
+        const outer = body.radiusPx * lerp(0.62, 0.96, noiseFromSeed(body.seed, i, 3));
+        drawPolygon([
+          { x: Math.cos(angle - 0.15) * inner, y: Math.sin(angle - 0.15) * inner },
+          { x: Math.cos(angle) * outer, y: Math.sin(angle) * outer },
+          { x: Math.cos(angle + 0.15) * inner, y: Math.sin(angle + 0.15) * inner }
+        ], 'rgba(255, 226, 132, 0.12)');
+      }
+
+      drawSunspots(body, simDays);
+
+      ctx.beginPath();
+      ctx.arc(0, 0, body.radiusPx, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
+      ctx.lineWidth = 1 / scale;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawBody(body, fillStyle, lightOrigin, timestamp = 0, simDays = 0) {
+      if (body.type === 'Star') {
+        drawStarBody(body, timestamp, simDays);
+        return;
+      }
+
+      drawLowPolyBody(body, fillStyle, lightOrigin, timestamp);
+    }
+
+    function queueBillboardLabel(entries, body, text, tint = '#ffffff') {
+      if (!showLabels || !body) {
+        return;
+      }
+
+      entries.push({
+        text,
+        tint,
+        x: body.screenX,
+        y: body.screenY,
+        radiusPx: Math.max(body.radiusPx * scale, 4)
+      });
+    }
+
+    function drawBillboardLabels(entries) {
+      if (!showLabels || entries.length === 0) {
+        return;
+      }
+
+      ctx.save();
+      const labelFontSize = clamp(Math.round(Math.min(canvas.width, canvas.height) * 0.015), 11, 18);
+      ctx.font = `${labelFontSize}px "Trebuchet MS", "Segoe UI", sans-serif`;
       ctx.textBaseline = 'middle';
       ctx.lineJoin = 'round';
-      ctx.lineWidth = 3 / scale;
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
-      ctx.strokeText(text, x + labelOffset, y - labelOffset * 0.45);
-      ctx.fillStyle = tint;
-      ctx.fillText(text, x + labelOffset, y - labelOffset * 0.45);
+
+      for (const entry of entries) {
+        const paddingX = Math.round(labelFontSize * 0.8);
+        const boxHeight = Math.round(labelFontSize * 1.9);
+        const boxWidth = ctx.measureText(entry.text).width + paddingX * 2;
+        const labelGap = Math.max(entry.radiusPx + Math.round(labelFontSize * 0.8), Math.round(labelFontSize * 1.15));
+        let boxX = entry.x + labelGap;
+        let boxY = entry.y - labelGap - boxHeight * 0.5;
+
+        if (boxX + boxWidth > canvas.width - 10) {
+          boxX = entry.x - labelGap - boxWidth;
+        }
+        if (boxY < 10) {
+          boxY = entry.y + labelGap * 0.45;
+        }
+        boxY = clamp(boxY, 10, canvas.height - boxHeight - 10);
+
+        const anchorX = boxX > entry.x ? boxX : boxX + boxWidth;
+        const anchorY = clamp(entry.y, boxY + 4, boxY + boxHeight - 4);
+
+        ctx.strokeStyle = 'rgba(200, 224, 255, 0.28)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(entry.x, entry.y);
+        ctx.lineTo(anchorX, anchorY);
+        ctx.stroke();
+
+        drawRoundedRect(boxX, boxY, boxWidth, boxHeight, Math.round(labelFontSize * 0.7));
+        ctx.fillStyle = 'rgba(7, 12, 24, 0.82)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        ctx.fillStyle = entry.tint;
+        ctx.fillText(entry.text, boxX + paddingX, boxY + boxHeight / 2 + 0.5);
+      }
+
       ctx.restore();
     }
 
@@ -1004,7 +1881,7 @@
     }
 
     function updateTrails(planetStates, timestamp) {
-      if (paused || Math.abs(speedFactor) < 0.001) {
+      if (paused || Math.abs(getSimulatedDaysPerSecond()) < 0.001) {
         return;
       }
       if (timestamp - trailLastTimestamp < 45) {
@@ -1090,9 +1967,85 @@
       panY = defaultView.panY;
     }
 
+    function resetSimulationView() {
+      paused = false;
+      speedFactor = 0;
+      simTimeMs = 0;
+      lastTimestamp = null;
+      bodyTrails.clear();
+      trailLastTimestamp = 0;
+      followTargetId = null;
+      followNeedsZoom = false;
+      showFollowChooser = false;
+      applyDefaultView();
+    }
+
+    function applySimulationReset() {
+      resetSimulationView();
+      updateFollowUI();
+      updateOverlay();
+      updateInfoCard(true);
+      updateCanvasCursor();
+    }
+
+    function promptToResetSimulation() {
+      const shouldReset = window.confirm('Reset the simulation and return to the default view?');
+      if (!shouldReset) {
+        return;
+      }
+
+      applySimulationReset();
+    }
+
+    function applyDefaultSessionState() {
+      resetSimulationView();
+      showLabels = false;
+      showHelp = true;
+      pointerBodyId = null;
+      hoveredBodyId = null;
+      selectedBodyId = null;
+      dragState = null;
+      suppressCanvasClick = false;
+      suppressCanvasContextMenu = false;
+      clearHoverHide(false);
+      clearHoverIntent(false);
+      infoCardRenderKey = '';
+      musicEnabled = true;
+      musicResumePending = HAS_WEB_AUDIO;
+      musicUnavailable = false;
+    }
+
+    async function clearSavedSettings() {
+      try {
+        window.localStorage.removeItem(STORAGE_KEY);
+      } catch (error) {
+        // Ignore storage errors so the simulation remains usable.
+      }
+
+      lastPersistedState = '';
+      applyDefaultSessionState();
+      updateHelpVisibility();
+      updateFollowUI();
+      updateOverlay();
+      updateInfoCard(true);
+      updateCanvasCursor();
+      persistSessionState(true);
+      await restoreMusicOnGesture();
+    }
+
     function getFollowFocusRadius(body) {
-      const bodyRadius = body?.hitRadiusPx || body?.radiusPx || 1;
-      return Math.max(bodyRadius, 1);
+      if (!body) {
+        return 1;
+      }
+
+      if (body.type === 'Planet') {
+        const planet = PLANETS.find(entry => `planet:${entry.name}` === body.id);
+        if (planet?.rings) {
+          return Math.max(planet.radiusPx * getRingOuterFactor(planet.rings), 1);
+        }
+      }
+
+      return Math.max(body.radiusPx || 1, 1);
     }
 
     function getFollowScale(body) {
@@ -1112,10 +2065,74 @@
       updateFollowUI();
     }
 
+    function startFollowing(bodyId, selectBody = false) {
+      if (!bodyId) {
+        return;
+      }
+      followTargetId = bodyId;
+      followNeedsZoom = true;
+      showFollowChooser = false;
+      if (selectBody) {
+        selectedBodyId = bodyId;
+      }
+      updateFollowUI();
+      updateOverlay();
+      updateInfoCard(true);
+    }
+
     function updateFollowUI() {
       followPanel.classList.toggle('is-hidden', !showFollowChooser);
       followSelect.value = followTargetId || '';
       document.getElementById('followDisplay').textContent = `Follow: ${getFollowLabel()}`;
+      persistSessionState();
+    }
+
+    function updateCanvasCursor() {
+      if (dragState?.active) {
+        canvas.style.cursor = 'grabbing';
+        return;
+      }
+      if (pointerBodyId) {
+        canvas.style.cursor = 'pointer';
+        return;
+      }
+      canvas.style.cursor = 'grab';
+    }
+
+    function zoomAtScreenPoint(screenX, screenY, factor) {
+      const worldX = (screenX - panX) / scale;
+      const worldY = (screenY - panY) / scale;
+      const newScale = clamp(scale * factor, MIN_SCALE, MAX_SCALE);
+      panX = screenX - worldX * newScale;
+      panY = screenY - worldY * newScale;
+      scale = newScale;
+    }
+
+    function zoomAtViewportCenter(factor) {
+      zoomAtScreenPoint(canvas.width / 2, canvas.height / 2, factor);
+    }
+
+    function centerViewOnScreenPoint(screenX, screenY) {
+      const worldX = (screenX - panX) / scale;
+      const worldY = (screenY - panY) / scale;
+      if (followTargetId) {
+        stopFollowing();
+      }
+      panX = canvas.width / 2 - worldX * scale;
+      panY = canvas.height / 2 - worldY * scale;
+    }
+
+    function applyWheelZoom(clientX, clientY, deltaY, anchorToPointer = true) {
+      const zoomFactor = Math.exp(-deltaY * 0.0015);
+      if (followTargetId) {
+        zoomAtViewportCenter(zoomFactor);
+      } else if (anchorToPointer) {
+        const point = getCanvasPoint(clientX, clientY);
+        zoomAtScreenPoint(point.x, point.y, zoomFactor);
+      } else {
+        zoomAtViewportCenter(zoomFactor);
+      }
+      updateCanvasCursor();
     }
 
     function buildWorldBodies(layout, planetStates, simDays) {
@@ -1125,7 +2142,8 @@
           x: layout.sunCenterX,
           y: layout.sunCenterY,
           radiusPx: layout.sunRadPx,
-          hitRadiusPx: layout.sunRadPx
+          hitRadiusPx: layout.sunRadPx,
+          planetCount: PLANETS.length
         }
       ];
 
@@ -1139,6 +2157,8 @@
           id: `planet:${planet.name}`,
           name: planet.name,
           type: 'Planet',
+          seed: planet.seed,
+          surfaceStyle: planet.surfaceStyle,
           x: planet.x,
           y: planet.y,
           radiusPx: planet.radiusPx,
@@ -1160,6 +2180,8 @@
             name: moon.name,
             type: 'Moon',
             parentName: planet.name,
+            seed: moon.seed,
+            surfaceStyle: moon.surfaceStyle,
             x: moonX,
             y: moonY,
             radiusPx: moon.radiusPx,
@@ -1210,6 +2232,7 @@
         activeBody ? activeBody.id : 'none',
         showHelp ? 'help-on' : 'help-off',
         selectedBodyId ? 'selected' : 'hover',
+        activeBody && activeBody.id === followTargetId ? 'following' : 'not-following',
         imageState.status,
         imageState.url || ''
       ].join('|');
@@ -1255,6 +2278,21 @@
         imageMarkup = `<p class="hint">Wikipedia image unavailable for this object right now.</p>`;
       }
 
+      const countLabel = activeBody.type === 'Star' ? 'Planet Count' : 'Moon Count';
+      const countValue = activeBody.type === 'Star'
+        ? (activeBody.planetCount ?? 'N/A')
+        : (activeBody.moonCount === null || activeBody.moonCount === undefined ? 'N/A' : activeBody.moonCount);
+      const isFollowingActiveBody = activeBody.id === followTargetId;
+      const wikipediaUrl = getWikipediaArticleUrl(activeBody);
+      const actionMarkup = `
+        <div class="card-actions">
+          <button type="button" data-card-action="follow" data-body-id="${escapeHtml(activeBody.id)}" ${isFollowingActiveBody ? 'disabled' : ''}>
+            ${isFollowingActiveBody ? 'Following This Object' : `Follow ${escapeHtml(activeBody.name)}`}
+          </button>
+          <a href="${escapeHtml(wikipediaUrl)}" target="_blank" rel="noopener noreferrer">Open in Wikipedia</a>
+        </div>
+      `;
+
       infoCard.innerHTML = `
         <h2>${escapeHtml(activeBody.name)}</h2>
         <span class="type">${escapeHtml(activeBody.type)}${activeBody.parentName ? ` • orbits ${escapeHtml(activeBody.parentName)}` : ''}</span>
@@ -1263,10 +2301,11 @@
           <dd>${formatNumber(Math.round(activeBody.diameterKm))} km</dd>
           <dt>Orbital Period</dt>
           <dd>${formatOrbitalPeriod(activeBody.orbitalPeriodDays)}</dd>
-          <dt>Moon Count</dt>
-          <dd>${activeBody.moonCount === null ? 'N/A' : activeBody.moonCount}</dd>
+          <dt>${countLabel}</dt>
+          <dd>${countValue}</dd>
         </dl>
         <p class="fact">${escapeHtml(activeBody.fact)}</p>
+        ${actionMarkup}
         <p class="hint">${selectedBodyId ? 'Pinned. Click the same object or empty space to release.' : 'Hover for preview. Click to pin.'}</p>
         ${imageMarkup}
       `;
@@ -1275,6 +2314,8 @@
     function updateHelpVisibility() {
       document.getElementById('overlay').classList.toggle('hidden-ui', !showHelp);
       document.getElementById('legend').classList.toggle('hidden-ui', !showHelp);
+      updateInfoCard(true);
+      persistSessionState();
     }
 
     function drawScene(timestamp) {
@@ -1285,7 +2326,7 @@
       lastTimestamp = timestamp;
 
       if (!paused) {
-        simTimeMs += delta * speedFactor;
+        simTimeMs += delta * getSimulatedDaysPerSecond();
       } else {
         delta = 0;
       }
@@ -1295,27 +2336,37 @@
       const years   = simDays / EARTH_ORBITAL_PERIOD_DAYS;
       document.getElementById('yearsDisplay').textContent = `Earth Years: ${years.toFixed(2)}`;
 
-      // Move stars horizontally
-      const starSpeedConstant = 0.02;
+      // Keep a subtle independent star drift so the background stays calm and lightweight.
+      const starSpeedConstant = 0.0034;
       for (const s of stars) {
-        s.x += delta * speedFactor * starSpeedConstant;
-        if (s.x > canvas.width) s.x -= canvas.width;
-        if (s.x < 0) s.x += canvas.width;
+        s.x -= delta * starSpeedConstant * (0.35 + s.depth * 1.15);
+        if (s.x > canvas.width + 6) s.x -= canvas.width + 12;
+        if (s.x < -6) s.x += canvas.width + 12;
       }
 
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Draw stars
+      // Draw the background starfield in screen space.
       for (const s of stars) {
-        const twinkle = 0.7 + Math.sin(timestamp * s.twinkleSpeed + s.twinkleOffset) * 0.3;
+        const twinkle = 0.78 + Math.sin(timestamp * s.twinkleSpeed + s.twinkleOffset) * 0.22;
+        const alpha = clamp(s.opacity * twinkle, 0.08, 0.84);
         ctx.beginPath();
         ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255,255,255,${clamp(s.opacity * twinkle, 0.1, 1).toFixed(3)})`;
+        ctx.fillStyle = `rgba(${s.tint[0]}, ${s.tint[1]}, ${s.tint[2]}, ${alpha.toFixed(3)})`;
         ctx.fill();
-      }
 
-      ctx.setTransform(scale, 0, 0, scale, panX, panY);
+        if (s.sparkle > 0.93 && s.radius > 0.7) {
+          ctx.strokeStyle = `rgba(${s.tint[0]}, ${s.tint[1]}, ${s.tint[2]}, ${(alpha * 0.55).toFixed(3)})`;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(s.x - s.radius * 1.8, s.y);
+          ctx.lineTo(s.x + s.radius * 1.8, s.y);
+          ctx.moveTo(s.x, s.y - s.radius * 1.8);
+          ctx.lineTo(s.x, s.y + s.radius * 1.8);
+          ctx.stroke();
+        }
+      }
 
       const layout = getLayout();
       const planetStates = buildPlanetStates(simDays, layout);
@@ -1333,6 +2384,8 @@
         panY = canvas.height / 2 - followBody.y * scale;
       }
 
+      ctx.setTransform(scale, 0, 0, scale, panX, panY);
+
       const habitableInnerRadius = mapDistanceToOrbitRadius(HABITABLE_ZONE_INNER_KM, orbitRadii);
       const habitableOuterRadius = mapDistanceToOrbitRadius(HABITABLE_ZONE_OUTER_KM, orbitRadii);
       const frostInnerRadius = mapDistanceToOrbitRadius(FROST_LINE_INNER_KM, orbitRadii);
@@ -1348,6 +2401,9 @@
           screenHitRadiusPx: Math.max((body.hitRadiusPx || body.radiusPx) * scale, 7)
         };
       });
+      refreshPointerHover();
+      const sceneBodyMap = new Map(sceneBodies.map(body => [body.id, body]));
+      const labelEntries = [];
 
       drawBand(layout.sunCenterX, layout.sunCenterY, habitableInnerRadius, habitableOuterRadius, 'rgba(121, 222, 146, 0.08)');
       drawBand(layout.sunCenterX, layout.sunCenterY, frostInnerRadius, frostOuterRadius, 'rgba(118, 176, 255, 0.06)');
@@ -1360,18 +2416,19 @@
 
       const sunBody = worldBodyMap.get('sun');
       drawCircle(sunBody.x, sunBody.y, layout.sunRadPx * 1.08, 'rgba(255, 205, 70, 0.12)');
-      drawCircle(sunBody.x, sunBody.y, layout.sunRadPx, '#ffd24d');
-      drawLabel(sunBody.x, sunBody.y, layout.sunRadPx, 'Sun', '#fff6c2');
+      drawBody(sunBody, '#ffd24d', { x: sunBody.x, y: sunBody.y }, timestamp, simDays);
+      queueBillboardLabel(labelEntries, sceneBodyMap.get('sun'), 'Sun', '#fff6c2');
 
       for (const planet of planetStates) {
         const planetBody = worldBodyMap.get(`planet:${planet.name}`);
+        const scenePlanetBody = sceneBodyMap.get(`planet:${planet.name}`);
         const planetColor = planet.colorFn ? planet.colorFn(simTimeMs) : planet.color;
 
         drawRingBandsHalf(planet, planetBody.x, planetBody.y, planet.radiusPx, 'back');
 
-        drawBody(planetBody.x, planetBody.y, planet.radiusPx, planetColor);
+        drawBody(planetBody, planetColor, sunBody, timestamp);
         drawRingBandsHalf(planet, planetBody.x, planetBody.y, planet.radiusPx, 'front');
-        drawLabel(planetBody.x, planetBody.y, planet.radiusPx, planet.name);
+        queueBillboardLabel(labelEntries, scenePlanetBody, planet.name);
 
         if (showLabels && planet.moons.length > 0) {
           const moonOrbitBounds = getMoonOrbitBounds(planet.radiusPx, planet.moons.length);
@@ -1380,44 +2437,54 @@
 
         for (const moon of planet.moons) {
           const moonBody = worldBodyMap.get(`moon:${planet.name}:${moon.name}`);
+          const sceneMoonBody = sceneBodyMap.get(`moon:${planet.name}:${moon.name}`);
           const moonOrbitRadiusPx = Math.hypot(moonBody.x - planetBody.x, moonBody.y - planetBody.y);
 
           if (showLabels) {
             drawOrbitGuide(planetBody.x, planetBody.y, moonOrbitRadiusPx, 'rgba(255, 255, 255, 0.05)', 0.6);
           }
 
-          drawBody(moonBody.x, moonBody.y, moon.radiusPx, moon.color);
-          drawLabel(moonBody.x, moonBody.y, moon.radiusPx, moon.name, '#f0f0f0');
+          drawBody(moonBody, moon.color, sunBody, timestamp);
+          queueBillboardLabel(labelEntries, sceneMoonBody, moon.name, '#f0f0f0');
         }
       }
 
       ctx.setTransform(1, 0, 0, 1, 0, 0);
+      drawBillboardLabels(labelEntries);
       updateInfoCard();
+      if (timestamp - lastPersistTimestamp >= 1000) {
+        persistSessionState();
+        lastPersistTimestamp = timestamp;
+      }
       requestAnimationFrame(drawScene);
     }
 
     function updateOverlay() {
-      document.getElementById('timeFactorDisplay').textContent = `Time Factor: ${speedFactor.toFixed(1)}`;
+      document.getElementById('timeFactorDisplay').textContent = `Time Factor: ${formatTimeFactor(speedFactor)}`;
       document.getElementById('timeScaleDisplay').textContent = getTimeScaleDescription();
       document.getElementById('musicDisplay').textContent = musicUnavailable
         ? 'Music: Unavailable'
-        : `Music: ${musicEnabled ? 'On' : 'Off'}`;
+        : `Music: ${musicEnabled ? (musicResumePending ? 'On (resume on input)' : 'On') : 'Off'}`;
       const simDays = simTimeMs / 1000;
       document.getElementById('yearsDisplay').textContent = `Earth Years: ${(simDays / EARTH_ORBITAL_PERIOD_DAYS).toFixed(2)}`;
       document.getElementById('labelDisplay').textContent = `Labels: ${showLabels ? 'On' : 'Off'}`;
       document.getElementById('followDisplay').textContent = `Follow: ${getFollowLabel()}`;
       document.getElementById('motionDisplay').textContent = 'Motion: Compact orbits, real relative speeds';
+      persistSessionState();
     }
 
     window.addEventListener('keydown', e => {
       const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+      if (key !== 'm') {
+        void restoreMusicOnGesture();
+      }
 
       if (key === 'w') {
-        speedFactor += 1;
+        speedFactor = normalizeTimeFactor(speedFactor + TIME_FACTOR_STEP);
         updateOverlay();
       }
       if (key === 's') {
-        speedFactor -= 1;
+        speedFactor = normalizeTimeFactor(speedFactor - TIME_FACTOR_STEP);
         updateOverlay();
       }
       if (e.key === ' ') {
@@ -1428,7 +2495,7 @@
         showLabels = !showLabels;
         updateOverlay();
       }
-      if (key === 'h') {
+      if (key === 'h' || key === '?') {
         showHelp = !showHelp;
         updateHelpVisibility();
       }
@@ -1443,24 +2510,19 @@
         }
       }
       if (e.key === 'Escape') {
-        paused = false;
-        speedFactor = 0;
-        simTimeMs = 0;
-        lastTimestamp = null;
-        bodyTrails.clear();
-        trailLastTimestamp = 0;
-        followTargetId = null;
-        followNeedsZoom = false;
-        showFollowChooser = false;
-        applyDefaultView();
-        updateFollowUI();
-        updateOverlay();
+        e.preventDefault();
+        promptToResetSimulation();
       }
-      if (key === 'z') {
-        scale = clamp(scale * 1.1, MIN_SCALE, MAX_SCALE);
+      if (key === 'z' || key === '+' || key === '=') {
+        zoomAtViewportCenter(1.1);
       }
-      if (key === 'x') {
-        scale = clamp(scale / 1.1, MIN_SCALE, MAX_SCALE);
+      if (key === 'x' || key === '-' || key === '_') {
+        zoomAtViewportCenter(1 / 1.1);
+      }
+      if (key === 'r' && e.shiftKey) {
+        void clearSavedSettings();
+      } else if (key === 'r') {
+        applySimulationReset();
       }
       if (e.key === 'ArrowUp') {
         if (followTargetId) stopFollowing();
@@ -1478,44 +2540,284 @@
         if (followTargetId) stopFollowing();
         panX += 50;
       }
+      updateCanvasCursor();
     });
 
     followSelect.addEventListener('change', () => {
-      followTargetId = followSelect.value || null;
-      followNeedsZoom = !!followTargetId;
-      showFollowChooser = false;
-      updateFollowUI();
-      updateOverlay();
+      const targetId = followSelect.value || null;
+      if (targetId) {
+        startFollowing(targetId);
+      } else {
+        stopFollowing();
+        showFollowChooser = false;
+        updateFollowUI();
+        updateOverlay();
+      }
     });
 
-    canvas.addEventListener('mousemove', e => {
-      const canvasPoint = getCanvasPoint(e.clientX, e.clientY);
-      const hoveredBody = findSceneBodyAt(canvasPoint.x, canvasPoint.y);
-      hoveredBodyId = hoveredBody ? hoveredBody.id : null;
-      canvas.style.cursor = hoveredBody ? 'pointer' : 'default';
-      updateInfoCard();
+    clearSettingsButton.addEventListener('click', () => {
+      void clearSavedSettings();
     });
 
-    canvas.addEventListener('mouseleave', () => {
+    function handlePointerDragMove(e) {
+      if (!dragState || dragState.pointerId !== e.pointerId) {
+        return false;
+      }
+
+      const dx = e.clientX - dragState.startX;
+      const dy = e.clientY - dragState.startY;
+      if (!dragState.active && (Math.abs(dx) > 3 || Math.abs(dy) > 3)) {
+        dragState.active = true;
+        suppressCanvasClick = true;
+        if (dragState.button === 2) {
+          suppressCanvasContextMenu = true;
+        }
+        if (followTargetId) {
+          stopFollowing();
+        }
+      }
+
+      if (!dragState.active) {
+        return false;
+      }
+
+      panX = dragState.panX + dx;
+      panY = dragState.panY + dy;
+      pointerBodyId = null;
+      clearHoverHide(true);
       hoveredBodyId = null;
-      canvas.style.cursor = 'default';
+      clearHoverIntent(false);
+      updateCanvasCursor();
       updateInfoCard();
+
+      if (e.cancelable) {
+        e.preventDefault();
+      }
+
+      return true;
+    }
+
+    function finishDrag(pointerId = null) {
+      if (!dragState) {
+        return;
+      }
+
+      if (pointerId !== null && dragState.pointerId !== pointerId) {
+        return;
+      }
+
+      if (dragState.pointerId !== undefined && canvas.hasPointerCapture?.(dragState.pointerId)) {
+        try {
+          canvas.releasePointerCapture(dragState.pointerId);
+        } catch (error) {
+          // Ignore release failures when capture was already lost.
+        }
+      }
+
+      dragState = null;
+      updateCanvasCursor();
+    }
+
+    canvas.addEventListener('dragstart', e => {
+      e.preventDefault();
     });
+
+    canvas.addEventListener('mousedown', e => {
+      if (e.button === 2) {
+        e.preventDefault();
+      }
+    });
+
+    canvas.addEventListener('auxclick', e => {
+      if (e.button === 2) {
+        e.preventDefault();
+      }
+    });
+
+    canvas.addEventListener('pointerdown', e => {
+      void restoreMusicOnGesture();
+      if (e.pointerType === 'mouse' && e.button !== 0 && e.button !== 2) {
+        return;
+      }
+
+      const canvasPoint = getCanvasPoint(e.clientX, e.clientY);
+      const targetBody = findSceneBodyAt(canvasPoint.x, canvasPoint.y);
+
+      dragState = {
+        startX: e.clientX,
+        startY: e.clientY,
+        panX,
+        panY,
+        active: false,
+        targetBodyId: targetBody ? targetBody.id : null,
+        button: e.button,
+        pointerId: e.pointerId
+      };
+      suppressCanvasClick = false;
+      canvas.setPointerCapture?.(e.pointerId);
+      e.preventDefault();
+      updateCanvasCursor();
+    });
+
+    canvas.addEventListener('pointerup', e => {
+      finishDrag(e.pointerId);
+    });
+
+    canvas.addEventListener('pointercancel', e => {
+      finishDrag(e.pointerId);
+    });
+
+    canvas.addEventListener('lostpointercapture', e => {
+      finishDrag(e.pointerId);
+    });
+
+    window.addEventListener('pointermove', e => {
+      if (handlePointerDragMove(e)) {
+        return;
+      }
+
+      if (e.pointerType !== 'mouse') {
+        return;
+      }
+
+      updatePointerHover(e.clientX, e.clientY);
+    });
+
+    window.addEventListener('pointerup', e => {
+      finishDrag(e.pointerId);
+    });
+
+    window.addEventListener('pointercancel', e => {
+      finishDrag(e.pointerId);
+    });
+
+    window.addEventListener('mouseout', e => {
+      if (e.relatedTarget) {
+        return;
+      }
+
+      clearStoredMousePosition();
+      pointerBodyId = null;
+      clearHoverIntent(false);
+      if (!selectedBodyId && hoveredBodyId) {
+        scheduleHoverHide();
+      } else {
+        clearHoverHide(true);
+        updateInfoCard();
+      }
+      updateCanvasCursor();
+    });
+
+    window.addEventListener('wheel', e => {
+      if (!e.ctrlKey) {
+        return;
+      }
+
+      void restoreMusicOnGesture();
+      e.preventDefault();
+      e.stopPropagation();
+      const anchorToPointer = e.target === canvas;
+      applyWheelZoom(e.clientX, e.clientY, e.deltaY, anchorToPointer);
+    }, { passive: false, capture: true });
+
+    canvas.addEventListener('wheel', e => {
+      void restoreMusicOnGesture();
+      e.preventDefault();
+      if (e.ctrlKey) {
+        return;
+      }
+      applyWheelZoom(e.clientX, e.clientY, e.deltaY, true);
+    }, { passive: false });
 
     canvas.addEventListener('click', e => {
+      if (suppressCanvasClick) {
+        suppressCanvasClick = false;
+        return;
+      }
+      void restoreMusicOnGesture();
       const canvasPoint = getCanvasPoint(e.clientX, e.clientY);
       const clickedBody = findSceneBodyAt(canvasPoint.x, canvasPoint.y);
       selectedBodyId = clickedBody && clickedBody.id !== selectedBodyId ? clickedBody.id : null;
       updateInfoCard();
     });
 
+    canvas.addEventListener('dblclick', e => {
+      void restoreMusicOnGesture();
+      e.preventDefault();
+      const canvasPoint = getCanvasPoint(e.clientX, e.clientY);
+      centerViewOnScreenPoint(canvasPoint.x, canvasPoint.y);
+      updateCanvasCursor();
+      persistSessionState();
+    });
+
+    infoCard.addEventListener('click', e => {
+      const followButton = e.target instanceof Element
+        ? e.target.closest('button[data-card-action="follow"]')
+        : null;
+      if (!followButton || !(followButton instanceof HTMLButtonElement) || followButton.disabled) {
+        return;
+      }
+
+      e.preventDefault();
+      e.stopPropagation();
+      const bodyId = followButton.getAttribute('data-body-id');
+      if (!bodyId) {
+        return;
+      }
+
+      startFollowing(bodyId, true);
+    });
+
+    infoCard.addEventListener('mouseout', e => {
+      const fromAction = e.target instanceof Element && e.target.closest('.card-actions');
+      if (!fromAction) {
+        return;
+      }
+
+      const stillInsideCard = e.relatedTarget instanceof Node && infoCard.contains(e.relatedTarget);
+      if (stillInsideCard) {
+        clearHoverHide(false);
+        return;
+      }
+
+      if (!selectedBodyId && !pointerBodyId) {
+        scheduleHoverHide();
+      }
+    });
+
+    canvas.addEventListener('contextmenu', e => {
+      e.preventDefault();
+      if (suppressCanvasContextMenu) {
+        suppressCanvasContextMenu = false;
+        return;
+      }
+
+      const canvasPoint = getCanvasPoint(e.clientX, e.clientY);
+      const targetBody = findSceneBodyAt(canvasPoint.x, canvasPoint.y);
+      if (!targetBody) {
+        return;
+      }
+
+      void restoreMusicOnGesture();
+      startFollowing(targetBody.id, true);
+    });
+
     window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('beforeunload', () => persistSessionState(true));
+    window.addEventListener('pagehide', () => persistSessionState(true));
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        persistSessionState(true);
+      }
+    });
 
     followSelect.innerHTML = FOLLOW_OPTIONS
       .map(option => `<option value="${option.id}">${option.label}</option>`)
       .join('');
     resizeCanvas();
-    applyDefaultView();
+    if (!restoreSessionState()) {
+      applyDefaultSessionState();
+    }
     updateOverlay();
     updateHelpVisibility();
     updateFollowUI();
