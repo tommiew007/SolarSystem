@@ -427,7 +427,7 @@
       <span id="primaryControlsHelp">Zoom: wheel, Ctrl+wheel, or +/-</span>
       <span id="navigationHelp">Pan: drag, double-click center, arrows move</span>
       <span id="pauseHelp">Pause: Space or P</span>
-      <span id="speedHelp">Speed: tap W / S by 1, hold to ramp (1 = 1 Earth hour/sec)</span>
+      <span id="speedHelp">Speed: tap W / S by 1, hold to ramp (1 = 1 Earth month/sec)</span>
       <span id="resetHelp">Reset: R | Defaults: Shift+R | Clear hover: Esc</span>
       <span id="toggleHelp">Toggles: F follow, C cards, L labels, I info, M music, Shift+N Nibiru, H/? help</span>
     </div>
@@ -505,7 +505,7 @@
     const MAX_SCALE = 1200;
     const HAS_WEB_AUDIO = Boolean(window.AudioContext || window.webkitAudioContext);
     const STORAGE_KEY = 'solar-system-session-state-v1';
-    const SESSION_STATE_VERSION = 7;
+    const SESSION_STATE_VERSION = 8;
     const HABITABLE_ZONE_INNER_KM = EARTH_ORBIT_RADIUS_KM * 0.95;
     const HABITABLE_ZONE_OUTER_KM = EARTH_ORBIT_RADIUS_KM * 1.67;
     const FROST_LINE_INNER_KM = EARTH_ORBIT_RADIUS_KM * 2.55;
@@ -515,9 +515,10 @@
     const FOLLOW_FLIGHT_DURATION_MS = 4200;
     const DISPLAY_TIME_FACTOR_MULTIPLIER = 100_000;
     const DAYS_PER_EARTH_MONTH = EARTH_ORBITAL_PERIOD_DAYS / 12;
-    const DISPLAY_REFERENCE_EARTH_DAYS = 1 / 24;
+    const DISPLAY_REFERENCE_EARTH_DAYS = DAYS_PER_EARTH_MONTH;
     const TIME_FACTOR_STEP = 1 / DISPLAY_TIME_FACTOR_MULTIPLIER;
     const SIM_DAYS_PER_SECOND_PER_TIME_FACTOR = DISPLAY_REFERENCE_EARTH_DAYS * DISPLAY_TIME_FACTOR_MULTIPLIER;
+    const LEGACY_V7_SIM_DAYS_PER_SECOND_PER_TIME_FACTOR = (1 / 24) * DISPLAY_TIME_FACTOR_MULTIPLIER;
     const LEGACY_V6_SIM_DAYS_PER_SECOND_PER_TIME_FACTOR = EARTH_ORBITAL_PERIOD_DAYS * 0.5 * DISPLAY_TIME_FACTOR_MULTIPLIER;
     const LEGACY_V5_SIM_DAYS_PER_SECOND_PER_TIME_FACTOR = EARTH_ORBITAL_PERIOD_DAYS * 10 * DISPLAY_TIME_FACTOR_MULTIPLIER;
     const LEGACY_V4_SIM_DAYS_PER_SECOND_PER_TIME_FACTOR = DAYS_PER_EARTH_MONTH * DISPLAY_TIME_FACTOR_MULTIPLIER * 10;
@@ -1769,8 +1770,8 @@
         ? 'Pause: touch Pause or press Space / P'
         : 'Pause: Space or P';
       speedHelp.textContent = touchLayout
-        ? 'Speed: touch Time +/- or hold W / S to ramp (1 = 1 Earth hour/sec)'
-        : 'Speed: tap W / S by 1, hold to ramp (1 = 1 Earth hour/sec)';
+        ? 'Speed: touch Time +/- or hold W / S to ramp (1 = 1 Earth month/sec)'
+        : 'Speed: tap W / S by 1, hold to ramp (1 = 1 Earth month/sec)';
       resetHelp.textContent = 'Reset: R | Defaults: Shift+R | Clear hover: Esc';
       toggleHelp.textContent = touchLayout
         ? 'Toolbar: Follow, Labels, Music, Help • keyboard C cards, I info, Shift+N Nibiru'
@@ -1955,7 +1956,7 @@
 
     function getTimeScaleDescription() {
       if (speedFactor === 0) {
-        return 'Rate: Paused • 1 = 1 Earth hour/sec';
+        return 'Rate: Paused • 1 = 1 Earth month/sec';
       }
 
       const direction = speedFactor > 0 ? '' : 'Reverse ';
@@ -2252,6 +2253,10 @@
 
         if (state.version >= SESSION_STATE_VERSION) {
           speedFactor = normalizeTimeFactor(Number.isFinite(state.speedFactor) ? state.speedFactor : speedFactor);
+        } else if (state.version >= 7) {
+          const legacySpeedFactor = Number.isFinite(state.speedFactor) ? state.speedFactor : speedFactor;
+          const legacySimDaysPerSecond = legacySpeedFactor * LEGACY_V7_SIM_DAYS_PER_SECOND_PER_TIME_FACTOR;
+          speedFactor = normalizeTimeFactor(legacySimDaysPerSecond / SIM_DAYS_PER_SECOND_PER_TIME_FACTOR);
         } else if (state.version >= 6) {
           const legacySpeedFactor = Number.isFinite(state.speedFactor) ? state.speedFactor : speedFactor;
           const legacySimDaysPerSecond = legacySpeedFactor * LEGACY_V6_SIM_DAYS_PER_SECOND_PER_TIME_FACTOR;
