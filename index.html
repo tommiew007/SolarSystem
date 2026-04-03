@@ -267,7 +267,7 @@
     <span>Mouse wheel, Ctrl+wheel, or +/- zooms</span>
     <span>Drag background with either mouse button, double-click to center, or use arrows to pan</span>
     <span>SPACE pauses or resumes</span>
-    <span>W / S change time factor (0.01 = 1 Earth day/sec)</span>
+    <span>W / S change time factor by 0.00005 (0.01 = 1 Earth day/sec)</span>
     <span>R resets the view</span>
     <span>ESC asks before resetting</span>
     <span>F follows an object</span>
@@ -319,7 +319,7 @@
     const HOVER_INFO_DELAY_MS = 500;
     const HOVER_CARD_HIDE_DELAY_MS = 5000;
     const TIME_FACTOR_DAY_REFERENCE = 0.01;
-    const TIME_FACTOR_STEP = 0.01;
+    const TIME_FACTOR_STEP = 0.00005;
     const SIM_DAYS_PER_SECOND_PER_TIME_FACTOR = 1 / TIME_FACTOR_DAY_REFERENCE;
 
     const SUN_INFO = {
@@ -1479,12 +1479,12 @@
       const cx = (centroid.x / points.length) / radiusPx;
       const cy = (centroid.y / points.length) / radiusPx;
       const z = Math.sqrt(Math.max(0, 1 - cx * cx - cy * cy));
-      const nx = cx + (noiseFromSeed(seed, bandIndex, facetIndex, 1) - 0.5) * 0.18;
-      const ny = cy + (noiseFromSeed(seed, bandIndex, facetIndex, 2) - 0.5) * 0.18;
+      const nx = cx + (noiseFromSeed(seed, bandIndex, facetIndex, 1) - 0.5) * 0.08;
+      const ny = cy + (noiseFromSeed(seed, bandIndex, facetIndex, 2) - 0.5) * 0.08;
       const normal = normalizeVector3(nx, ny, z + 0.2);
       const dot = clamp(normal.x * lightVector.x + normal.y * lightVector.y + normal.z * lightVector.z, -1, 1);
       const shimmer = noiseFromSeed(seed, bandIndex, facetIndex, 3) - 0.5;
-      return clamp(-0.38 + dot * 0.78 + shimmer * 0.18, -0.7, 0.48);
+      return clamp(-0.04 + dot * 0.16 + shimmer * 0.03, -0.14, 0.12);
     }
 
     function drawTexturePatches(body, radiusPx, visibleRadiusPx, baseColor, timestamp) {
@@ -1503,7 +1503,7 @@
           const tintAmount = style === 'ice'
             ? lerp(-0.16, 0.22, noiseFromSeed(seed, i, 5))
             : lerp(-0.22, 0.18, noiseFromSeed(seed, i, 5));
-          const fill = colorToCss(tintColor(baseColor, tintAmount, style === 'cloudy' ? 0.22 : 0.26));
+          const fill = colorToCss(tintColor(baseColor, tintAmount, style === 'cloudy' ? 0.12 : 0.14));
           drawPolygon([
             { x: -topExtent, y: top + wave },
             { x: topExtent, y: top - wave * 0.55 },
@@ -1551,7 +1551,7 @@
         if (style === 'ice-moon') patchBase = parseCssColor('#b9dceb');
         if (style === 'moon') patchBase = parseCssColor(noiseFromSeed(seed, i, 40) > 0.5 ? '#8f939b' : '#c7c9cf');
 
-        drawPolygon(points, colorToCss(tintColor(patchBase, tintAmount, 0.22)));
+        drawPolygon(points, colorToCss(tintColor(patchBase, tintAmount, 0.16)));
       }
 
       if (style === 'earth') {
@@ -1588,8 +1588,8 @@
 
       const baseColor = parseCssColor(fillStyle);
       const lightVector = getBodyLightVector(body, lightOrigin);
-      const bandCount = clamp(Math.round(visibleRadiusPx / 28) + 4, 4, 10);
-      const facetColsMax = clamp(Math.round(visibleRadiusPx / 18) + 5, 4, 14);
+      const bandCount = clamp(Math.round(visibleRadiusPx / 18) + 7, 7, 18);
+      const facetColsMax = clamp(Math.round(visibleRadiusPx / 11) + 9, 9, 28);
 
       ctx.save();
       ctx.translate(body.x, body.y);
@@ -1604,6 +1604,7 @@
       ctx.fillStyle = baseGradient;
       ctx.fillRect(-radiusPx, -radiusPx, radiusPx * 2, radiusPx * 2);
 
+      ctx.globalAlpha = 0.42;
       for (let band = 0; band < bandCount; band++) {
         const y0 = lerp(-radiusPx, radiusPx, band / bandCount);
         const y1 = lerp(-radiusPx, radiusPx, (band + 1) / bandCount);
@@ -1615,10 +1616,10 @@
         for (let col = 0; col < cols; col++) {
           const t0 = col / cols;
           const t1 = (col + 1) / cols;
-          const topJitterL = (noiseFromSeed(body.seed, band, col, 10) - 0.5) * radiusPx * 0.05;
-          const topJitterR = (noiseFromSeed(body.seed, band, col, 11) - 0.5) * radiusPx * 0.05;
-          const botJitterL = (noiseFromSeed(body.seed, band, col, 12) - 0.5) * radiusPx * 0.05;
-          const botJitterR = (noiseFromSeed(body.seed, band, col, 13) - 0.5) * radiusPx * 0.05;
+          const topJitterL = (noiseFromSeed(body.seed, band, col, 10) - 0.5) * radiusPx * 0.018;
+          const topJitterR = (noiseFromSeed(body.seed, band, col, 11) - 0.5) * radiusPx * 0.018;
+          const botJitterL = (noiseFromSeed(body.seed, band, col, 12) - 0.5) * radiusPx * 0.018;
+          const botJitterR = (noiseFromSeed(body.seed, band, col, 13) - 0.5) * radiusPx * 0.018;
           const points = [
             { x: lerp(-topExtent, topExtent, t0) + topJitterL, y: y0 },
             { x: lerp(-topExtent, topExtent, t1) + topJitterR, y: y0 },
@@ -1626,11 +1627,25 @@
             { x: lerp(-bottomExtent, bottomExtent, t0) + botJitterL, y: y1 }
           ];
           const shade = getFacetShade(points, radiusPx, lightVector, body.seed, band, col);
-          const fill = colorToCss(tintColor(baseColor, shade, 0.92));
-          const stroke = visibleRadiusPx > 22 ? 'rgba(255, 255, 255, 0.05)' : null;
-          drawPolygon(points, fill, stroke, 0.8 / scale);
+          const fill = colorToCss(tintColor(baseColor, shade, 0.74));
+          drawPolygon(points, fill, null, 0);
         }
       }
+      ctx.globalAlpha = 1;
+
+      const smoothWash = ctx.createRadialGradient(
+        -lightVector.x * radiusPx * 0.22,
+        -lightVector.y * radiusPx * 0.22,
+        radiusPx * 0.12,
+        0,
+        0,
+        radiusPx * 1.02
+      );
+      smoothWash.addColorStop(0, 'rgba(255, 255, 255, 0.08)');
+      smoothWash.addColorStop(0.56, 'rgba(255, 255, 255, 0.015)');
+      smoothWash.addColorStop(1, 'rgba(0, 0, 0, 0.14)');
+      ctx.fillStyle = smoothWash;
+      ctx.fillRect(-radiusPx, -radiusPx, radiusPx * 2, radiusPx * 2);
 
       drawTexturePatches(body, radiusPx, visibleRadiusPx, baseColor, timestamp);
 
