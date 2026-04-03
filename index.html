@@ -53,7 +53,7 @@
     .hidden-ui {
       display: none !important;
     }
-    #infoCard, #legend, #followPanel {
+    #infoCard, #legend, #followPanel, #creatorPanel {
       position: absolute;
       background: rgba(5, 10, 20, 0.74);
       border: 1px solid rgba(255, 255, 255, 0.12);
@@ -225,6 +225,17 @@
       color: #0c1020;
       background: #ffffff;
     }
+    #creatorPanel {
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      max-width: calc(100vw - 20px);
+      padding: clamp(8px, 0.6vw, 12px) clamp(12px, 0.9vw, 18px);
+      font-size: clamp(12px, 0.72vw, 15px);
+      line-height: 1.35;
+      text-align: center;
+      z-index: 11;
+    }
     .is-hidden {
       display: none !important;
     }
@@ -238,6 +249,7 @@
     <p>Select a body to keep it centered on screen while the simulation continues.</p>
     <select id="followSelect"></select>
   </div>
+  <div id="creatorPanel" class="is-hidden">Info: Created by Tom Wellborn, 2026</div>
   <div id="overlay">
     <span>Mouse wheel, Ctrl+wheel, or +/- zooms</span>
     <span>Drag background with either mouse button, double-click to center, or use arrows to pan</span>
@@ -247,6 +259,7 @@
     <span>ESC asks before resetting</span>
     <span>F follows an object</span>
     <span>L toggles labels</span>
+    <span>I toggles creator info</span>
     <span>M toggles music</span>
     <span>? or H toggles help</span>
     <span>Shift+R clears saved settings</span>
@@ -273,6 +286,7 @@
     const ctx = canvas.getContext('2d');
     const infoCard = document.getElementById('infoCard');
     const followPanel = document.getElementById('followPanel');
+    const creatorPanel = document.getElementById('creatorPanel');
     const followSelect = document.getElementById('followSelect');
     const clearSettingsButton = document.getElementById('clearSettingsButton');
 
@@ -516,6 +530,7 @@
     let paused = false;
     let showLabels = false;
     let showHelp = true;
+    let showCreatorInfo = false;
     let showFollowChooser = false;
     let followTargetId = null;
     let followNeedsZoom = false;
@@ -1209,6 +1224,7 @@
         panY,
         showLabels,
         showHelp,
+        showCreatorInfo,
         followTargetId,
         musicEnabled
       };
@@ -1253,6 +1269,7 @@
         panY = Number.isFinite(state.panY) ? state.panY : panY;
         showLabels = typeof state.showLabels === 'boolean' ? state.showLabels : showLabels;
         showHelp = typeof state.showHelp === 'boolean' ? state.showHelp : showHelp;
+        showCreatorInfo = typeof state.showCreatorInfo === 'boolean' ? state.showCreatorInfo : showCreatorInfo;
         followTargetId = FOLLOW_OPTIONS.some(option => option.id === state.followTargetId) ? state.followTargetId : null;
         musicEnabled = typeof state.musicEnabled === 'boolean' ? state.musicEnabled : musicEnabled;
         musicResumePending = musicEnabled;
@@ -2001,6 +2018,7 @@
       resetSimulationView();
       showLabels = false;
       showHelp = true;
+      showCreatorInfo = false;
       pointerBodyId = null;
       hoveredBodyId = null;
       selectedBodyId = null;
@@ -2084,6 +2102,11 @@
       followPanel.classList.toggle('is-hidden', !showFollowChooser);
       followSelect.value = followTargetId || '';
       document.getElementById('followDisplay').textContent = `Follow: ${getFollowLabel()}`;
+      persistSessionState();
+    }
+
+    function updateCreatorInfoVisibility() {
+      creatorPanel.classList.toggle('is-hidden', !showCreatorInfo);
       persistSessionState();
     }
 
@@ -2495,6 +2518,10 @@
         showLabels = !showLabels;
         updateOverlay();
       }
+      if (key === 'i') {
+        showCreatorInfo = !showCreatorInfo;
+        updateCreatorInfoVisibility();
+      }
       if (key === 'h' || key === '?') {
         showHelp = !showHelp;
         updateHelpVisibility();
@@ -2821,6 +2848,7 @@
     updateOverlay();
     updateHelpVisibility();
     updateFollowUI();
+    updateCreatorInfoVisibility();
     updateInfoCard();
     requestAnimationFrame(drawScene);
   </script>
