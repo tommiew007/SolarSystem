@@ -27,11 +27,11 @@
       bottom: max(10px, env(safe-area-inset-bottom));
       right: max(10px, env(safe-area-inset-right));
       background: rgba(0, 0, 0, 0.6);
-      max-width: min(560px, calc(100vw - 20px));
-      padding: clamp(10px, 0.8vw, 16px) clamp(12px, 0.95vw, 18px);
+      max-width: min(500px, calc(100vw - 20px));
+      padding: clamp(8px, 0.65vw, 12px) clamp(10px, 0.8vw, 14px);
       border-radius: 12px;
-      font-size: clamp(12px, 0.72vw, 16px);
-      line-height: 1.45;
+      font-size: clamp(10px, 0.62vw, 13px);
+      line-height: 1.32;
       z-index: 9;
     }
     #overlay span {
@@ -52,14 +52,14 @@
     #overlay button {
       display: block;
       width: 100%;
-      margin-top: clamp(8px, 0.6vw, 12px);
-      padding: clamp(8px, 0.6vw, 12px) clamp(10px, 0.75vw, 14px);
+      margin-top: clamp(6px, 0.45vw, 10px);
+      padding: clamp(7px, 0.5vw, 10px) clamp(9px, 0.65vw, 12px);
       border: 1px solid rgba(255, 255, 255, 0.16);
       border-radius: 8px;
       background: rgba(255, 255, 255, 0.1);
       color: white;
       font: inherit;
-      font-size: clamp(12px, 0.72vw, 15px);
+      font-size: clamp(10px, 0.62vw, 13px);
       text-align: center;
       cursor: pointer;
     }
@@ -315,7 +315,7 @@
         left: max(10px, env(safe-area-inset-left));
         right: max(10px, env(safe-area-inset-right));
         bottom: calc(max(10px, env(safe-area-inset-bottom)) + 72px);
-        font-size: clamp(12px, 3vw, 16px);
+        font-size: clamp(10px, 2.5vw, 13px);
       }
       #legend {
         left: max(10px, env(safe-area-inset-left));
@@ -357,25 +357,18 @@
   <div id="creatorPanel" class="is-hidden">Info: Created by Tom Wellborn, 2026</div>
   <div id="overlay">
     <span id="timeFactorDisplay" class="time-factor-neutral">Time Factor: 0.00</span>
-    <span id="primaryControlsHelp">Mouse wheel, Ctrl+wheel, or +/- zooms</span>
-    <span id="navigationHelp">Drag background with either mouse button, double-click to center, or use arrows to pan</span>
-    <span id="pauseHelp">SPACE or P pauses or resumes</span>
-    <span id="speedHelp">W / S change displayed time factor by 1 (1 = 1 Earth hour/sec)</span>
-    <span>R resets the simulation</span>
-    <span>ESC clears hover-over artifacts</span>
-    <span>F follows an object</span>
-    <span>L toggles labels</span>
-    <span>I toggles creator info</span>
-    <span>M toggles music</span>
-    <span>? or H toggles help</span>
-    <span>Shift+R resets the simulation to default</span>
+    <span id="primaryControlsHelp">Zoom: wheel, Ctrl+wheel, or +/-</span>
+    <span id="navigationHelp">Pan: drag, double-click center, arrows move</span>
+    <span id="pauseHelp">Pause: Space or P</span>
+    <span id="speedHelp">Speed: W / S by 1 (1 = 1 Earth hour/sec)</span>
+    <span>Reset: R | Defaults: Shift+R | Clear hover: Esc</span>
+    <span>Toggles: F follow, L labels, I info, M music, H/? help</span>
     <span id="timeScaleDisplay">Rate: Paused</span>
-    <span>Reference: 1 = 1 Earth hour/sec</span>
     <span id="musicDisplay">Music: Off</span>
     <span id="yearsDisplay">Earth Years: 0.00</span>
     <span id="labelDisplay">Labels: Off</span>
     <span id="followDisplay">Follow: Free camera</span>
-    <span id="motionDisplay">Motion: Compact orbits, real relative speeds</span>
+    <span id="motionDisplay">Model: Compact layout, relative speeds</span>
     <button id="clearSettingsButton" type="button">Clear Saved Settings</button>
   </div>
   <div id="touchToolbar" class="is-hidden" aria-label="Touch controls">
@@ -1260,17 +1253,17 @@
       touchToolbar.classList.toggle('is-hidden', !touchLayout);
 
       primaryControlsHelp.textContent = touchLayout
-        ? 'Pinch to zoom, drag with one finger to pan, and double-tap to center'
-        : 'Mouse wheel, Ctrl+wheel, or +/- zooms';
+        ? 'Zoom: pinch or tap Zoom +/-'
+        : 'Zoom: wheel, Ctrl+wheel, or +/-';
       navigationHelp.textContent = touchLayout
-        ? 'Tap an object for info. Use the touch bar for speed, follow, labels, music, and help'
-        : 'Drag background with either mouse button, double-click to center, or use arrows to pan';
+        ? 'Pan: drag with one finger, double-tap center'
+        : 'Pan: drag, double-click center, arrows move';
       pauseHelp.textContent = touchLayout
-        ? 'Use Pause in the touch bar or SPACE / P to pause or resume'
-        : 'SPACE or P pauses or resumes';
+        ? 'Pause: touch Pause or press Space / P'
+        : 'Pause: Space or P';
       speedHelp.textContent = touchLayout
-        ? 'Use +/- Time in the touch bar or W / S to change displayed time factor by 1 (1 = 1 Earth hour/sec)'
-        : 'W / S change displayed time factor by 1 (1 = 1 Earth hour/sec)';
+        ? 'Speed: touch Time +/- or press W / S (1 = 1 Earth hour/sec)'
+        : 'Speed: W / S by 1 (1 = 1 Earth hour/sec)';
 
       touchPauseButton.textContent = paused ? 'Play' : 'Pause';
       touchPauseButton.classList.toggle('is-active', paused);
@@ -3222,7 +3215,7 @@
       document.getElementById('yearsDisplay').textContent = `Earth Years: ${(simDays / EARTH_ORBITAL_PERIOD_DAYS).toFixed(2)}`;
       document.getElementById('labelDisplay').textContent = `Labels: ${showLabels ? 'On' : 'Off'}`;
       document.getElementById('followDisplay').textContent = `Follow: ${getFollowLabel()}`;
-      document.getElementById('motionDisplay').textContent = 'Motion: Compact orbits, real relative speeds';
+      document.getElementById('motionDisplay').textContent = 'Model: Compact layout, relative speeds';
       updateResponsiveUI();
       persistSessionState();
     }
