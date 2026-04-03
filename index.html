@@ -80,10 +80,8 @@
     #overlay button:hover {
       background: rgba(255, 255, 255, 0.16);
     }
-    #timeFactorToast {
+    #timeFactorToast, #statusToast {
       position: absolute;
-      right: max(10px, env(safe-area-inset-right));
-      bottom: max(10px, env(safe-area-inset-bottom));
       padding: 10px 14px;
       border-radius: 12px;
       background: rgba(5, 10, 20, 0.82);
@@ -94,6 +92,28 @@
       line-height: 1.2;
       z-index: 10;
       pointer-events: none;
+    }
+    #timeFactorToast {
+      right: max(10px, env(safe-area-inset-right));
+      bottom: max(10px, env(safe-area-inset-bottom));
+    }
+    #statusToast {
+      left: 50%;
+      top: 18vh;
+      transform: translateX(-50%);
+      width: max-content;
+      max-width: min(680px, calc(100vw - 40px));
+      text-align: center;
+      z-index: 12;
+      padding: 16px 22px;
+      border-radius: 16px;
+      font-size: clamp(18px, 1.45vw, 28px);
+      line-height: 1.28;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      background: rgba(6, 12, 24, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      box-shadow: 0 18px 42px rgba(0, 0, 0, 0.38);
     }
     .hidden-ui {
       display: none !important;
@@ -352,6 +372,16 @@
         bottom: calc(max(10px, env(safe-area-inset-bottom)) + 72px);
         font-size: clamp(11px, 2.8vw, 14px);
       }
+      #statusToast {
+        left: max(10px, env(safe-area-inset-left));
+        right: max(10px, env(safe-area-inset-right));
+        top: 16vh;
+        transform: none;
+        width: auto;
+        max-width: calc(100vw - 20px);
+        padding: 14px 16px;
+        font-size: clamp(16px, 4.6vw, 22px);
+      }
       #legend {
         left: max(10px, env(safe-area-inset-left));
         right: max(10px, env(safe-area-inset-right));
@@ -414,6 +444,7 @@
     <button id="clearSettingsButton" type="button">Clear Saved Settings</button>
   </div>
   <div id="timeFactorToast" class="is-hidden">Time Factor: 0.00</div>
+  <div id="statusToast" class="is-hidden" aria-live="polite"></div>
   <div id="touchToolbar" class="is-hidden" aria-label="Touch controls">
     <button id="touchSlowerButton" type="button" aria-label="Slow time">-Time</button>
     <button id="touchPauseButton" type="button" aria-label="Pause or resume">Pause</button>
@@ -442,6 +473,7 @@
     const followPanel = document.getElementById('followPanel');
     const creatorPanel = document.getElementById('creatorPanel');
     const timeFactorToast = document.getElementById('timeFactorToast');
+    const statusToast = document.getElementById('statusToast');
     const followSelect = document.getElementById('followSelect');
     const clearSettingsButton = document.getElementById('clearSettingsButton');
     const touchToolbar = document.getElementById('touchToolbar');
@@ -480,9 +512,7 @@
     const FROST_LINE_OUTER_KM = EARTH_ORBIT_RADIUS_KM * 2.95;
     const HOVER_INFO_DELAY_MS = 500;
     const HOVER_CARD_HIDE_DELAY_MS = 5000;
-    const FOLLOW_FLIGHT_DURATION_MS = 3600;
-    const FOLLOW_FLIGHT_OUTBOUND_PORTION = 0.48;
-    const FOLLOW_FLIGHT_PAN_PORTION = 0.24;
+    const FOLLOW_FLIGHT_DURATION_MS = 4200;
     const DISPLAY_TIME_FACTOR_MULTIPLIER = 100_000;
     const DAYS_PER_EARTH_MONTH = EARTH_ORBITAL_PERIOD_DAYS / 12;
     const DISPLAY_REFERENCE_EARTH_DAYS = 1 / 24;
@@ -933,6 +963,7 @@
     let hoverIntentTimer = null;
     let hoverHideTimer = null;
     let timeFactorToastTimer = null;
+    let statusToastTimer = null;
     let speedUpHeld = false;
     let speedDownHeld = false;
     let timeFactorHoldDirection = 0;
@@ -1675,6 +1706,32 @@
         timeFactorToastTimer = null;
         timeFactorToast.classList.add('is-hidden');
       }, 5000);
+    }
+
+    function clearTransientStatusMessage() {
+      if (statusToastTimer !== null) {
+        window.clearTimeout(statusToastTimer);
+        statusToastTimer = null;
+      }
+      statusToast.classList.add('is-hidden');
+      statusToast.textContent = '';
+    }
+
+    function showTransientStatusMessage(message, durationMs = 2200) {
+      if (!message) {
+        clearTransientStatusMessage();
+        return;
+      }
+
+      statusToast.textContent = message;
+      statusToast.classList.remove('is-hidden');
+      if (statusToastTimer !== null) {
+        window.clearTimeout(statusToastTimer);
+      }
+      statusToastTimer = window.setTimeout(() => {
+        statusToastTimer = null;
+        statusToast.classList.add('is-hidden');
+      }, durationMs);
     }
 
     async function togglePauseState() {
@@ -3192,6 +3249,10 @@
         : 1 - Math.pow(-2 * value + 2, 3) / 2;
     }
 
+    function getFlightOverviewInfluence(progress) {
+      return Math.pow(Math.max(0, Math.sin(progress * Math.PI)), 1.18);
+    }
+
     function getCameraCenter(scaleValue = scale, panXValue = panX, panYValue = panY) {
       return {
         x: (canvas.width / 2 - panXValue) / scaleValue,
@@ -3291,11 +3352,6 @@
         centerY: midpointView.centerY,
         scale: overviewScale
       };
-      const panView = {
-        centerX: targetView.centerX,
-        centerY: targetView.centerY,
-        scale: overviewScale
-      };
 
       cameraFlight = {
         targetId: bodyId,
@@ -3304,7 +3360,6 @@
         resumeState,
         startView,
         outboundView,
-        panView,
         targetView
       };
       speedFactor = 0;
@@ -3318,44 +3373,26 @@
       }
 
       const progress = clamp((timestamp - cameraFlight.startTime) / cameraFlight.durationMs, 0, 1);
-      const outboundPortion = clamp(FOLLOW_FLIGHT_OUTBOUND_PORTION, 0.2, 0.7);
-      const panPortion = clamp(FOLLOW_FLIGHT_PAN_PORTION, 0.1, 0.4);
-      const zoomInStart = clamp(outboundPortion + panPortion, 0.3, 0.92);
       const updatedTargetView = {
         centerX: followBody.x,
         centerY: followBody.y,
         scale: getFollowScale(followBody)
       };
-      const updatedPanView = {
-        centerX: updatedTargetView.centerX,
-        centerY: updatedTargetView.centerY,
-        scale: cameraFlight.outboundView.scale
-      };
-      cameraFlight.panView = updatedPanView;
       cameraFlight.targetView = updatedTargetView;
+      const travelProgress = easeInOutCubic(progress);
+      const overviewInfluence = getFlightOverviewInfluence(progress);
+      const directCenterX = lerp(cameraFlight.startView.centerX, updatedTargetView.centerX, travelProgress);
+      const directCenterY = lerp(cameraFlight.startView.centerY, updatedTargetView.centerY, travelProgress);
+      const blendedCenterX = lerp(directCenterX, cameraFlight.outboundView.centerX, overviewInfluence * 0.72);
+      const blendedCenterY = lerp(directCenterY, cameraFlight.outboundView.centerY, overviewInfluence * 0.72);
+      const directScale = lerp(cameraFlight.startView.scale, updatedTargetView.scale, travelProgress);
+      const blendedScale = lerp(directScale, cameraFlight.outboundView.scale, overviewInfluence);
 
-      if (progress < outboundPortion) {
-        const phaseProgress = easeInOutCubic(progress / outboundPortion);
-        applyViewState({
-          centerX: lerp(cameraFlight.startView.centerX, cameraFlight.outboundView.centerX, phaseProgress),
-          centerY: lerp(cameraFlight.startView.centerY, cameraFlight.outboundView.centerY, phaseProgress),
-          scale: lerp(cameraFlight.startView.scale, cameraFlight.outboundView.scale, phaseProgress)
-        });
-      } else if (progress < zoomInStart) {
-        const phaseProgress = easeInOutCubic((progress - outboundPortion) / panPortion);
-        applyViewState({
-          centerX: lerp(cameraFlight.outboundView.centerX, updatedPanView.centerX, phaseProgress),
-          centerY: lerp(cameraFlight.outboundView.centerY, updatedPanView.centerY, phaseProgress),
-          scale: cameraFlight.outboundView.scale
-        });
-      } else {
-        const phaseProgress = easeInOutCubic((progress - zoomInStart) / (1 - zoomInStart));
-        applyViewState({
-          centerX: updatedTargetView.centerX,
-          centerY: updatedTargetView.centerY,
-          scale: lerp(updatedPanView.scale, updatedTargetView.scale, phaseProgress)
-        });
-      }
+      applyViewState({
+        centerX: blendedCenterX,
+        centerY: blendedCenterY,
+        scale: blendedScale
+      });
 
       if (progress >= 1) {
         const finishedFlight = cameraFlight;
@@ -3381,6 +3418,12 @@
 
     function startFollowing(bodyId, selectBody = false) {
       if (!bodyId) {
+        return;
+      }
+      if (bodyId === followTargetId) {
+        const currentBody = findSceneBodyById(bodyId);
+        const bodyName = currentBody?.name || getFollowLabel().replace(/^Free camera$/, 'that object');
+        showTransientStatusMessage(`Already following ${bodyName}.`);
         return;
       }
       followTargetId = bodyId;
@@ -3702,13 +3745,17 @@
     }
 
     function updateInfoCard(force = false) {
-      const activeBody = findSceneBodyById(selectedBodyId) || findSceneBodyById(hoveredBodyId);
+      const effectiveSelectedBodyId = showHelp ? selectedBodyId : null;
+      const activeBodyId = effectiveSelectedBodyId || hoveredBodyId;
+      const activeBody = findSceneBodyById(activeBodyId);
+      const cardsVisible = showCards;
       const imageState = activeBody ? (wikiImageCache.get(activeBody.id) || { status: 'idle' }) : { status: 'none' };
       const renderKey = [
         activeBody ? activeBody.id : 'none',
         showHelp ? 'help-on' : 'help-off',
         showCards ? 'cards-on' : 'cards-off',
-        selectedBodyId ? 'selected' : 'hover',
+        effectiveSelectedBodyId ? 'selected' : 'hover',
+        cardsVisible ? 'visible' : 'hidden',
         activeBody && activeBody.id === followTargetId ? 'following' : 'not-following',
         imageState.status,
         imageState.url || ''
@@ -3717,9 +3764,7 @@
       if (!force && renderKey === infoCardRenderKey) {
         return;
       }
-
       infoCardRenderKey = renderKey;
-      const cardsVisible = !showHelp || showCards;
 
       if (!activeBody) {
         infoCard.classList.toggle('is-hidden', !showHelp || !showCards);
@@ -3791,12 +3836,18 @@
         </dl>
         <p class="fact">${escapeHtml(activeBody.fact)}</p>
         ${actionMarkup}
-        <p class="hint">${selectedBodyId ? 'Pinned. Click the same object or empty space to release.' : 'Hover for preview. Click to pin.'}</p>
+        <p class="hint">${effectiveSelectedBodyId ? 'Pinned. Click the same object or empty space to release.' : 'Hover for preview. Click to pin.'}</p>
         ${imageMarkup}
       `;
     }
 
     function updateHelpVisibility() {
+      if (!showHelp) {
+        clearHoverIntent(false);
+        clearHoverHide(true);
+        hoveredBodyId = null;
+        pointerBodyId = null;
+      }
       document.getElementById('overlay').classList.toggle('hidden-ui', !showHelp);
       document.getElementById('legend').classList.toggle('hidden-ui', !showHelp);
       if (showHelp) {
