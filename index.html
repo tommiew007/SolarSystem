@@ -66,6 +66,21 @@
     #overlay button:hover {
       background: rgba(255, 255, 255, 0.16);
     }
+    #timeFactorToast {
+      position: absolute;
+      right: max(10px, env(safe-area-inset-right));
+      bottom: max(10px, env(safe-area-inset-bottom));
+      padding: 10px 14px;
+      border-radius: 12px;
+      background: rgba(5, 10, 20, 0.82);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+      backdrop-filter: blur(10px);
+      font-size: clamp(11px, 0.66vw, 14px);
+      line-height: 1.2;
+      z-index: 10;
+      pointer-events: none;
+    }
     .hidden-ui {
       display: none !important;
     }
@@ -317,6 +332,12 @@
         bottom: calc(max(10px, env(safe-area-inset-bottom)) + 72px);
         font-size: clamp(10px, 2.5vw, 13px);
       }
+      #timeFactorToast {
+        left: max(10px, env(safe-area-inset-left));
+        right: max(10px, env(safe-area-inset-right));
+        bottom: calc(max(10px, env(safe-area-inset-bottom)) + 72px);
+        font-size: clamp(11px, 2.8vw, 14px);
+      }
       #legend {
         left: max(10px, env(safe-area-inset-left));
         right: max(10px, env(safe-area-inset-right));
@@ -360,9 +381,9 @@
     <span id="primaryControlsHelp">Zoom: wheel, Ctrl+wheel, or +/-</span>
     <span id="navigationHelp">Pan: drag, double-click center, arrows move</span>
     <span id="pauseHelp">Pause: Space or P</span>
-    <span id="speedHelp">Speed: W / S by 1 (1 = 1 Earth hour/sec)</span>
+    <span id="speedHelp">Speed: tap W / S by 1, hold to ramp (1 = 1 Earth hour/sec)</span>
     <span>Reset: R | Defaults: Shift+R | Clear hover: Esc</span>
-    <span>Toggles: F follow, L labels, I info, M music, H/? help</span>
+    <span>Toggles: F follow, L labels, I info, M music, Shift+N Nibiru, H/? help</span>
     <span id="timeScaleDisplay">Rate: Paused</span>
     <span id="musicDisplay">Music: Off</span>
     <span id="yearsDisplay">Earth Years: 0.00</span>
@@ -371,6 +392,7 @@
     <span id="motionDisplay">Model: Compact layout, relative speeds</span>
     <button id="clearSettingsButton" type="button">Clear Saved Settings</button>
   </div>
+  <div id="timeFactorToast" class="is-hidden">Time Factor: 0.00</div>
   <div id="touchToolbar" class="is-hidden" aria-label="Touch controls">
     <button id="touchSlowerButton" type="button" aria-label="Slow time">-Time</button>
     <button id="touchPauseButton" type="button" aria-label="Pause or resume">Pause</button>
@@ -380,6 +402,7 @@
     <button id="touchCenterButton" type="button" aria-label="Center on the Sun">Center</button>
     <button id="touchFollowButton" type="button" aria-label="Follow chooser">Follow</button>
     <button id="touchLabelsButton" type="button" aria-label="Toggle labels">Labels</button>
+    <button id="touchNibiruButton" type="button" aria-label="Toggle Nibiru">Nibiru</button>
     <button id="touchMusicButton" type="button" aria-label="Toggle music">Music</button>
     <button id="touchHelpButton" type="button" aria-label="Toggle help">Help</button>
   </div>
@@ -397,6 +420,7 @@
     const infoCard = document.getElementById('infoCard');
     const followPanel = document.getElementById('followPanel');
     const creatorPanel = document.getElementById('creatorPanel');
+    const timeFactorToast = document.getElementById('timeFactorToast');
     const followSelect = document.getElementById('followSelect');
     const clearSettingsButton = document.getElementById('clearSettingsButton');
     const touchToolbar = document.getElementById('touchToolbar');
@@ -412,6 +436,7 @@
     const touchCenterButton = document.getElementById('touchCenterButton');
     const touchFollowButton = document.getElementById('touchFollowButton');
     const touchLabelsButton = document.getElementById('touchLabelsButton');
+    const touchNibiruButton = document.getElementById('touchNibiruButton');
     const touchMusicButton = document.getElementById('touchMusicButton');
     const touchHelpButton = document.getElementById('touchHelpButton');
 
@@ -454,7 +479,30 @@
       fact: 'The Sun contains more than 99% of the solar system\'s mass.'
     };
 
-    const PLANETS = [
+    function enrichPlanetData(planet) {
+      return {
+        ...planet,
+        orbitalClass: planet.orbitalClass || 'Planet',
+        seed: getStableSeed(planet.name),
+        surfaceStyle: getSurfaceStyle('planet', planet.name),
+        radiusPx: diameterKmToPx(planet.diameterKm) / 2,
+        rotationPeriodDays: planet.rotationPeriodHours / 24,
+        rotationPhase: getStablePhase(`${planet.name}-rotation`) / (Math.PI * 2),
+        phase: getStablePhase(planet.name),
+        moons: planet.moons
+          .slice()
+          .sort((a, b) => a.orbitRadiusKm - b.orbitRadiusKm)
+          .map((moon, moonIndex, moonArray) => ({
+            ...moon,
+            seed: getStableSeed(`${planet.name}-${moon.name}`),
+            surfaceStyle: getSurfaceStyle('moon', moon.name, planet.name),
+            radiusPx: diameterKmToPx(moon.diameterKm) / 2,
+            phase: moonArray.length === 1 ? getStablePhase(`${planet.name}-${moon.name}`) : getStablePhase(`${planet.name}-${moon.name}`) + (moonIndex / moonArray.length) * 0.2
+          }))
+      };
+    }
+
+    const BASE_PLANETS = [
       {
         name: 'Mercury',
         diameterKm: 4_879,
@@ -598,38 +646,51 @@
           { name: 'Triton', diameterKm: 2_706.8, orbitRadiusKm: 354_760, orbitalPeriodDays: 5.877, color: '#d6cfc2', fact: 'Triton orbits Neptune backward, strongly suggesting it was captured.' },
           { name: 'Nereid', diameterKm: 340, orbitRadiusKm: 5_513_818, orbitalPeriodDays: 360.13, color: '#9ca0a8', fact: 'Nereid follows one of the most eccentric moon orbits in the solar system.' }
         ]
+      },
+      {
+        name: 'Pluto',
+        orbitalClass: 'Dwarf Planet',
+        diameterKm: 2_377,
+        semiMajorAxisKm: 5_869_656_000,
+        orbitalPeriodDays: 90_560,
+        rotationPeriodHours: -153.2928,
+        orbitalSpeedKmS: 4.64,
+        color: '#cbb79b',
+        trailColor: '#e4d2ba',
+        fact: 'Pluto is a dwarf planet in the Kuiper Belt with an eccentric, inclined orbit that can bring it closer to the Sun than Neptune.',
+        moons: []
       }
-    ].map(planet => ({
-      ...planet,
-      seed: getStableSeed(planet.name),
-      surfaceStyle: getSurfaceStyle('planet', planet.name),
-      radiusPx: diameterKmToPx(planet.diameterKm) / 2,
-      rotationPeriodDays: planet.rotationPeriodHours / 24,
-      rotationPhase: getStablePhase(`${planet.name}-rotation`) / (Math.PI * 2),
-      phase: getStablePhase(planet.name),
-      moons: planet.moons
-        .slice()
-        .sort((a, b) => a.orbitRadiusKm - b.orbitRadiusKm)
-        .map((moon, moonIndex, moonArray) => ({
-          ...moon,
-          seed: getStableSeed(`${planet.name}-${moon.name}`),
-          surfaceStyle: getSurfaceStyle('moon', moon.name, planet.name),
-          radiusPx: diameterKmToPx(moon.diameterKm) / 2,
-          phase: moonArray.length === 1 ? getStablePhase(`${planet.name}-${moon.name}`) : getStablePhase(`${planet.name}-${moon.name}`) + (moonIndex / moonArray.length) * 0.2
-        }))
-    }));
+    ].map(enrichPlanetData);
 
-    const FOLLOW_OPTIONS = [
-      { id: '', label: 'Free camera' },
-      { id: 'sun', label: 'Sun' },
-      ...PLANETS.flatMap(planet => [
-        { id: `planet:${planet.name}`, label: planet.name },
-        ...planet.moons.map(moon => ({
-          id: `moon:${planet.name}:${moon.name}`,
-          label: `${moon.name} (${planet.name})`
-        }))
-      ])
-    ];
+    const NIBIRU_PLANET = enrichPlanetData({
+      name: 'Nibiru',
+      diameterKm: 51_024,
+      semiMajorAxisKm: 35_155_591_570,
+      orbitalPeriodDays: 1_314_921.6,
+      rotationPeriodHours: 32,
+      orbitalSpeedKmS: 1.94,
+      color: '#a3462d',
+      trailColor: '#dd7c59',
+      fact: 'A fictional rogue planet from modern conspiracy lore. This easter egg uses a lore-based 3,600-year orbit and roughly four-times-Earth size estimate, not real astronomy.',
+      moons: []
+    });
+
+    const ALL_PLANETS = [...BASE_PLANETS, NIBIRU_PLANET];
+    let PLANETS = BASE_PLANETS;
+
+    function getFollowOptions() {
+      return [
+        { id: '', label: 'Free camera' },
+        { id: 'sun', label: 'Sun' },
+        ...PLANETS.flatMap(planet => [
+          { id: `planet:${planet.name}`, label: planet.name },
+          ...planet.moons.map(moon => ({
+            id: `moon:${planet.name}:${moon.name}`,
+            label: `${moon.name} (${planet.name})`
+          }))
+        ])
+      ];
+    }
 
     const WIKIPEDIA_TITLES = {
       sun: ['Sun'],
@@ -641,6 +702,8 @@
       'planet:Saturn': ['Saturn'],
       'planet:Uranus': ['Uranus'],
       'planet:Neptune': ['Neptune'],
+      'planet:Pluto': ['Pluto'],
+      'planet:Nibiru': ['Nibiru_cataclysm', 'Nibiru'],
       'moon:Earth:Moon': ['Moon'],
       'moon:Mars:Phobos': ['Phobos_(moon)', 'Phobos'],
       'moon:Mars:Deimos': ['Deimos_(moon)', 'Deimos'],
@@ -666,7 +729,8 @@
     };
 
     const WIKIPEDIA_IMAGE_TITLES = {
-      'planet:Earth': ['The_Blue_Marble', 'Earth']
+      'planet:Earth': ['The_Blue_Marble', 'Earth'],
+      'planet:Nibiru': []
     };
 
     const BODY_RENDER_IMAGE_OPTIONS = {
@@ -675,12 +739,12 @@
       }
     };
 
-    const RENDERABLE_BODIES = [
-      ...PLANETS.flatMap(planet => [
+    function getRenderableBodies() {
+      return PLANETS.flatMap(planet => [
         {
           id: `planet:${planet.name}`,
           name: planet.name,
-          type: 'Planet',
+          type: planet.orbitalClass,
           rotationPeriodDays: planet.rotationPeriodDays,
           rotationPhase: planet.rotationPhase
         },
@@ -690,8 +754,8 @@
           type: 'Moon',
           parentName: planet.name
         }))
-      ])
-    ];
+      ]);
+    }
 
     let stars = [];
     let speedFactor = 0.0;
@@ -701,6 +765,7 @@
     let showLabels = false;
     let showHelp = true;
     let showCreatorInfo = false;
+    let showNibiru = false;
     let showFollowChooser = false;
     let followTargetId = null;
     let followNeedsZoom = false;
@@ -723,6 +788,12 @@
     let hoverIntentBodyId = null;
     let hoverIntentTimer = null;
     let hoverHideTimer = null;
+    let timeFactorToastTimer = null;
+    let speedUpHeld = false;
+    let speedDownHeld = false;
+    let timeFactorHoldDirection = 0;
+    let timeFactorHoldStartedAt = 0;
+    let timeFactorHoldLastStepAt = 0;
     let lastMouseClientX = null;
     let lastMouseClientY = null;
 
@@ -818,6 +889,7 @@
         if (name === 'Venus') return 'cloudy';
         if (name === 'Earth') return 'earth';
         if (name === 'Mars') return 'mars';
+        if (name === 'Nibiru') return 'nibiru';
         if (name === 'Jupiter' || name === 'Saturn') return 'gas';
         if (name === 'Uranus' || name === 'Neptune') return 'ice';
         return 'rocky';
@@ -1193,7 +1265,7 @@
     }
 
     function preloadWikipediaRenderImages() {
-      for (const body of RENDERABLE_BODIES) {
+      for (const body of getRenderableBodies()) {
         void loadWikipediaImageForBody(body);
       }
     }
@@ -1225,6 +1297,87 @@
     function adjustTimeFactor(stepDirection) {
       speedFactor = normalizeTimeFactor(speedFactor + (TIME_FACTOR_STEP * stepDirection));
       updateOverlay();
+      showTransientTimeFactorToast();
+    }
+
+    function getHeldTimeFactorDirection() {
+      const positive = speedUpHeld ? 1 : 0;
+      const negative = speedDownHeld ? 1 : 0;
+      if (positive === negative) {
+        return 0;
+      }
+      return positive ? 1 : -1;
+    }
+
+    function resetHeldTimeFactorState() {
+      timeFactorHoldDirection = 0;
+      timeFactorHoldStartedAt = 0;
+      timeFactorHoldLastStepAt = 0;
+    }
+
+    function syncHeldTimeFactorState(now = performance.now()) {
+      const direction = getHeldTimeFactorDirection();
+      if (direction === 0) {
+        resetHeldTimeFactorState();
+        return;
+      }
+
+      if (direction !== timeFactorHoldDirection) {
+        timeFactorHoldDirection = direction;
+        timeFactorHoldStartedAt = now;
+        timeFactorHoldLastStepAt = now;
+      }
+    }
+
+    function getHeldTimeFactorInterval(elapsedMs) {
+      if (elapsedMs < 280) {
+        return Infinity;
+      }
+
+      const ramp = clamp((elapsedMs - 280) / 1800, 0, 1);
+      return lerp(150, 28, Math.pow(ramp, 0.82));
+    }
+
+    function updateHeldTimeFactor(timestamp) {
+      if (!timeFactorHoldDirection) {
+        return;
+      }
+
+      const elapsedMs = timestamp - timeFactorHoldStartedAt;
+      const intervalMs = getHeldTimeFactorInterval(elapsedMs);
+      if (!Number.isFinite(intervalMs)) {
+        return;
+      }
+
+      while (timestamp - timeFactorHoldLastStepAt >= intervalMs) {
+        timeFactorHoldLastStepAt += intervalMs;
+        adjustTimeFactor(timeFactorHoldDirection);
+      }
+    }
+
+    function clearTransientTimeFactorToast() {
+      if (timeFactorToastTimer !== null) {
+        window.clearTimeout(timeFactorToastTimer);
+        timeFactorToastTimer = null;
+      }
+      timeFactorToast.classList.add('is-hidden');
+    }
+
+    function showTransientTimeFactorToast() {
+      if (showHelp) {
+        clearTransientTimeFactorToast();
+        return;
+      }
+
+      timeFactorToast.textContent = `Time Factor: ${formatTimeFactor(speedFactor)}`;
+      timeFactorToast.classList.remove('is-hidden');
+      if (timeFactorToastTimer !== null) {
+        window.clearTimeout(timeFactorToastTimer);
+      }
+      timeFactorToastTimer = window.setTimeout(() => {
+        timeFactorToastTimer = null;
+        timeFactorToast.classList.add('is-hidden');
+      }, 5000);
     }
 
     async function togglePauseState() {
@@ -1262,8 +1415,8 @@
         ? 'Pause: touch Pause or press Space / P'
         : 'Pause: Space or P';
       speedHelp.textContent = touchLayout
-        ? 'Speed: touch Time +/- or press W / S (1 = 1 Earth hour/sec)'
-        : 'Speed: W / S by 1 (1 = 1 Earth hour/sec)';
+        ? 'Speed: touch Time +/- or hold W / S to ramp (1 = 1 Earth hour/sec)'
+        : 'Speed: tap W / S by 1, hold to ramp (1 = 1 Earth hour/sec)';
 
       touchPauseButton.textContent = paused ? 'Play' : 'Pause';
       touchPauseButton.classList.toggle('is-active', paused);
@@ -1271,6 +1424,8 @@
       touchFollowButton.classList.toggle('is-active', showFollowChooser || Boolean(followTargetId));
       touchLabelsButton.textContent = showLabels ? 'Labels On' : 'Labels';
       touchLabelsButton.classList.toggle('is-active', showLabels);
+      touchNibiruButton.textContent = showNibiru ? 'Nibiru On' : 'Nibiru';
+      touchNibiruButton.classList.toggle('is-active', showNibiru);
       touchMusicButton.textContent = musicEnabled ? 'Music On' : 'Music Off';
       touchMusicButton.classList.toggle('is-active', musicEnabled);
       touchHelpButton.textContent = showHelp ? 'Hide Help' : 'Help';
@@ -1463,6 +1618,62 @@
       return `Rate: ${direction}1 Earth year every ${formatDuration(realSecondsPerEarthYear)} • ${simDaysEachSecond} simulated days/sec (${multipleOfRealTime.toLocaleString('en-US', { maximumFractionDigits: 0 })}x real time)`;
     }
 
+    function syncNibiruPlanetSet() {
+      PLANETS = showNibiru ? ALL_PLANETS : BASE_PLANETS;
+    }
+
+    function isNibiruBodyId(bodyId) {
+      return bodyId === 'planet:Nibiru';
+    }
+
+    function setNibiruVisibility(nextVisible) {
+      const normalized = Boolean(nextVisible);
+      if (showNibiru === normalized) {
+        return;
+      }
+
+      showNibiru = normalized;
+      syncNibiruPlanetSet();
+      bodyTrails.clear();
+      trailLastTimestamp = 0;
+
+      if (!showNibiru) {
+        if (isNibiruBodyId(followTargetId)) {
+          followTargetId = null;
+          followNeedsZoom = false;
+        }
+        if (isNibiruBodyId(selectedBodyId)) {
+          selectedBodyId = null;
+        }
+        if (isNibiruBodyId(hoveredBodyId)) {
+          hoveredBodyId = null;
+        }
+        if (isNibiruBodyId(pointerBodyId)) {
+          pointerBodyId = null;
+        }
+        if (isNibiruBodyId(hoverIntentBodyId)) {
+          clearHoverIntent(false);
+        }
+      } else {
+        void loadWikipediaImageForBody({
+          id: 'planet:Nibiru',
+          name: 'Nibiru',
+          type: 'Planet'
+        });
+      }
+
+      infoCardRenderKey = '';
+      updateFollowUI();
+      updateOverlay();
+      updateInfoCard(true);
+      updateCanvasCursor();
+      persistSessionState(true);
+    }
+
+    function toggleNibiruVisibility() {
+      setNibiruVisibility(!showNibiru);
+    }
+
     function createCelestialMusicEngine() {
       if (!HAS_WEB_AUDIO) {
         return null;
@@ -1648,6 +1859,7 @@
         showLabels,
         showHelp,
         showCreatorInfo,
+        showNibiru,
         followTargetId,
         musicEnabled
       };
@@ -1713,7 +1925,9 @@
         showLabels = typeof state.showLabels === 'boolean' ? state.showLabels : showLabels;
         showHelp = typeof state.showHelp === 'boolean' ? state.showHelp : showHelp;
         showCreatorInfo = typeof state.showCreatorInfo === 'boolean' ? state.showCreatorInfo : showCreatorInfo;
-        followTargetId = FOLLOW_OPTIONS.some(option => option.id === state.followTargetId) ? state.followTargetId : null;
+        showNibiru = typeof state.showNibiru === 'boolean' ? state.showNibiru : showNibiru;
+        syncNibiruPlanetSet();
+        followTargetId = getFollowOptions().some(option => option.id === state.followTargetId) ? state.followTargetId : null;
         musicEnabled = typeof state.musicEnabled === 'boolean' ? state.musicEnabled : musicEnabled;
         musicResumePending = musicEnabled;
         lastPersistedState = raw;
@@ -1921,6 +2135,46 @@
     function drawTexturePatches(body, radiusPx, visibleRadiusPx, baseColor, timestamp) {
       const seed = body.seed || 1;
       const style = body.surfaceStyle || 'rocky';
+
+      if (style === 'nibiru') {
+        const bandCount = clamp(Math.round(visibleRadiusPx / 28) + 5, 5, 10);
+        for (let i = 0; i < bandCount; i++) {
+          const top = lerp(-radiusPx * 0.9, radiusPx * 0.7, i / bandCount);
+          const bandHeight = radiusPx * lerp(0.11, 0.2, noiseFromSeed(seed, i, 204));
+          const bottom = clamp(top + bandHeight, -radiusPx * 0.95, radiusPx * 0.95);
+          const topExtent = Math.sqrt(Math.max(0, radiusPx * radiusPx - top * top));
+          const bottomExtent = Math.sqrt(Math.max(0, radiusPx * radiusPx - bottom * bottom));
+          const wave = (Math.sin(timestamp * 0.00016 + i * 0.8 + seed) * 0.5 + 0.5) * radiusPx * 0.06;
+          const patchBase = parseCssColor(noiseFromSeed(seed, i, 205) > 0.48 ? '#c55a2e' : '#5b180f');
+          const tintAmount = lerp(-0.2, 0.14, noiseFromSeed(seed, i, 206));
+          drawPolygon([
+            { x: -topExtent, y: top + wave },
+            { x: topExtent, y: top - wave * 0.52 },
+            { x: bottomExtent, y: bottom + wave * 0.25 },
+            { x: -bottomExtent, y: bottom - wave * 0.34 }
+          ], colorToCss(tintColor(patchBase, tintAmount, 0.18)));
+        }
+
+        for (let i = 0; i < 4; i++) {
+          const scarX = (noiseFromSeed(seed, i, 220) - 0.5) * radiusPx * 0.92;
+          const scarY = (noiseFromSeed(seed, i, 221) - 0.5) * radiusPx * 0.88;
+          const scarWidth = radiusPx * lerp(0.16, 0.28, noiseFromSeed(seed, i, 222));
+          const scarHeight = scarWidth * lerp(0.22, 0.42, noiseFromSeed(seed, i, 223));
+          const scarAngle = noiseFromSeed(seed, i, 224) * Math.PI;
+
+          ctx.beginPath();
+          ctx.ellipse(scarX, scarY, scarWidth, scarHeight, scarAngle, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(34, 7, 5, 0.24)';
+          ctx.fill();
+
+          ctx.beginPath();
+          ctx.ellipse(scarX - scarWidth * 0.08, scarY - scarHeight * 0.06, scarWidth * 0.55, scarHeight * 0.52, scarAngle, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(255, 148, 77, 0.12)';
+          ctx.fill();
+        }
+
+        return;
+      }
 
       if (style === 'gas' || style === 'cloudy' || style === 'ice' || style === 'hazy') {
         const bandCount = clamp(Math.round(visibleRadiusPx / 26) + 4, 4, 10);
@@ -2289,6 +2543,10 @@
         return;
       }
 
+      if (body.surfaceStyle === 'nibiru') {
+        drawCircle(body.x, body.y, body.radiusPx * 1.14, 'rgba(217, 108, 69, 0.10)', 14 / scale);
+      }
+
       const imageState = wikiImageCache.get(body.id);
       if (!imageState) {
         void loadWikipediaImageForBody(body);
@@ -2629,6 +2887,8 @@
     }
 
     function applyDefaultSessionState() {
+      showNibiru = false;
+      syncNibiruPlanetSet();
       resetSimulationView();
       showLabels = false;
       showHelp = true;
@@ -2685,7 +2945,7 @@
     }
 
     function getFollowLabel() {
-      const option = FOLLOW_OPTIONS.find(entry => entry.id === followTargetId);
+      const option = getFollowOptions().find(entry => entry.id === followTargetId);
       return option ? option.label : 'Free camera';
     }
 
@@ -2711,8 +2971,12 @@
     }
 
     function updateFollowUI() {
+      const followOptions = getFollowOptions();
+      followSelect.innerHTML = followOptions
+        .map(option => `<option value="${option.id}">${option.label}</option>`)
+        .join('');
       followPanel.classList.toggle('is-hidden', !showFollowChooser);
-      followSelect.value = followTargetId || '';
+      followSelect.value = followOptions.some(option => option.id === followTargetId) ? (followTargetId || '') : '';
       document.getElementById('followDisplay').textContent = `Follow: ${getFollowLabel()}`;
       updateResponsiveUI();
       persistSessionState();
@@ -2880,7 +3144,7 @@
           y: layout.sunCenterY,
           radiusPx: layout.sunRadPx,
           hitRadiusPx: layout.sunRadPx,
-          planetCount: PLANETS.length
+          planetCount: PLANETS.filter(planet => planet.orbitalClass === 'Planet').length
         }
       ];
 
@@ -2893,7 +3157,7 @@
         bodies.push({
           id: `planet:${planet.name}`,
           name: planet.name,
-          type: 'Planet',
+          type: planet.orbitalClass,
           seed: planet.seed,
           surfaceStyle: planet.surfaceStyle,
           rotationPeriodDays: planet.rotationPeriodDays,
@@ -3053,6 +3317,9 @@
     function updateHelpVisibility() {
       document.getElementById('overlay').classList.toggle('hidden-ui', !showHelp);
       document.getElementById('legend').classList.toggle('hidden-ui', !showHelp);
+      if (showHelp) {
+        clearTransientTimeFactorToast();
+      }
       updateResponsiveUI();
       updateInfoCard(true);
       persistSessionState();
@@ -3070,6 +3337,8 @@
       } else {
         delta = 0;
       }
+
+      updateHeldTimeFactor(timestamp);
 
       // ONE simulated day = 1000 simMs
       const simDays = simTimeMs / 1000;
@@ -3215,22 +3484,42 @@
       document.getElementById('yearsDisplay').textContent = `Earth Years: ${(simDays / EARTH_ORBITAL_PERIOD_DAYS).toFixed(2)}`;
       document.getElementById('labelDisplay').textContent = `Labels: ${showLabels ? 'On' : 'Off'}`;
       document.getElementById('followDisplay').textContent = `Follow: ${getFollowLabel()}`;
-      document.getElementById('motionDisplay').textContent = 'Model: Compact layout, relative speeds';
+      document.getElementById('motionDisplay').textContent = showNibiru
+        ? 'Model: Compact layout, relative speeds + Nibiru'
+        : 'Model: Compact layout, relative speeds';
+      if (!timeFactorToast.classList.contains('is-hidden')) {
+        timeFactorToast.textContent = `Time Factor: ${formatTimeFactor(speedFactor)}`;
+      }
       updateResponsiveUI();
       persistSessionState();
     }
 
     window.addEventListener('keydown', e => {
       const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+      if (e.shiftKey && key === 'n') {
+        e.preventDefault();
+        toggleNibiruVisibility();
+        return;
+      }
       if (key !== 'm') {
         void restoreMusicOnGesture();
       }
 
       if (key === 'w') {
-        adjustTimeFactor(1);
+        e.preventDefault();
+        if (!speedUpHeld) {
+          speedUpHeld = true;
+          adjustTimeFactor(1);
+        }
+        syncHeldTimeFactorState();
       }
       if (key === 's') {
-        adjustTimeFactor(-1);
+        e.preventDefault();
+        if (!speedDownHeld) {
+          speedDownHeld = true;
+          adjustTimeFactor(-1);
+        }
+        syncHeldTimeFactorState();
       }
       if (e.key === ' ' || key === 'p') {
         e.preventDefault();
@@ -3290,6 +3579,24 @@
         panX += 50;
       }
       updateCanvasCursor();
+    });
+
+    window.addEventListener('keyup', e => {
+      const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+      if (key === 'w') {
+        speedUpHeld = false;
+        syncHeldTimeFactorState();
+      }
+      if (key === 's') {
+        speedDownHeld = false;
+        syncHeldTimeFactorState();
+      }
+    });
+
+    window.addEventListener('blur', () => {
+      speedUpHeld = false;
+      speedDownHeld = false;
+      resetHeldTimeFactorState();
     });
 
     followSelect.addEventListener('change', () => {
@@ -3355,6 +3662,11 @@
       void restoreMusicOnGesture();
       showLabels = !showLabels;
       updateOverlay();
+    });
+
+    touchNibiruButton.addEventListener('click', () => {
+      void restoreMusicOnGesture();
+      toggleNibiruVisibility();
     });
 
     touchMusicButton.addEventListener('click', () => {
@@ -3642,9 +3954,6 @@
       }
     });
 
-    followSelect.innerHTML = FOLLOW_OPTIONS
-      .map(option => `<option value="${option.id}">${option.label}</option>`)
-      .join('');
     resizeCanvas();
     if (!restoreSessionState()) {
       applyDefaultSessionState();
