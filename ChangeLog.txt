@@ -282,3 +282,23 @@ Timestamp:
 - Strengthened Sun-driven lighting on both image-rendered and procedural bodies so day/night contrast reads more clearly from the top-down view.
 - Added Earth-view phase reporting to object cards for bodies whose current geometry can be computed locally.
 - Updated README.md plus the About and More Info panels to describe the curated texture policy and the new illumination / phase behavior.
+
+27. Time-Factor Minute Baseline And Softer Early Ramp
+Timestamp:
+- 2026-04-03 23:31:12 -04:00 (America/New_York)
+
+- Changed the displayed time-factor baseline so `1` now equals `1 Earth minute/sec` instead of `1 Earth hour/sec`.
+- Updated the visible speed help, paused-rate reference text, and manual time-factor prompt to match the new minute-based scale.
+- Retuned the `W / S` hold behavior so the left side of the long-press curve is softer and gentler before it ramps into larger jumps.
+- Added session-state migration for the previous hour-based baseline so saved time-factor values remain sensible after reload.
+- Updated README.md to note the new display baseline.
+
+28. Main-Menu Copy Clarification And Nibiru Secrecy Pass
+Timestamp:
+- 2026-04-04 10:25:52 -04:00 (America/New_York)
+
+- Removed the visible `Shift+N Nibiru` hint from the main-menu controls text.
+- Hid the touch-toolbar Nibiru button so the easter egg is no longer advertised in the main UI.
+- Removed the visible Nibiru shortcut line from README.md.
+- Clarified the reset/help copy so it now explicitly says the Live Now button toggles real time.
+- Updated the Main Menu info-button explainer to describe Live Now as a true toggle into and back out of real-time positions.

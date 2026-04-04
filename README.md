@@ -73,11 +73,11 @@ The app runs entirely in the browser and does not require a build step.
 - Toggle the About panel: `A`
 - Toggle help: `H` or `?`
 - Cycle ambient music tracks / mute: `M`
-- Toggle the Nibiru easter egg: `Shift+N`
 
 ### Date and Time
 
 - Click `Time Factor` to type a value directly
+- Current display baseline: `1 = 1 Earth minute/sec`
 - Click `Date` to enter a simulation date/time directly
 - Use `Live Now` to toggle into the current real date/time at real-time speed, then toggle back to your prior simulation state
 - Use the timeline scrubber to move through days, months, or years

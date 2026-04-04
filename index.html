@@ -796,12 +796,12 @@
       <span id="primaryControlsHelp">Zoom: wheel, Ctrl+wheel, or +/-</span>
       <span id="navigationHelp">Pan or center: drag, double-click center, arrows move</span>
       <span id="pauseHelp">Pause or play: Space or P</span>
-      <span id="speedHelp">Change speed: tap W / S by 1, hold to ramp (1 = 1 Earth hour/sec)</span>
+      <span id="speedHelp">Change speed: tap W / S by 1, hold to ramp (1 = 1 Earth minute/sec)</span>
       <span id="moonHelp">Slow moons or return to default: [ / ]</span>
       <span id="unitsHelp">Switch units: U for metric / English</span>
       <span id="timelineHelp">Shift the date: drag the scrubber through days, months, or years</span>
-      <span id="resetHelp">Reset or clear: R reset, Shift+R defaults, Live Now real-time toggle, Esc clear hover</span>
-      <span id="toggleHelp">Toggle displays: F follow, C cards, L labels, I info, A about, M music, Shift+N Nibiru, H/? help</span>
+      <span id="resetHelp">Reset or clear: R reset, Shift+R defaults, Live Now button toggles real time, Esc clear hover</span>
+      <span id="toggleHelp">Toggle displays: F follow, C cards, L labels, I info, A about, M music, H/? help</span>
     </div>
     <div class="overlay-section">
       <strong class="overlay-heading">Telemetry</strong>
@@ -845,7 +845,7 @@
     <button id="touchCenterButton" type="button" aria-label="Center on the Sun">Center</button>
     <button id="touchFollowButton" type="button" aria-label="Follow chooser">Follow</button>
     <button id="touchLabelsButton" type="button" aria-label="Toggle labels">Labels</button>
-    <button id="touchNibiruButton" type="button" aria-label="Toggle Nibiru">Nibiru</button>
+    <button id="touchNibiruButton" class="is-hidden" type="button" aria-label="Toggle Nibiru">Nibiru</button>
     <button id="touchMusicButton" type="button" aria-label="Cycle music tracks">Track 1</button>
     <button id="touchUnitsButton" type="button" aria-label="Toggle measurement units">Metric</button>
     <button id="touchLiveNowButton" type="button" aria-label="Sync simulation to the current real date and time">Live</button>
@@ -940,7 +940,7 @@
     const MAX_TINY_SCREEN_LONGEST_SIDE = 1100;
     const HAS_WEB_AUDIO = Boolean(window.AudioContext || window.webkitAudioContext);
     const STORAGE_KEY = 'solar-system-session-state-v1';
-    const SESSION_STATE_VERSION = 11;
+    const SESSION_STATE_VERSION = 12;
     const HABITABLE_ZONE_INNER_KM = EARTH_ORBIT_RADIUS_KM * 0.95;
     const HABITABLE_ZONE_OUTER_KM = EARTH_ORBIT_RADIUS_KM * 1.67;
     const FROST_LINE_INNER_KM = EARTH_ORBIT_RADIUS_KM * 2.55;
@@ -954,10 +954,11 @@
     const MAX_DISPLAY_TIME_FACTOR = 10_000;
     const DISPLAY_TIME_FACTOR_MULTIPLIER = 100_000;
     const DAYS_PER_EARTH_MONTH = EARTH_ORBITAL_PERIOD_DAYS / 12;
-    const DISPLAY_REFERENCE_EARTH_DAYS = 1 / 24;
-    const REAL_TIME_DISPLAY_FACTOR = 1 / 3600;
+    const DISPLAY_REFERENCE_EARTH_DAYS = 1 / 1440;
+    const REAL_TIME_DISPLAY_FACTOR = 1 / 60;
     const TIME_FACTOR_STEP = 1 / DISPLAY_TIME_FACTOR_MULTIPLIER;
     const SIM_DAYS_PER_SECOND_PER_TIME_FACTOR = DISPLAY_REFERENCE_EARTH_DAYS * DISPLAY_TIME_FACTOR_MULTIPLIER;
+    const LEGACY_V11_SIM_DAYS_PER_SECOND_PER_TIME_FACTOR = (1 / 24) * DISPLAY_TIME_FACTOR_MULTIPLIER;
     const LEGACY_V9_SIM_DAYS_PER_SECOND_PER_TIME_FACTOR = DISPLAY_TIME_FACTOR_MULTIPLIER;
     const LEGACY_V8_SIM_DAYS_PER_SECOND_PER_TIME_FACTOR = DAYS_PER_EARTH_MONTH * DISPLAY_TIME_FACTOR_MULTIPLIER;
     const LEGACY_V7_SIM_DAYS_PER_SECOND_PER_TIME_FACTOR = (1 / 24) * DISPLAY_TIME_FACTOR_MULTIPLIER;
@@ -1977,7 +1978,7 @@ Hover previews a body, click pins the card, Follow centers the camera on it, and
 
 This panel is the control center for the simulation. Time Factor sets how quickly simulated time moves, Controls lists actions first and shortcuts second, Telemetry reports the current simulation state, and Timeline shifts the simulation date without changing the current speed.
 
-Use Live Now to jump into real-time astronomical positions, and Clear Saved Settings if you want to wipe the stored browser session and start fresh.`,
+Use the Live Now button to toggle into current real-time astronomical positions and back out again, and Clear Saved Settings if you want to wipe the stored browser session and start fresh.`,
       scale: `Scale Guide
 
 Body sizes use one shared scale relative to the Sun, so diameters stay meaningful across planets and moons. Orbital spacing is intentionally compressed to fit the screen, which means distances are readable rather than literal. The faint orbital rings are guide tracks that show where planets and moons travel inside this compact layout.
@@ -3397,7 +3398,7 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
     function promptForTimeFactor() {
       const currentDisplayedFactor = getDisplayedTimeFactor();
       const response = window.prompt(
-        `Enter a time factor between -${MAX_DISPLAY_TIME_FACTOR.toLocaleString('en-US')} and ${MAX_DISPLAY_TIME_FACTOR.toLocaleString('en-US')}.\n1 = 1 Earth hour/sec.`,
+        `Enter a time factor between -${MAX_DISPLAY_TIME_FACTOR.toLocaleString('en-US')} and ${MAX_DISPLAY_TIME_FACTOR.toLocaleString('en-US')}.\n1 = 1 Earth minute/sec.`,
         currentDisplayedFactor.toLocaleString('en-US', {
           minimumFractionDigits: 0,
           maximumFractionDigits: 5,
@@ -3609,34 +3610,34 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
     }
 
     function getHeldTimeFactorInterval(elapsedMs) {
-      if (elapsedMs < 180) {
+      if (elapsedMs < 260) {
         return Infinity;
       }
 
-      const ramp = clamp((elapsedMs - 180) / 1700, 0, 1);
-      return lerp(125, 11, 1 - Math.exp(-5.2 * ramp));
+      const ramp = clamp((elapsedMs - 260) / 2200, 0, 1);
+      return lerp(165, 13, 1 - Math.exp(-4.2 * ramp));
     }
 
     function getHeldTimeFactorStepMultiplier(elapsedMs) {
-      if (elapsedMs < 450) {
+      if (elapsedMs < 650) {
         return 1;
       }
 
-      const holdSeconds = (elapsedMs - 450) / 1000;
+      const holdSeconds = (elapsedMs - 650) / 1000;
 
-      if (holdSeconds < 1.2) {
-        return clamp(Math.round(Math.pow(2.3, holdSeconds * 1.45)), 1, 4);
+      if (holdSeconds < 1.8) {
+        return clamp(Math.round(Math.pow(1.45, holdSeconds * 1.1)), 1, 2);
       }
 
-      if (holdSeconds < 3.5) {
-        return clamp(Math.round(4 * Math.pow(1.45, holdSeconds - 1.2)), 4, 12);
+      if (holdSeconds < 4.2) {
+        return clamp(Math.round(2 * Math.pow(1.52, holdSeconds - 1.8)), 2, 8);
       }
 
-      if (holdSeconds < 6.5) {
-        return clamp(Math.round(12 * Math.pow(1.2, holdSeconds - 3.5)), 12, 22);
+      if (holdSeconds < 7.2) {
+        return clamp(Math.round(8 * Math.pow(1.26, holdSeconds - 4.2)), 8, 22);
       }
 
-      return clamp(Math.round(22 * Math.pow(1.11, holdSeconds - 6.5)), 22, 42);
+      return clamp(Math.round(22 * Math.pow(1.13, holdSeconds - 7.2)), 22, 42);
     }
 
     function updateHeldTimeFactor(timestamp) {
@@ -3806,8 +3807,8 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
         ? 'Pause or play: touch Pause or press Space / P'
         : 'Pause or play: Space or P';
       speedHelp.textContent = touchLayout
-        ? 'Change speed: touch Time +/- or hold W / S to ramp (1 = 1 Earth hour/sec)'
-        : 'Change speed: tap W / S by 1, hold to ramp (1 = 1 Earth hour/sec)';
+        ? 'Change speed: touch Time +/- or hold W / S to ramp (1 = 1 Earth minute/sec)'
+        : 'Change speed: tap W / S by 1, hold to ramp (1 = 1 Earth minute/sec)';
       moonHelp.textContent = touchLayout
         ? 'Slow moons or return to default: -Moon / +Moon'
         : 'Slow moons or return to default: [ / ]';
@@ -3819,10 +3820,10 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
           ? 'Shift the date: drag the scrubber to move through days, months, or years'
           : 'Shift the date: drag the scrubber through days, months, or years';
       }
-      resetHelp.textContent = 'Reset or clear: R reset, Shift+R defaults, Live Now real-time toggle, Esc clear hover';
+      resetHelp.textContent = 'Reset or clear: R reset, Shift+R defaults, Live Now button toggles real time, Esc clear hover';
       toggleHelp.textContent = touchLayout
-        ? 'Toggle displays: use the toolbar for follow, labels, music, units, about, and help • keyboard C cards, I info, Shift+N Nibiru'
-        : 'Toggle displays: F follow, C cards, L labels, U units, I info, A about, M music, Shift+N Nibiru, H/? help';
+        ? 'Toggle displays: use the toolbar for follow, labels, music, units, about, and help • keyboard C cards, I info'
+        : 'Toggle displays: F follow, C cards, L labels, U units, I info, A about, M music, H/? help';
 
       touchPauseButton.textContent = paused ? 'Play' : 'Pause';
       touchPauseButton.classList.toggle('is-active', paused);
@@ -3874,12 +3875,12 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
         return 'Paused';
       }
 
-      const absoluteHoursPerSecond = Math.abs(getDisplayedTimeFactor(value));
+      const absoluteMinutesPerSecond = Math.abs(getDisplayedTimeFactor(value));
+      const absoluteHoursPerSecond = absoluteMinutesPerSecond / 60;
       const absoluteDaysPerSecond = absoluteHoursPerSecond / 24;
-      const absoluteMinutesPerSecond = absoluteHoursPerSecond * 60;
       const absoluteSecondsPerSecond = absoluteMinutesPerSecond * 60;
-      let magnitude = absoluteHoursPerSecond;
-      let unit = 'Earth hour';
+      let magnitude = absoluteMinutesPerSecond;
+      let unit = 'Earth minute';
 
       if (absoluteDaysPerSecond >= 365) {
         magnitude = absoluteDaysPerSecond / EARTH_ORBITAL_PERIOD_DAYS;
@@ -3890,9 +3891,12 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
       } else if (absoluteDaysPerSecond >= 7) {
         magnitude = absoluteDaysPerSecond / 7;
         unit = 'Earth week';
-      } else if (absoluteHoursPerSecond >= 24) {
+      } else if (absoluteDaysPerSecond >= 1) {
         magnitude = absoluteDaysPerSecond;
         unit = 'Earth day';
+      } else if (absoluteHoursPerSecond >= 1) {
+        magnitude = absoluteHoursPerSecond;
+        unit = 'Earth hour';
       } else if (absoluteMinutesPerSecond >= 1) {
         magnitude = absoluteMinutesPerSecond;
         unit = 'Earth minute';
@@ -4064,7 +4068,7 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
 
     function getTimeScaleDescription() {
       if (speedFactor === 0) {
-        return 'Rate: Paused • 1 = 1 Earth hour/sec';
+        return 'Rate: Paused • 1 = 1 Earth minute/sec';
       }
 
       const direction = speedFactor > 0 ? '' : 'Reverse ';
@@ -4423,6 +4427,10 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
 
         if (state.version >= SESSION_STATE_VERSION) {
           speedFactor = normalizeTimeFactor(Number.isFinite(state.speedFactor) ? state.speedFactor : speedFactor);
+        } else if (state.version >= 11) {
+          const legacySpeedFactor = Number.isFinite(state.speedFactor) ? state.speedFactor : speedFactor;
+          const legacySimDaysPerSecond = legacySpeedFactor * LEGACY_V11_SIM_DAYS_PER_SECOND_PER_TIME_FACTOR;
+          speedFactor = normalizeTimeFactor(legacySimDaysPerSecond / SIM_DAYS_PER_SECOND_PER_TIME_FACTOR);
         } else if (state.version >= 9) {
           const legacySpeedFactor = Number.isFinite(state.speedFactor) ? state.speedFactor : speedFactor;
           const legacySimDaysPerSecond = legacySpeedFactor * LEGACY_V9_SIM_DAYS_PER_SECOND_PER_TIME_FACTOR;
