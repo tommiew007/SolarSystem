@@ -3128,6 +3128,26 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
       }
 
       bufferCtx.putImageData(imageData, 0, 0);
+      if (body?.type !== 'Star') {
+        const center = renderSize / 2;
+        const innerFadeRadius = renderSize * (body?.type === 'Moon' ? 0.44 : 0.455);
+        const outerFadeRadius = renderSize * 0.495;
+        const alphaMask = bufferCtx.createRadialGradient(
+          center,
+          center,
+          innerFadeRadius,
+          center,
+          center,
+          outerFadeRadius
+        );
+        alphaMask.addColorStop(0, 'rgba(255, 255, 255, 1)');
+        alphaMask.addColorStop(0.72, 'rgba(255, 255, 255, 1)');
+        alphaMask.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        bufferCtx.globalCompositeOperation = 'destination-in';
+        bufferCtx.fillStyle = alphaMask;
+        bufferCtx.fillRect(0, 0, renderSize, renderSize);
+        bufferCtx.globalCompositeOperation = 'source-over';
+      }
       return buffer;
     }
 
@@ -6305,6 +6325,23 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
       persistSessionState();
     }
 
+    function setCardsVisibility(nextShowCards) {
+      showCards = Boolean(nextShowCards);
+      if (!showCards) {
+        clearHoverIntent(false);
+        clearHoverHide(true);
+        hoveredBodyId = null;
+        selectedBodyId = null;
+        pointerBodyId = null;
+        infoCardRenderKey = '';
+        infoCard.classList.add('is-hidden');
+        infoCard.innerHTML = '';
+      }
+      updateOverlay();
+      updateInfoCard(true);
+      updateCanvasCursor();
+    }
+
     function drawScene(timestamp) {
       if (screenSizeBlocked) {
         drawLoopStarted = false;
@@ -6570,9 +6607,7 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
           return;
         }
         e.preventDefault();
-        showCards = !showCards;
-        updateOverlay();
-        updateInfoCard(true);
+        setCardsVisibility(!showCards);
       }
       if (key === 'h' || key === '?') {
         showHelp = !showHelp;
