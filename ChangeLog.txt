@@ -255,3 +255,10 @@ Timestamp:
 - Added a short real-time hold window so the displayed event text stays stable long enough to read.
 - Rounded countdowns into coarser minute, hour, day, month, and year buckets so labels do not churn on tiny timing changes.
 - Updated README.md plus the About and More Info panels to reflect the smoother event-feed behavior.
+
+24. Orbital Guide Text Clarification
+Timestamp:
+- 2026-04-03 22:00:00 -04:00 (America/New_York)
+
+- Updated the Scale Guide, its info-button explainer, the About panel, the More Info panel, and README.md to explain that the faint orbital rings are visual guide tracks in the compact layout.
+- Clarified that those rings show where bodies travel in this readable 2D model, but are not literal physical bands or exact on-screen distance widths.

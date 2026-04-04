@@ -39,6 +39,7 @@ The app runs entirely in the browser and does not require a build step.
 - Moon positions are computed locally from stored mean-element style reference values and orbital periods.
 - The app does **not** make live JPL or NASA requests each frame or each date change.
 - Distances are intentionally compacted for readability.
+- The faint orbital rings are visual guide tracks inside that compact layout, not literal physical bands or exact on-screen distance widths.
 - Planet and moon diameters are kept on a shared relative size scale.
 - Pluto remains on the simplified model path compared with the JPL-based planet set.
 - Startup now uses a staged local-asset warmup: the Milky Way, Sun, and core planet/dwarf-planet imagery are preloaded first, while minor moon imagery can continue warming in the background.
@@ -90,7 +91,7 @@ The app runs entirely in the browser and does not require a build step.
 - `Follow`: object chooser
 - `About`: feature overview
 - `More Info`: technology and source summary
-- `Scale Guide`: explains compacted spacing and scaled body sizes
+- `Scale Guide`: explains compacted spacing, scaled body sizes, and the faint orbital guide rings in the scene
 - `Loading Overlay`: staged startup warmup for core scene assets
 
 Major panels also include small `i` buttons that open a concise explanation of what that display means and how to read it. Those messages stay up until the next key press, click, or wheel input.

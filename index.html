@@ -683,6 +683,7 @@
     <ul>
       <li>Planet and moon sizes are drawn from a shared size scale relative to the Sun, so body diameters stay visually meaningful.</li>
       <li>Planet positions now follow date-based JPL approximate heliocentric positions, letting the model reflect where the planets should be for the chosen simulation date and time.</li>
+      <li>Faint orbital rings act as visual guide tracks for compacted planet and moon paths, so you can read motion and ordering without mistaking them for literal physical bands in space.</li>
       <li>Moons now use date-based mean-motion positions as well, so changing the simulation date re-creates the same moon geometry for that moment.</li>
       <li>A built-in event feed can flag transits, eclipses, and occultation-style alignments for major moons with lightweight predictive timing, then hold the current readout long enough to be readable.</li>
       <li>A staged startup warmup now loads the Milky Way, Sun, and core planet assets behind a dedicated loading overlay so the scene feels ready before you begin interacting.</li>
@@ -690,7 +691,7 @@
       <li>Camera controls support drag, zoom, follow mode, recentering, a draggable date timeline, a Live Now real-time toggle, and touch-friendly navigation on phones and tablets.</li>
       <li>The simulation remembers your preferred view, speed, labels, music, units, and other settings between sessions unless you clear them.</li>
     </ul>
-    <p>Some parts remain intentionally simplified for readability: orbit spacing is compressed to fit the screen, and Pluto stays on the simplified model path.</p>
+    <p>Some parts remain intentionally simplified for readability: orbit spacing is compressed to fit the screen, the faint orbital rings are guide paths rather than literal spatial widths, and Pluto stays on the simplified model path.</p>
     <div class="about-actions">
       <button id="moreInfoButton" class="about-more" type="button">More Info</button>
       <button id="closeAboutButton" class="about-close" type="button">Close About</button>
@@ -705,6 +706,7 @@
       <li><strong>Planet positions:</strong> date-based heliocentric planet placement uses JPL approximate position formulas so the major planets can be shown at realistic locations for the chosen simulation date. These positions are computed locally in the browser from embedded reference data, not fetched live. The Live Now control snaps that same model to the current real moment, then can toggle back to your prior simulation state.</li>
       <li><strong>Moon positions:</strong> date-based moon placement uses JPL planetary satellite mean-element epochs and mean anomalies as lightweight browser-friendly anchors for recreating moon geometry by date. These moon positions are also computed locally from stored reference values rather than requested from JPL or NASA on each change.</li>
       <li><strong>Sizes, periods, and orbital values:</strong> body diameters, periods, and other baseline numbers are drawn from NASA and JPL fact-sheet style references used throughout the model data.</li>
+      <li><strong>Orbital guide rings:</strong> the faint circles and moon-path rings are visual orbit guides inside the compact layout. They show where bodies travel in this readable 2D model, but their apparent line thickness and spacing are not meant to be literal scale measurements.</li>
       <li><strong>Object imagery:</strong> local body images are sourced from Wikipedia article imagery and then stored in the project for scene rendering and cards.</li>
       <li><strong>Milky Way background:</strong> the galaxy panorama comes from ESO imagery and is used as the real-space backdrop behind the simulation.</li>
       <li><strong>Startup warmup:</strong> the app now preloads the Milky Way, the Sun, and the core planet/dwarf-planet scene assets before unlocking interaction, then continues warming minor moon images in the background.</li>
@@ -791,6 +793,7 @@
     </div>
     <span>Planet and moon diameters are drawn from the same size scale relative to the Sun.</span>
     <span>Planet spacing is compacted to fit the screen and adjusts evenly with window width.</span>
+    <span>Faint orbital rings show the guide paths bodies follow in this compact layout; they are visual tracks, not literal band thicknesses in space.</span>
     <span>Planet positions follow JPL approximate heliocentric date/time positions while orbit spacing stays compressed.</span>
     <span>Green marks the habitable zone and blue marks the frost-line region.</span>
   </div>
@@ -1861,7 +1864,7 @@ This panel is the control center for the simulation. Time Factor sets how quickl
 Use Live Now to jump into real-time astronomical positions, and Clear Saved Settings if you want to wipe the stored browser session and start fresh.`,
       scale: `Scale Guide
 
-Body sizes use one shared scale relative to the Sun, so diameters stay meaningful across planets and moons. Orbital spacing is intentionally compressed to fit the screen, which means distances are readable rather than literal.
+Body sizes use one shared scale relative to the Sun, so diameters stay meaningful across planets and moons. Orbital spacing is intentionally compressed to fit the screen, which means distances are readable rather than literal. The faint orbital rings are guide tracks that show where planets and moons travel inside this compact layout.
 
 The green band marks the habitable zone, the blue band marks the frost-line region, and the planet positions still follow date-based JPL-style placement even inside this compact layout.`
     };
