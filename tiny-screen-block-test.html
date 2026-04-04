@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Tiny Screen Block Test</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at center, rgba(16, 24, 44, 0.22), rgba(2, 6, 14, 0.96) 74%),
+        rgba(2, 6, 14, 0.96);
+      color: #eef6ff;
+      font-family: sans-serif;
+    }
+
+    .screen-size-overlay {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      backdrop-filter: blur(10px);
+    }
+
+    .screen-block-panel {
+      width: min(560px, calc(100vw - 32px));
+      padding: 24px 24px 20px;
+      border-radius: 18px;
+      background: rgba(5, 10, 20, 0.84);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow: 0 18px 48px rgba(0, 0, 0, 0.42);
+    }
+
+    .screen-block-title {
+      display: block;
+      font-size: clamp(20px, 1.55vw, 28px);
+      font-weight: 700;
+      margin-bottom: 10px;
+      letter-spacing: 0.01em;
+    }
+
+    .screen-block-detail,
+    .screen-block-note,
+    .screen-block-meta {
+      display: block;
+      line-height: 1.5;
+    }
+
+    .screen-block-detail {
+      color: rgba(238, 246, 255, 0.92);
+      font-size: clamp(14px, 0.95vw, 18px);
+    }
+
+    .screen-block-note {
+      margin-top: 10px;
+      color: rgba(238, 246, 255, 0.74);
+      font-size: clamp(12px, 0.78vw, 15px);
+    }
+
+    .screen-block-meta {
+      margin-top: 16px;
+      color: rgba(150, 190, 255, 0.88);
+      font-size: clamp(12px, 0.76vw, 14px);
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+  <div class="screen-size-overlay" role="alertdialog" aria-live="assertive" aria-label="Large screen required">
+    <div class="screen-block-panel">
+      <strong class="screen-block-title">Larger Screen Required</strong>
+      <span class="screen-block-detail">This simulation is optimized for larger screens and cannot be rendered on your device.</span>
+      <span class="screen-block-note">Please reopen it on a tablet, laptop, desktop display, or a larger browser window.</span>
+      <span class="screen-block-meta">Test Stub • Always Visible</span>
+    </div>
+  </div>
+</body>
+</html>

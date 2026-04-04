@@ -746,6 +746,8 @@
       <li>Planet positions now follow date-based JPL approximate heliocentric positions, letting the model reflect where the planets should be for the chosen simulation date and time.</li>
       <li>Faint orbital rings act as visual guide tracks for compacted planet and moon paths, so you can read motion and ordering without mistaking them for literal physical bands in space.</li>
       <li>Moons now use date-based mean-motion positions as well, so changing the simulation date re-creates the same moon geometry for that moment.</li>
+      <li>The scene now uses a curated local texture set for the Sun, major planets, and selected showcase moons, while smaller bodies can fall back to the procedural renderer so the view stays readable and visually consistent.</li>
+      <li>Sun-driven illumination is now stronger, and object cards can report an Earth-view phase estimate for bodies where the geometry is available.</li>
       <li>A built-in event feed can flag transits, eclipses, and occultation-style alignments for major moons with lightweight predictive timing, then hold the current readout long enough to be readable.</li>
       <li>A staged startup warmup now loads the Milky Way, Sun, and core planet assets behind a dedicated loading overlay so the scene feels ready before you begin interacting.</li>
       <li>Very small smartphone-sized viewports are intentionally blocked with a larger-screen message, so the simulation does not try to render into an unreadable layout.</li>
@@ -769,7 +771,8 @@
       <li><strong>Moon positions:</strong> date-based moon placement uses JPL planetary satellite mean-element epochs and mean anomalies as lightweight browser-friendly anchors for recreating moon geometry by date. These moon positions are also computed locally from stored reference values rather than requested from JPL or NASA on each change.</li>
       <li><strong>Sizes, periods, and orbital values:</strong> body diameters, periods, and other baseline numbers are drawn from NASA and JPL fact-sheet style references used throughout the model data.</li>
       <li><strong>Orbital guide rings:</strong> the faint circles and moon-path rings are visual orbit guides inside the compact layout. They show where bodies travel in this readable 2D model, but their apparent line thickness and spacing are not meant to be literal scale measurements.</li>
-      <li><strong>Object imagery:</strong> local body images are sourced from Wikipedia article imagery and then stored in the project for scene rendering and cards.</li>
+      <li><strong>Object imagery:</strong> local body images are sourced from Wikipedia article imagery and then stored in the project for scene rendering and cards. The scene renderer now uses a curated subset for the Sun, major planets, and selected moons, while other bodies can stay on the procedural shader for consistency.</li>
+      <li><strong>Illumination and phases:</strong> scene bodies use Sun-driven lighting in the top-down model, and object cards can show a lightweight Earth-view phase estimate based on the current locally computed body geometry.</li>
       <li><strong>Milky Way background:</strong> the galaxy panorama comes from ESO imagery and is used as the real-space backdrop behind the simulation.</li>
       <li><strong>Startup warmup:</strong> the app now preloads the Milky Way, the Sun, and the core planet/dwarf-planet scene assets before unlocking interaction, then continues warming minor moon images in the background.</li>
       <li><strong>Minimum practical screen size:</strong> very small smartphone-style viewports are blocked intentionally and shown a larger-screen message instead of trying to force the full simulation into an unreadable render.</li>
@@ -1747,8 +1750,52 @@
       },
       'planet:Saturn': {
         cropScale: 0.42
+      },
+      'moon:Earth:Moon': {
+        cropScale: 0.9
+      },
+      'moon:Jupiter:Io': {
+        cropScale: 0.92
+      },
+      'moon:Jupiter:Europa': {
+        cropScale: 0.92
+      },
+      'moon:Jupiter:Ganymede': {
+        cropScale: 0.9
+      },
+      'moon:Jupiter:Callisto': {
+        cropScale: 0.9
+      },
+      'moon:Saturn:Titan': {
+        cropScale: 0.9
+      },
+      'moon:Neptune:Triton': {
+        cropScale: 0.9
+      },
+      'moon:Pluto:Charon': {
+        cropScale: 0.88
       }
     };
+
+    const SCENE_RENDER_IMAGE_IDS = new Set([
+      'sun',
+      'planet:Mercury',
+      'planet:Venus',
+      'planet:Earth',
+      'planet:Mars',
+      'planet:Jupiter',
+      'planet:Uranus',
+      'planet:Neptune',
+      'planet:Pluto',
+      'moon:Earth:Moon',
+      'moon:Jupiter:Io',
+      'moon:Jupiter:Europa',
+      'moon:Jupiter:Ganymede',
+      'moon:Jupiter:Callisto',
+      'moon:Saturn:Titan',
+      'moon:Neptune:Triton',
+      'moon:Pluto:Charon'
+    ]);
 
     globalThis.JPL_MEAN_MOON_ELEMENTS = {
       'moon:Earth:Moon': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 135.27 },
@@ -1923,7 +1970,7 @@
     const PANEL_INFO_MESSAGES = {
       object: `Object Info
 
-This card explains the body you are hovering over or have clicked. Read it top to bottom: what the body is, what it orbits, how large it is, how long its orbit takes, how fast it moves, and how far it is from the Sun in approximate terms.
+This card explains the body you are hovering over or have clicked. Read it top to bottom: what the body is, what it orbits, how large it is, how long its orbit takes, how fast it moves, how far it is from the Sun in approximate terms, and when available how brightly lit it appears from Earth.
 
 Hover previews a body, click pins the card, Follow centers the camera on it, and Open in Wikipedia jumps to a reference page.`,
       overlay: `Main Menu
@@ -2150,6 +2197,85 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
         })} mph`;
       }
       return `${value.toLocaleString('en-US', { minimumFractionDigits: value < 10 ? 2 : 1, maximumFractionDigits: value < 10 ? 2 : 1 })} km/s`;
+    }
+
+    function getEarthViewPhaseLabel(illuminatedFraction) {
+      if (!Number.isFinite(illuminatedFraction)) {
+        return null;
+      }
+      if (illuminatedFraction >= 0.985) {
+        return 'Full';
+      }
+      if (illuminatedFraction <= 0.015) {
+        return 'New';
+      }
+      if (illuminatedFraction >= 0.65) {
+        return 'Gibbous';
+      }
+      if (illuminatedFraction <= 0.35) {
+        return 'Crescent';
+      }
+      return 'Quarter';
+    }
+
+    function getBodyPhaseInfo(body) {
+      if (!body || body.type === 'Star' || body.id === 'planet:Earth') {
+        return null;
+      }
+
+      const earthBody = findSceneBodyById('planet:Earth');
+      if (!earthBody) {
+        return null;
+      }
+
+      const bodyX = body.heliocentricXKm;
+      const bodyY = body.heliocentricYKm;
+      const bodyZ = body.heliocentricZKm ?? 0;
+      const earthX = earthBody.heliocentricXKm;
+      const earthY = earthBody.heliocentricYKm;
+      const earthZ = earthBody.heliocentricZKm ?? 0;
+
+      if (![bodyX, bodyY, bodyZ, earthX, earthY, earthZ].every(Number.isFinite)) {
+        return null;
+      }
+
+      const sunVectorX = -bodyX;
+      const sunVectorY = -bodyY;
+      const sunVectorZ = -bodyZ;
+      const earthVectorX = earthX - bodyX;
+      const earthVectorY = earthY - bodyY;
+      const earthVectorZ = earthZ - bodyZ;
+      const sunDistance = Math.hypot(sunVectorX, sunVectorY, sunVectorZ);
+      const earthDistance = Math.hypot(earthVectorX, earthVectorY, earthVectorZ);
+
+      if (sunDistance <= 0 || earthDistance <= 0) {
+        return null;
+      }
+
+      const cosinePhaseAngle = clamp(
+        ((sunVectorX * earthVectorX) + (sunVectorY * earthVectorY) + (sunVectorZ * earthVectorZ)) / (sunDistance * earthDistance),
+        -1,
+        1
+      );
+      const illuminatedFraction = (1 + cosinePhaseAngle) / 2;
+      const label = getEarthViewPhaseLabel(illuminatedFraction);
+      if (!label) {
+        return null;
+      }
+
+      return {
+        label,
+        illuminatedFraction,
+        illuminatedPercent: Math.round(illuminatedFraction * 100)
+      };
+    }
+
+    function formatBodyPhase(body) {
+      const phaseInfo = getBodyPhaseInfo(body);
+      if (!phaseInfo) {
+        return null;
+      }
+      return `${phaseInfo.label} • ${phaseInfo.illuminatedPercent}% lit from Earth`;
     }
 
     function degToRad(value) {
@@ -3078,15 +3204,12 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
     }
 
     function shouldUseSceneRenderImage(body) {
-      return Boolean(body)
-        && body.type !== 'Moon'
-        && body.surfaceStyle !== 'nibiru'
-        && body.id !== 'planet:Saturn';
+      return Boolean(body) && SCENE_RENDER_IMAGE_IDS.has(body.id);
     }
 
     function preloadWikipediaRenderImages() {
       for (const body of getRenderableBodies()) {
-        if (body.type === 'Moon') {
+        if (!shouldUseSceneRenderImage(body)) {
           continue;
         }
         void loadWikipediaImageForBody(body);
@@ -4523,7 +4646,8 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
     }
 
     function getBodyLightVector(body, lightOrigin) {
-      return normalizeVector3(lightOrigin.x - body.x, lightOrigin.y - body.y, 0.82);
+      const elevation = body?.type === 'Moon' ? 0.48 : 0.58;
+      return normalizeVector3(lightOrigin.x - body.x, lightOrigin.y - body.y, elevation);
     }
 
     function getFacetShade(points, radiusPx, lightVector, seed, bandIndex, facetIndex) {
@@ -4694,9 +4818,9 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
       ctx.clip();
 
       const baseGradient = ctx.createLinearGradient(lightVector.x * -radiusPx, lightVector.y * -radiusPx, lightVector.x * radiusPx, lightVector.y * radiusPx);
-      baseGradient.addColorStop(0, colorToCss(tintColor(baseColor, 0.22)));
-      baseGradient.addColorStop(0.5, colorToCss(baseColor));
-      baseGradient.addColorStop(1, colorToCss(tintColor(baseColor, -0.35)));
+      baseGradient.addColorStop(0, colorToCss(tintColor(baseColor, 0.28)));
+      baseGradient.addColorStop(0.48, colorToCss(baseColor));
+      baseGradient.addColorStop(1, colorToCss(tintColor(baseColor, -0.46)));
       ctx.fillStyle = baseGradient;
       ctx.fillRect(-radiusPx, -radiusPx, radiusPx * 2, radiusPx * 2);
 
@@ -4737,24 +4861,38 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
         0,
         radiusPx * 1.02
       );
-      smoothWash.addColorStop(0, 'rgba(255, 255, 255, 0.08)');
-      smoothWash.addColorStop(0.56, 'rgba(255, 255, 255, 0.015)');
-      smoothWash.addColorStop(1, 'rgba(0, 0, 0, 0.14)');
+      smoothWash.addColorStop(0, 'rgba(255, 255, 255, 0.12)');
+      smoothWash.addColorStop(0.48, 'rgba(255, 255, 255, 0.03)');
+      smoothWash.addColorStop(1, 'rgba(0, 0, 0, 0.22)');
       ctx.fillStyle = smoothWash;
       ctx.fillRect(-radiusPx, -radiusPx, radiusPx * 2, radiusPx * 2);
 
       drawTexturePatches(body, radiusPx, visibleRadiusPx, baseColor, timestamp);
 
       const shadowGradient = ctx.createLinearGradient(lightVector.x * radiusPx, lightVector.y * radiusPx, -lightVector.x * radiusPx, -lightVector.y * radiusPx);
-      shadowGradient.addColorStop(0, 'rgba(255, 255, 255, 0.10)');
-      shadowGradient.addColorStop(0.45, 'rgba(255, 255, 255, 0.00)');
-      shadowGradient.addColorStop(1, 'rgba(0, 0, 0, 0.46)');
+      shadowGradient.addColorStop(0, 'rgba(255, 255, 255, 0.14)');
+      shadowGradient.addColorStop(0.38, 'rgba(255, 255, 255, 0.02)');
+      shadowGradient.addColorStop(1, 'rgba(0, 0, 0, 0.60)');
       ctx.fillStyle = shadowGradient;
+      ctx.fillRect(-radiusPx, -radiusPx, radiusPx * 2, radiusPx * 2);
+
+      const nightGradient = ctx.createRadialGradient(
+        -lightVector.x * radiusPx * 0.52,
+        -lightVector.y * radiusPx * 0.52,
+        radiusPx * 0.12,
+        -lightVector.x * radiusPx * 0.52,
+        -lightVector.y * radiusPx * 0.52,
+        radiusPx * 1.06
+      );
+      nightGradient.addColorStop(0, 'rgba(0, 0, 0, 0.34)');
+      nightGradient.addColorStop(0.54, 'rgba(0, 0, 0, 0.14)');
+      nightGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = nightGradient;
       ctx.fillRect(-radiusPx, -radiusPx, radiusPx * 2, radiusPx * 2);
 
       ctx.beginPath();
       ctx.ellipse(lightVector.x * radiusPx * 0.34, lightVector.y * radiusPx * 0.34, radiusPx * 0.26, radiusPx * 0.18, Math.atan2(lightVector.y, lightVector.x), 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.10)';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
       ctx.fill();
 
       ctx.beginPath();
@@ -4840,10 +4978,39 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
           lightVector.x * radiusPx,
           lightVector.y * radiusPx
         );
-        lightGradient.addColorStop(0, 'rgba(255, 255, 255, 0.12)');
-        lightGradient.addColorStop(0.46, 'rgba(255, 255, 255, 0.02)');
-        lightGradient.addColorStop(1, 'rgba(0, 0, 0, 0.24)');
+        lightGradient.addColorStop(0, 'rgba(255, 248, 218, 0.24)');
+        lightGradient.addColorStop(0.42, 'rgba(255, 255, 255, 0.05)');
+        lightGradient.addColorStop(0.62, 'rgba(0, 0, 0, 0.16)');
+        lightGradient.addColorStop(1, 'rgba(0, 0, 0, 0.58)');
         ctx.fillStyle = lightGradient;
+        ctx.fillRect(-radiusPx, -radiusPx, radiusPx * 2, radiusPx * 2);
+
+        const nightGradient = ctx.createRadialGradient(
+          -lightVector.x * radiusPx * 0.46,
+          -lightVector.y * radiusPx * 0.46,
+          radiusPx * 0.12,
+          -lightVector.x * radiusPx * 0.46,
+          -lightVector.y * radiusPx * 0.46,
+          radiusPx * 1.02
+        );
+        nightGradient.addColorStop(0, 'rgba(0, 0, 0, 0.32)');
+        nightGradient.addColorStop(0.56, 'rgba(0, 0, 0, 0.12)');
+        nightGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = nightGradient;
+        ctx.fillRect(-radiusPx, -radiusPx, radiusPx * 2, radiusPx * 2);
+
+        const dayGlow = ctx.createRadialGradient(
+          lightVector.x * radiusPx * 0.3,
+          lightVector.y * radiusPx * 0.3,
+          radiusPx * 0.05,
+          lightVector.x * radiusPx * 0.3,
+          lightVector.y * radiusPx * 0.3,
+          radiusPx * 0.78
+        );
+        dayGlow.addColorStop(0, 'rgba(255, 255, 255, 0.12)');
+        dayGlow.addColorStop(0.55, 'rgba(255, 255, 255, 0.04)');
+        dayGlow.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        ctx.fillStyle = dayGlow;
         ctx.fillRect(-radiusPx, -radiusPx, radiusPx * 2, radiusPx * 2);
 
         ctx.beginPath();
@@ -4856,14 +5023,14 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
           0,
           Math.PI * 2
         );
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
         ctx.fill();
         ctx.globalCompositeOperation = 'source-over';
       }
 
       ctx.beginPath();
       ctx.arc(0, 0, radiusPx, 0, Math.PI * 2);
-      ctx.strokeStyle = body.type === 'Star' ? 'rgba(255, 255, 255, 0.16)' : 'rgba(255, 255, 255, 0.04)';
+      ctx.strokeStyle = body.type === 'Star' ? 'rgba(255, 255, 255, 0.16)' : 'rgba(255, 255, 255, 0.08)';
       ctx.lineWidth = 1 / scale;
       ctx.stroke();
       ctx.restore();
@@ -5116,6 +5283,15 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
         const angle = approximateEphemeris
           ? approximateEphemeris.screenAngle
           : getPlanetAngle(planet, orbitRadiusPx, simDays, earthOrbitRadiusPx);
+        const heliocentricXKm = approximateEphemeris
+          ? approximateEphemeris.xAu * ASTRONOMICAL_UNIT_KM
+          : Math.cos(angle) * planet.semiMajorAxisKm;
+        const heliocentricYKm = approximateEphemeris
+          ? approximateEphemeris.yAu * ASTRONOMICAL_UNIT_KM
+          : -Math.sin(angle) * planet.semiMajorAxisKm;
+        const heliocentricZKm = approximateEphemeris
+          ? approximateEphemeris.zAu * ASTRONOMICAL_UNIT_KM
+          : 0;
         return {
           ...planet,
           surfaceGap,
@@ -5125,6 +5301,9 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
           orbitCenterY: layout.sunCenterY,
           angle,
           positionModel: approximateEphemeris ? 'jpl-approx' : 'synthetic',
+          heliocentricXKm,
+          heliocentricYKm,
+          heliocentricZKm,
           approxDistanceFromSunKm: approximateEphemeris
             ? approximateEphemeris.heliocentricDistanceKm
             : planet.semiMajorAxisKm,
@@ -5702,7 +5881,10 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
           hitRadiusPx: layout.sunRadPx,
           planetCount: PLANETS.filter(planet => planet.orbitalClass === 'Planet').length,
           orbitalSpeedKmS: null,
-          approxDistanceFromSunKm: 0
+          approxDistanceFromSunKm: 0,
+          heliocentricXKm: 0,
+          heliocentricYKm: 0,
+          heliocentricZKm: 0
         }
       ];
 
@@ -5729,6 +5911,9 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
           orbitalPeriodDays: planet.orbitalPeriodDays,
           orbitalSpeedKmS: planet.orbitalSpeedKmS,
           approxDistanceFromSunKm: planet.approxDistanceFromSunKm ?? planet.semiMajorAxisKm,
+          heliocentricXKm: planet.heliocentricXKm,
+          heliocentricYKm: planet.heliocentricYKm,
+          heliocentricZKm: planet.heliocentricZKm,
           moonCount: planet.moons.length,
           fact: planet.fact
         });
@@ -5741,6 +5926,9 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
           const moonOrbitalSpeedKmS = moon.orbitalPeriodDays
             ? (Math.PI * 2 * moon.orbitRadiusKm) / (moon.orbitalPeriodDays * 86400)
             : null;
+          const moonRelativeXKm = Math.cos(moonAngle) * moon.orbitRadiusKm;
+          const moonRelativeYKm = -Math.sin(moonAngle) * moon.orbitRadiusKm;
+          const moonRelativeZKm = 0;
 
           bodies.push({
             id: `moon:${planet.name}:${moon.name}`,
@@ -5759,6 +5947,9 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
             orbitalPeriodDays: moon.orbitalPeriodDays,
             orbitalSpeedKmS: moonOrbitalSpeedKmS,
             approxDistanceFromSunKm: (planet.approxDistanceFromSunKm || planet.semiMajorAxisKm || 0) + moon.orbitRadiusKm,
+            heliocentricXKm: Number.isFinite(planet.heliocentricXKm) ? planet.heliocentricXKm + moonRelativeXKm : null,
+            heliocentricYKm: Number.isFinite(planet.heliocentricYKm) ? planet.heliocentricYKm + moonRelativeYKm : null,
+            heliocentricZKm: Number.isFinite(planet.heliocentricZKm) ? planet.heliocentricZKm + moonRelativeZKm : null,
             moonCount: 0,
             eventEligible: getMoonEventEligibility(moon),
             retrograde: Boolean(moon.orbitEphemeris?.retrograde),
@@ -6020,7 +6211,7 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
             <strong class="card-panel-title">Object Info</strong>
           </div>
           <span class="type">Hover or click</span>
-          <p class="fact">Move over a planet, moon, or the Sun to inspect scaled size, orbital timing, and a quick fact.</p>
+          <p class="fact">Move over a planet, moon, or the Sun to inspect scaled size, orbital timing, apparent lighting, and a quick fact.</p>
           <p class="hint">Click to pin a card in place. Click empty space to clear it.</p>
         `;
         return;
@@ -6039,17 +6230,17 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
 
       let imageMarkup = '';
       if (imageState.status === 'ready') {
-        const imageSourceLabel = imageState.sourceType === 'local' ? 'Local image asset' : 'Wikipedia image';
+        const imageSourceLabel = imageState.sourceType === 'local' ? 'Local image asset' : 'Image asset';
         imageMarkup = `
           <figure>
-            <img src="${escapeHtml(imageState.url)}" alt="${escapeHtml(`Wikipedia image of ${activeBody.name}`)}" loading="lazy" referrerpolicy="no-referrer">
+            <img src="${escapeHtml(imageState.url)}" alt="${escapeHtml(`Image of ${activeBody.name}`)}" loading="lazy" referrerpolicy="no-referrer">
             <figcaption>${escapeHtml(imageSourceLabel)}: ${escapeHtml(imageState.title || activeBody.name)}</figcaption>
           </figure>
         `;
       } else if (imageState.status === 'loading' || imageState.status === 'idle') {
-        imageMarkup = `<p class="hint">Loading Wikipedia image...</p>`;
+        imageMarkup = `<p class="hint">Loading image...</p>`;
       } else if (imageState.status === 'error') {
-        imageMarkup = `<p class="hint">Wikipedia image unavailable for this object right now.</p>`;
+        imageMarkup = `<p class="hint">Image unavailable for this object right now.</p>`;
       }
 
       const countLabel = activeBody.type === 'Star' ? 'Planet Count' : 'Moon Count';
@@ -6058,6 +6249,7 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
         : (activeBody.moonCount === null || activeBody.moonCount === undefined ? 'N/A' : activeBody.moonCount);
       const orbitalSpeedValue = formatOrbitalSpeed(activeBody.orbitalSpeedKmS);
       const approxDistanceFromSunValue = formatApproxDistanceKm(activeBody.approxDistanceFromSunKm);
+      const phaseValue = formatBodyPhase(activeBody);
       const isFollowingActiveBody = activeBody.id === followTargetId;
       const wikipediaUrl = getWikipediaArticleUrl(activeBody);
       const actionMarkup = `
@@ -6085,6 +6277,7 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
           <dd>${orbitalSpeedValue}</dd>
           <dt>Approx Sun Distance</dt>
           <dd>${approxDistanceFromSunValue}</dd>
+          ${phaseValue ? `<dt>Earth-view Phase</dt><dd>${escapeHtml(phaseValue)}</dd>` : ''}
           <dt>${countLabel}</dt>
           <dd>${countValue}</dd>
         </dl>

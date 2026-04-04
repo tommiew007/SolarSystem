@@ -271,3 +271,14 @@ Timestamp:
 - Prevented the simulation from initializing or continuing to render while the viewport is below the supported threshold.
 - Allowed the app to start or resume automatically if the viewport becomes large enough again.
 - Updated README.md plus the About and More Info panels to explain the tiny-screen block behavior.
+
+26. Curated Scene Textures And Phase Readouts
+Timestamp:
+- 2026-04-03 22:40:27 -04:00 (America/New_York)
+
+- Replaced the old blanket scene-image rule with a curated in-scene texture set for the Sun, major planets, and selected showcase moons.
+- Kept Saturn on the dedicated globe-and-rings render path and allowed smaller or less reliable bodies to continue using the procedural renderer for a cleaner overall scene.
+- Tuned crop settings for the curated moon texture set so the selected moon images frame more cleanly in the scene.
+- Strengthened Sun-driven lighting on both image-rendered and procedural bodies so day/night contrast reads more clearly from the top-down view.
+- Added Earth-view phase reporting to object cards for bodies whose current geometry can be computed locally.
+- Updated README.md plus the About and More Info panels to describe the curated texture policy and the new illumination / phase behavior.

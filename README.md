@@ -16,7 +16,8 @@ This project focuses on readability, exploration, and education. It blends real 
 - Follow camera with animated flight behavior
 - Timeline scrubber for shifting the simulation by days, months, or years
 - Event feed for lightweight moon transits, eclipses, and occultation-style alignments, smoothed for readability
-- Real local image assets in `/images` for in-scene bodies
+- Curated local in-scene textures for the Sun, major planets, and selected showcase moons
+- Stronger Sun-driven illumination plus Earth-view phase readouts in object cards where geometry is available
 - Milky Way panorama background
 - Staged loading overlay that warms the Milky Way, Sun, and core planet assets before interaction begins
 - Ambient procedural music with multiple tracks and mute/cycle behavior
@@ -41,6 +42,8 @@ The app runs entirely in the browser and does not require a build step.
 - Distances are intentionally compacted for readability.
 - The faint orbital rings are visual guide tracks inside that compact layout, not literal physical bands or exact on-screen distance widths.
 - Planet and moon diameters are kept on a shared relative size scale.
+- The in-scene texture path is intentionally curated: the Sun, major planets, and a small set of showcase moons use local image rendering, while smaller or less reliable bodies can stay on the procedural renderer for a cleaner overall view.
+- Illumination is driven by the Sun in the scene, and object cards can report an approximate Earth-view phase for bodies whose current geometry is available locally.
 - Pluto remains on the simplified model path compared with the JPL-based planet set.
 - Startup now uses a staged local-asset warmup: the Milky Way, Sun, and core planet/dwarf-planet imagery are preloaded first, while minor moon imagery can continue warming in the background.
 - Very small smartphone-style viewports are intentionally blocked and shown a larger-screen message instead of forcing the full simulation into an unreadable render.
@@ -121,6 +124,7 @@ The telemetry area can show:
 
 - Local body images in `/images`
 - Planet/moon scene imagery sourced from Wikipedia article imagery and stored locally
+- In-scene image rendering is deliberately curated rather than blanket-applied to every body, so the scene keeps a cleaner, more consistent look
 - Milky Way background sourced from ESO imagery and stored locally
 - Core startup warmup prioritizes the Milky Way, Sun, planets, and Pluto before unlocking interaction, then continues with remaining body imagery in the background
 
