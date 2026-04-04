@@ -250,6 +250,46 @@
       line-height: 1.35;
       letter-spacing: 0.01em;
     }
+    #screenSizeOverlay {
+      position: absolute;
+      inset: 0;
+      z-index: 40;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background:
+        radial-gradient(circle at center, rgba(16, 24, 44, 0.22), rgba(2, 6, 14, 0.96) 74%),
+        rgba(2, 6, 14, 0.96);
+      backdrop-filter: blur(10px);
+    }
+    #screenSizeOverlay .screen-block-panel {
+      width: min(560px, calc(100vw - 32px));
+      padding: 24px 24px 20px;
+      border-radius: 18px;
+      background: rgba(5, 10, 20, 0.84);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow: 0 18px 48px rgba(0, 0, 0, 0.42);
+    }
+    #screenSizeOverlay .screen-block-title {
+      display: block;
+      font-size: clamp(20px, 1.55vw, 28px);
+      font-weight: 700;
+      margin-bottom: 10px;
+      letter-spacing: 0.01em;
+    }
+    #screenSizeOverlay .screen-block-detail,
+    #screenSizeOverlay .screen-block-note {
+      display: block;
+      color: rgba(238, 246, 255, 0.86);
+      font-size: clamp(13px, 0.86vw, 17px);
+      line-height: 1.5;
+    }
+    #screenSizeOverlay .screen-block-note {
+      margin-top: 10px;
+      color: rgba(238, 246, 255, 0.72);
+      font-size: clamp(12px, 0.78vw, 15px);
+    }
     .hidden-ui {
       display: none !important;
     }
@@ -618,6 +658,20 @@
       #loadingOverlay .loading-progress-text {
         font-size: clamp(12px, 3vw, 14px);
       }
+      #screenSizeOverlay {
+        padding: 16px;
+      }
+      #screenSizeOverlay .screen-block-panel {
+        width: calc(100vw - 24px);
+        padding: 18px 18px 16px;
+      }
+      #screenSizeOverlay .screen-block-title {
+        font-size: clamp(18px, 5vw, 24px);
+      }
+      #screenSizeOverlay .screen-block-detail,
+      #screenSizeOverlay .screen-block-note {
+        font-size: clamp(13px, 3.35vw, 16px);
+      }
       #legend {
         left: max(10px, env(safe-area-inset-left));
         right: max(10px, env(safe-area-inset-right));
@@ -658,6 +712,13 @@
 </head>
 <body>
   <canvas id="canvas"></canvas>
+  <div id="screenSizeOverlay" class="is-hidden" role="alertdialog" aria-live="assertive" aria-label="Large screen required">
+    <div class="screen-block-panel">
+      <strong class="screen-block-title">Larger Screen Required</strong>
+      <span class="screen-block-detail">This simulation is optimized for larger screens and cannot be rendered on your device.</span>
+      <span class="screen-block-note">Please reopen it on a tablet, laptop, desktop display, or a larger browser window.</span>
+    </div>
+  </div>
   <div id="loadingOverlay" role="status" aria-live="polite" aria-label="Loading simulation">
     <div class="loading-panel">
       <strong id="loadingTitle" class="loading-title">Loading Simulation</strong>
@@ -687,6 +748,7 @@
       <li>Moons now use date-based mean-motion positions as well, so changing the simulation date re-creates the same moon geometry for that moment.</li>
       <li>A built-in event feed can flag transits, eclipses, and occultation-style alignments for major moons with lightweight predictive timing, then hold the current readout long enough to be readable.</li>
       <li>A staged startup warmup now loads the Milky Way, Sun, and core planet assets behind a dedicated loading overlay so the scene feels ready before you begin interacting.</li>
+      <li>Very small smartphone-sized viewports are intentionally blocked with a larger-screen message, so the simulation does not try to render into an unreadable layout.</li>
       <li>Hover and click cards show object facts, distances, orbital timing, follow actions, quick links to learn more, and panel info buttons that explain how to read the displays.</li>
       <li>Camera controls support drag, zoom, follow mode, recentering, a draggable date timeline, a Live Now real-time toggle, and touch-friendly navigation on phones and tablets.</li>
       <li>The simulation remembers your preferred view, speed, labels, music, units, and other settings between sessions unless you clear them.</li>
@@ -710,6 +772,7 @@
       <li><strong>Object imagery:</strong> local body images are sourced from Wikipedia article imagery and then stored in the project for scene rendering and cards.</li>
       <li><strong>Milky Way background:</strong> the galaxy panorama comes from ESO imagery and is used as the real-space backdrop behind the simulation.</li>
       <li><strong>Startup warmup:</strong> the app now preloads the Milky Way, the Sun, and the core planet/dwarf-planet scene assets before unlocking interaction, then continues warming minor moon images in the background.</li>
+      <li><strong>Minimum practical screen size:</strong> very small smartphone-style viewports are blocked intentionally and shown a larger-screen message instead of trying to force the full simulation into an unreadable render.</li>
       <li><strong>Event feed:</strong> eclipse, transit, and occultation-style notices are generated from simplified Sun/Earth alignment geometry around each parent planet, then cadence-smoothed into a readable current/next display instead of re-sorting every frame.</li>
       <li><strong>Modeling note:</strong> distances are intentionally compacted on screen for readability, so the simulation preserves useful relationships without requiring an impossible amount of display space.</li>
       <li><strong>Context help:</strong> small info buttons on the main menu, object card, and scale guide open concise explanations of what each panel means and how to read it.</li>
@@ -801,6 +864,7 @@
   <script>
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
+    const screenSizeOverlay = document.getElementById('screenSizeOverlay');
     const infoCard = document.getElementById('infoCard');
     const loadingOverlay = document.getElementById('loadingOverlay');
     const loadingTitle = document.getElementById('loadingTitle');
@@ -869,6 +933,8 @@
     const KMS_TO_MPH = KM_TO_MILES * 3600;
     const MIN_SCALE = 0.05;
     const MAX_SCALE = 1200;
+    const MIN_SUPPORTED_VIEWPORT_SHORTEST_SIDE = 560;
+    const MAX_TINY_SCREEN_LONGEST_SIDE = 1100;
     const HAS_WEB_AUDIO = Boolean(window.AudioContext || window.webkitAudioContext);
     const STORAGE_KEY = 'solar-system-session-state-v1';
     const SESSION_STATE_VERSION = 11;
@@ -1850,6 +1916,9 @@
     let milkyWayBackgroundPromise = null;
     let startupWarmupComplete = false;
     let drawLoopStarted = false;
+    let appInitializationStarted = false;
+    let screenSizeBlocked = false;
+    let drawLoopHandle = null;
 
     const PANEL_INFO_MESSAGES = {
       object: `Object Info
@@ -2674,6 +2743,36 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
         image.onerror = () => reject(new Error(`Unable to load image: ${url}`));
         image.src = url;
       });
+    }
+
+    function isViewportTooSmallForSimulation() {
+      const shortestSide = Math.min(window.innerWidth, window.innerHeight);
+      const longestSide = Math.max(window.innerWidth, window.innerHeight);
+      return shortestSide < MIN_SUPPORTED_VIEWPORT_SHORTEST_SIDE
+        && longestSide < MAX_TINY_SCREEN_LONGEST_SIDE;
+    }
+
+    function clearSceneForScreenBlock() {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#02060e';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function updateScreenSizeBlocker() {
+      screenSizeBlocked = isViewportTooSmallForSimulation();
+      screenSizeOverlay.classList.toggle('is-hidden', !screenSizeBlocked);
+      if (screenSizeBlocked) {
+        if (drawLoopHandle !== null) {
+          cancelAnimationFrame(drawLoopHandle);
+          drawLoopHandle = null;
+        }
+        drawLoopStarted = false;
+        lastTimestamp = null;
+        loadingOverlay.classList.add('is-hidden');
+        clearSceneForScreenBlock();
+      }
+      return screenSizeBlocked;
     }
 
     function updateLoadingOverlayState({ title = 'Loading Simulation', detail = '', completed = 0, total = 1 } = {}) {
@@ -6014,6 +6113,13 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
     }
 
     function drawScene(timestamp) {
+      if (screenSizeBlocked) {
+        drawLoopStarted = false;
+        drawLoopHandle = null;
+        clearSceneForScreenBlock();
+        return;
+      }
+
       if (lastTimestamp === null) {
         lastTimestamp = timestamp;
       }
@@ -6164,15 +6270,15 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
         persistSessionState();
         lastPersistTimestamp = timestamp;
       }
-      requestAnimationFrame(drawScene);
+      drawLoopHandle = requestAnimationFrame(drawScene);
     }
 
     function ensureDrawLoopStarted() {
-      if (drawLoopStarted) {
+      if (drawLoopStarted || screenSizeBlocked) {
         return;
       }
       drawLoopStarted = true;
-      requestAnimationFrame(drawScene);
+      drawLoopHandle = requestAnimationFrame(drawScene);
     }
 
     function updateTimeFactorIndicators() {
@@ -6816,7 +6922,7 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
     });
 
     function blockInputDuringStartup(e) {
-      if (startupWarmupComplete) {
+      if (startupWarmupComplete && !screenSizeBlocked) {
         return;
       }
 
@@ -6831,7 +6937,18 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
     window.addEventListener('contextmenu', blockInputDuringStartup, { capture: true });
     window.addEventListener('wheel', blockInputDuringStartup, { capture: true, passive: false });
 
-    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('resize', () => {
+      resizeCanvas();
+      const blocked = updateScreenSizeBlocker();
+      if (blocked) {
+        return;
+      }
+      if (!appInitializationStarted) {
+        void initializeApp();
+        return;
+      }
+      ensureDrawLoopStarted();
+    });
     window.addEventListener('beforeunload', () => persistSessionState(true));
     window.addEventListener('pagehide', () => persistSessionState(true));
     document.addEventListener('visibilitychange', () => {
@@ -6841,6 +6958,10 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
     });
 
     async function initializeApp() {
+      if (appInitializationStarted || updateScreenSizeBlocker()) {
+        return;
+      }
+      appInitializationStarted = true;
       resizeCanvas();
       if (!restoreSessionState()) {
         applyDefaultSessionState();
@@ -6859,7 +6980,9 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
       } finally {
         hideLoadingOverlay();
         preloadDeferredBodyImages();
-        ensureDrawLoopStarted();
+        if (!updateScreenSizeBlocker()) {
+          ensureDrawLoopStarted();
+        }
       }
 
       if (warmupFailures > 0) {

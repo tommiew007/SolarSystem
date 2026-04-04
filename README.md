@@ -43,6 +43,7 @@ The app runs entirely in the browser and does not require a build step.
 - Planet and moon diameters are kept on a shared relative size scale.
 - Pluto remains on the simplified model path compared with the JPL-based planet set.
 - Startup now uses a staged local-asset warmup: the Milky Way, Sun, and core planet/dwarf-planet imagery are preloaded first, while minor moon imagery can continue warming in the background.
+- Very small smartphone-style viewports are intentionally blocked and shown a larger-screen message instead of forcing the full simulation into an unreadable render.
 
 ## Controls
 
@@ -154,6 +155,7 @@ The simulation saves key settings in browser storage, including:
 ## Files
 
 - `index.html`: main app
+- `tiny-screen-block-test.html`: standalone test stub that always shows the tiny-screen blocking message
 - `images/`: local visual assets
 - `README.md`: project documentation
 

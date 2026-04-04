@@ -262,3 +262,12 @@ Timestamp:
 
 - Updated the Scale Guide, its info-button explainer, the About panel, the More Info panel, and README.md to explain that the faint orbital rings are visual guide tracks in the compact layout.
 - Clarified that those rings show where bodies travel in this readable 2D model, but are not literal physical bands or exact on-screen distance widths.
+
+25. Tiny-Screen Render Block
+Timestamp:
+- 2026-04-03 22:00:00 -04:00 (America/New_York)
+
+- Added a blocking larger-screen message for very small smartphone-style viewports.
+- Prevented the simulation from initializing or continuing to render while the viewport is below the supported threshold.
+- Allowed the app to start or resume automatically if the viewport becomes large enough again.
+- Updated README.md plus the About and More Info panels to explain the tiny-screen block behavior.
