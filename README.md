@@ -18,6 +18,7 @@ This project focuses on readability, exploration, and education. It blends real 
 - Event feed for lightweight moon transits, eclipses, and occultation-style alignments
 - Real local image assets in `/images` for in-scene bodies
 - Milky Way panorama background
+- Staged loading overlay that warms the Milky Way, Sun, and core planet assets before interaction begins
 - Ambient procedural music with multiple tracks and mute/cycle behavior
 - Mobile and tablet touch support
 - Persistent user settings via browser storage
@@ -40,6 +41,7 @@ The app runs entirely in the browser and does not require a build step.
 - Distances are intentionally compacted for readability.
 - Planet and moon diameters are kept on a shared relative size scale.
 - Pluto remains on the simplified model path compared with the JPL-based planet set.
+- Startup now uses a staged local-asset warmup: the Milky Way, Sun, and core planet/dwarf-planet imagery are preloaded first, while minor moon imagery can continue warming in the background.
 
 ## Controls
 
@@ -89,6 +91,7 @@ The app runs entirely in the browser and does not require a build step.
 - `About`: feature overview
 - `More Info`: technology and source summary
 - `Scale Guide`: explains compacted spacing and scaled body sizes
+- `Loading Overlay`: staged startup warmup for core scene assets
 
 Major panels also include small `i` buttons that open a concise explanation of what that display means and how to read it. Those messages stay up until the next key press, click, or wheel input.
 
@@ -117,6 +120,7 @@ The telemetry area can show:
 - Local body images in `/images`
 - Planet/moon scene imagery sourced from Wikipedia article imagery and stored locally
 - Milky Way background sourced from ESO imagery and stored locally
+- Core startup warmup prioritizes the Milky Way, Sun, planets, and Pluto before unlocking interaction, then continues with remaining body imagery in the background
 
 ### Astronomy References
 

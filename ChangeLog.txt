@@ -1,10 +1,18 @@
 Solar System Simulation
 Change Log
 
+Log compiled / normalized timestamp:
+- 2026-04-03 21:49:47 -04:00 (America/New_York)
+
 This file records the active development history of the project through April 3, 2026.
+
+Timestamp note:
+- Entries in this file were compiled retrospectively into phase-based summaries, so the exact original per-change timestamps were not preserved for the older history below.
+- Going forward, new top-level change-log sections should include a local timestamp when they are added.
 
 Maintenance note:
 - At meaningful checkpoints or phase releases, update this file, README.md, and the in-app help/about/info text together so the project documentation stays in sync with the code.
+- At those same checkpoints, include a local timestamp for each new top-level entry so the log remains time-anchored as it grows.
 
 1. Initial Audit And Scale Pass
 - Audited the original solar-system scaling logic.
@@ -230,3 +238,10 @@ Maintenance note:
 - Added creator credit to About.
 - Updated in-app help repeatedly as controls and simulation behavior changed.
 - Added this ChangeLog.txt as a structured record of the active development history.
+
+22. Startup Warmup And Load-Flow Polish
+- Added a staged loading overlay so the app now warms the Milky Way, Sun, and core planet/dwarf-planet assets before interaction begins.
+- Delayed the first animation-frame startup until the core scene assets are ready, reducing visual pop-in at launch.
+- Kept moon and other secondary body images warming in the background after the scene becomes interactive.
+- Added safer promise-based asset loading for scene-body imagery and the Milky Way background so startup can await the core visual set without hanging the app.
+- Updated README.md plus the About and More Info panels to explain the new startup warmup behavior and the local/background asset-loading split.

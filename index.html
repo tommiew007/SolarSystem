@@ -160,6 +160,16 @@
     #timeFactorToast {
       right: max(10px, env(safe-area-inset-right));
       bottom: max(10px, env(safe-area-inset-bottom));
+      font-weight: 700;
+    }
+    #timeFactorToast.time-factor-positive {
+      color: #7ee67a;
+    }
+    #timeFactorToast.time-factor-negative {
+      color: #ff7b7b;
+    }
+    #timeFactorToast.time-factor-neutral {
+      color: #ffffff;
     }
     #statusToast {
       left: 50%;
@@ -179,6 +189,66 @@
       border: 1px solid rgba(255, 255, 255, 0.18);
       box-shadow: 0 18px 42px rgba(0, 0, 0, 0.38);
       white-space: pre-line;
+    }
+    #loadingOverlay {
+      position: absolute;
+      inset: 0;
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background:
+        radial-gradient(circle at center, rgba(12, 22, 42, 0.34), rgba(2, 6, 14, 0.92) 72%),
+        rgba(2, 6, 14, 0.9);
+      backdrop-filter: blur(10px);
+    }
+    #loadingOverlay .loading-panel {
+      width: min(520px, calc(100vw - 32px));
+      padding: 22px 24px 20px;
+      border-radius: 18px;
+      background: rgba(5, 10, 20, 0.82);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow: 0 18px 48px rgba(0, 0, 0, 0.4);
+      text-align: left;
+    }
+    #loadingOverlay .loading-title {
+      display: block;
+      font-size: clamp(20px, 1.55vw, 28px);
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      margin-bottom: 10px;
+    }
+    #loadingOverlay .loading-detail {
+      display: block;
+      color: rgba(238, 246, 255, 0.86);
+      font-size: clamp(13px, 0.86vw, 17px);
+      line-height: 1.45;
+      margin-bottom: 14px;
+    }
+    #loadingOverlay .loading-track {
+      width: 100%;
+      height: 10px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.1);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+    }
+    #loadingOverlay .loading-bar {
+      width: 0%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #86b7ff 0%, #9fd4ff 46%, #e6f4ff 100%);
+      box-shadow: 0 0 18px rgba(134, 183, 255, 0.3);
+      transition: width 180ms ease-out;
+    }
+    #loadingOverlay .loading-progress-text {
+      display: block;
+      margin-top: 10px;
+      color: rgba(238, 246, 255, 0.78);
+      font-size: clamp(12px, 0.76vw, 15px);
+      line-height: 1.35;
+      letter-spacing: 0.01em;
     }
     .hidden-ui {
       display: none !important;
@@ -532,6 +602,22 @@
         padding: 14px 16px;
         font-size: clamp(16px, 4.6vw, 22px);
       }
+      #loadingOverlay {
+        padding: 16px;
+      }
+      #loadingOverlay .loading-panel {
+        width: calc(100vw - 24px);
+        padding: 18px 18px 16px;
+      }
+      #loadingOverlay .loading-title {
+        font-size: clamp(18px, 5vw, 24px);
+      }
+      #loadingOverlay .loading-detail {
+        font-size: clamp(13px, 3.35vw, 16px);
+      }
+      #loadingOverlay .loading-progress-text {
+        font-size: clamp(12px, 3vw, 14px);
+      }
       #legend {
         left: max(10px, env(safe-area-inset-left));
         right: max(10px, env(safe-area-inset-right));
@@ -572,6 +658,16 @@
 </head>
 <body>
   <canvas id="canvas"></canvas>
+  <div id="loadingOverlay" role="status" aria-live="polite" aria-label="Loading simulation">
+    <div class="loading-panel">
+      <strong id="loadingTitle" class="loading-title">Loading Simulation</strong>
+      <span id="loadingDetail" class="loading-detail">Warming up the Milky Way, Sun, planets, and core scene assets before interaction begins.</span>
+      <div class="loading-track" aria-hidden="true">
+        <div id="loadingProgressBar" class="loading-bar"></div>
+      </div>
+      <span id="loadingProgressText" class="loading-progress-text">Preparing startup...</span>
+    </div>
+  </div>
   <div id="infoCard"></div>
   <div id="followPanel" class="is-hidden">
     <strong>Follow Object</strong>
@@ -589,6 +685,7 @@
       <li>Planet positions now follow date-based JPL approximate heliocentric positions, letting the model reflect where the planets should be for the chosen simulation date and time.</li>
       <li>Moons now use date-based mean-motion positions as well, so changing the simulation date re-creates the same moon geometry for that moment.</li>
       <li>A built-in event feed can flag transits, eclipses, and occultation-style alignments for major moons with lightweight predictive timing.</li>
+      <li>A staged startup warmup now loads the Milky Way, Sun, and core planet assets behind a dedicated loading overlay so the scene feels ready before you begin interacting.</li>
       <li>Hover and click cards show object facts, distances, orbital timing, follow actions, quick links to learn more, and panel info buttons that explain how to read the displays.</li>
       <li>Camera controls support drag, zoom, follow mode, recentering, a draggable date timeline, a Live Now real-time toggle, and touch-friendly navigation on phones and tablets.</li>
       <li>The simulation remembers your preferred view, speed, labels, music, units, and other settings between sessions unless you clear them.</li>
@@ -602,7 +699,7 @@
   <div id="moreInfoPanel" class="is-hidden">
     <h2>More Info</h2>
     <p>This simulation is built as an HTML5 browser app, using a single canvas-based scene with JavaScript for interaction, motion, rendering, and state management. It is designed to run directly in a modern browser without requiring extra software.</p>
-    <p>The visual scene combines local image assets with live browser rendering. Camera movement, labels, info cards, music, touch support, and saved settings all run in the browser so the project stays easy to open, share, and publish.</p>
+    <p>The visual scene combines local image assets with live browser rendering. Camera movement, labels, info cards, music, touch support, saved settings, and staged startup warmup all run in the browser so the project stays easy to open, share, and publish.</p>
     <ul>
       <li><strong>Core technology:</strong> HTML5, CSS, JavaScript, the Canvas 2D API for the scene, and the Web Audio API for the ambient soundtrack.</li>
       <li><strong>Planet positions:</strong> date-based heliocentric planet placement uses JPL approximate position formulas so the major planets can be shown at realistic locations for the chosen simulation date. These positions are computed locally in the browser from embedded reference data, not fetched live. The Live Now control snaps that same model to the current real moment, then can toggle back to your prior simulation state.</li>
@@ -610,6 +707,7 @@
       <li><strong>Sizes, periods, and orbital values:</strong> body diameters, periods, and other baseline numbers are drawn from NASA and JPL fact-sheet style references used throughout the model data.</li>
       <li><strong>Object imagery:</strong> local body images are sourced from Wikipedia article imagery and then stored in the project for scene rendering and cards.</li>
       <li><strong>Milky Way background:</strong> the galaxy panorama comes from ESO imagery and is used as the real-space backdrop behind the simulation.</li>
+      <li><strong>Startup warmup:</strong> the app now preloads the Milky Way, the Sun, and the core planet/dwarf-planet scene assets before unlocking interaction, then continues warming minor moon images in the background.</li>
       <li><strong>Event feed:</strong> eclipse, transit, and occultation-style notices are generated from simplified Sun/Earth alignment geometry around each parent planet, prioritizing readability over observatory-grade precision.</li>
       <li><strong>Modeling note:</strong> distances are intentionally compacted on screen for readability, so the simulation preserves useful relationships without requiring an impossible amount of display space.</li>
       <li><strong>Context help:</strong> small info buttons on the main menu, object card, and scale guide open concise explanations of what each panel means and how to read it.</li>
@@ -701,6 +799,11 @@
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
     const infoCard = document.getElementById('infoCard');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const loadingTitle = document.getElementById('loadingTitle');
+    const loadingDetail = document.getElementById('loadingDetail');
+    const loadingProgressBar = document.getElementById('loadingProgressBar');
+    const loadingProgressText = document.getElementById('loadingProgressText');
     const followPanel = document.getElementById('followPanel');
     const creatorPanel = document.getElementById('creatorPanel');
     const aboutPanel = document.getElementById('aboutPanel');
@@ -1737,6 +1840,9 @@
     const ASSET_CACHE_SUFFIX = window.location.protocol === 'file:' ? '' : `?v=${LOCAL_IMAGE_CACHE_KEY}`;
     const MILKY_WAY_BACKGROUND_URL = `images/milky-way-panorama.jpg${ASSET_CACHE_SUFFIX}`;
     let milkyWayBackgroundImage = null;
+    let milkyWayBackgroundPromise = null;
+    let startupWarmupComplete = false;
+    let drawLoopStarted = false;
 
     const PANEL_INFO_MESSAGES = {
       object: `Object Info
@@ -2504,14 +2610,46 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
       });
     }
 
+    function updateLoadingOverlayState({ title = 'Loading Simulation', detail = '', completed = 0, total = 1 } = {}) {
+      if (!loadingOverlay) {
+        return;
+      }
+
+      const safeTotal = Math.max(total || 1, 1);
+      const safeCompleted = clamp(completed || 0, 0, safeTotal);
+      const percent = (safeCompleted / safeTotal) * 100;
+      loadingTitle.textContent = title;
+      loadingDetail.textContent = detail;
+      loadingProgressBar.style.width = `${percent.toFixed(1)}%`;
+      loadingProgressText.textContent = safeCompleted >= safeTotal
+        ? 'Core startup assets are ready.'
+        : `Loading ${safeCompleted} / ${safeTotal} core assets`;
+    }
+
+    function hideLoadingOverlay() {
+      startupWarmupComplete = true;
+      loadingOverlay.classList.add('is-hidden');
+    }
+
     function loadMilkyWayBackground() {
-      loadImageElement(MILKY_WAY_BACKGROUND_URL)
+      if (milkyWayBackgroundImage) {
+        return Promise.resolve(milkyWayBackgroundImage);
+      }
+      if (milkyWayBackgroundPromise) {
+        return milkyWayBackgroundPromise;
+      }
+
+      milkyWayBackgroundPromise = loadImageElement(MILKY_WAY_BACKGROUND_URL)
         .then(image => {
           milkyWayBackgroundImage = image;
+          return image;
         })
         .catch(() => {
           milkyWayBackgroundImage = null;
+          return null;
         });
+
+      return milkyWayBackgroundPromise;
     }
 
     function createBufferCanvas(width, height) {
@@ -2704,15 +2842,23 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
 
     async function loadWikipediaImageForBody(body) {
       if (!body) {
-        return;
+        return null;
       }
 
       const cachedState = wikiImageCache.get(body.id);
-      if (cachedState && (cachedState.status === 'loading' || cachedState.status === 'ready' || cachedState.status === 'error')) {
-        return;
+      if (cachedState?.status === 'ready' || cachedState?.status === 'error') {
+        return cachedState;
+      }
+      if (cachedState?.status === 'loading' && cachedState.promise) {
+        return cachedState.promise;
       }
 
-      wikiImageCache.set(body.id, { status: 'loading' });
+      let resolveLoad;
+      const loadPromise = new Promise(resolve => {
+        resolveLoad = resolve;
+      });
+
+      wikiImageCache.set(body.id, { status: 'loading', promise: loadPromise });
       if (isActiveInfoBody(body.id)) {
         updateInfoCard(true);
       }
@@ -2729,7 +2875,7 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
               : shouldUseSceneRenderImage(body)
                 ? createSceneRenderImage(body, localImage, subjectBounds)
                 : localImage;
-            wikiImageCache.set(body.id, {
+            const readyState = {
               status: 'ready',
               url: localUrl,
               title: body.name,
@@ -2737,26 +2883,32 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
               subjectBounds,
               renderImage,
               sourceType: 'local'
-            });
+            };
+            wikiImageCache.set(body.id, readyState);
             if (isActiveInfoBody(body.id)) {
               updateInfoCard(true);
             }
-            return;
+            resolveLoad(readyState);
+            return readyState;
           } catch (error) {
-            wikiImageCache.set(body.id, { status: 'error' });
+            const errorState = { status: 'error' };
+            wikiImageCache.set(body.id, errorState);
             if (isActiveInfoBody(body.id)) {
               updateInfoCard(true);
             }
-            return;
+            resolveLoad(errorState);
+            return errorState;
           }
         }
-        wikiImageCache.set(body.id, { status: 'error' });
+        const errorState = { status: 'error' };
+        wikiImageCache.set(body.id, errorState);
+        resolveLoad(errorState);
+        return errorState;
       } catch (error) {
-        wikiImageCache.set(body.id, { status: 'error' });
-      }
-
-      if (isActiveInfoBody(body.id)) {
-        updateInfoCard(true);
+        const errorState = { status: 'error' };
+        wikiImageCache.set(body.id, errorState);
+        resolveLoad(errorState);
+        return errorState;
       }
     }
 
@@ -2768,13 +2920,77 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
     }
 
     function preloadWikipediaRenderImages() {
-      void loadWikipediaImageForBody(SUN_INFO);
       for (const body of getRenderableBodies()) {
-        if (!shouldUseSceneRenderImage(body)) {
+        if (body.type === 'Moon') {
           continue;
         }
         void loadWikipediaImageForBody(body);
       }
+    }
+
+    function preloadDeferredBodyImages() {
+      for (const body of getRenderableBodies()) {
+        void loadWikipediaImageForBody(body);
+      }
+    }
+
+    function getCoreWarmupBodies() {
+      const bodies = [SUN_INFO];
+      const seen = new Set([SUN_INFO.id]);
+      for (const body of getRenderableBodies()) {
+        if (body.type === 'Moon' || seen.has(body.id)) {
+          continue;
+        }
+        bodies.push(body);
+        seen.add(body.id);
+      }
+      return bodies;
+    }
+
+    async function warmCoreSceneAssets() {
+      const warmupBodies = getCoreWarmupBodies();
+      const warmupTasks = [
+        {
+          label: 'Milky Way background',
+          load: () => loadMilkyWayBackground()
+        },
+        ...warmupBodies.map(body => ({
+          label: body.name,
+          load: () => loadWikipediaImageForBody(body)
+        }))
+      ];
+      let completed = 0;
+      let failures = 0;
+      updateLoadingOverlayState({
+        title: 'Loading Simulation',
+        detail: 'Warming up the Milky Way, Sun, planets, and core scene assets before interaction begins.',
+        completed,
+        total: warmupTasks.length
+      });
+
+      await Promise.allSettled(warmupTasks.map(async task => {
+        try {
+          const result = await task.load();
+          if (result && result.status === 'error') {
+            failures += 1;
+          }
+        } catch (error) {
+          failures += 1;
+        } finally {
+          completed += 1;
+          updateLoadingOverlayState({
+            title: 'Loading Simulation',
+            detail: 'Warming up the Milky Way, Sun, planets, and core scene assets before interaction begins.',
+            completed,
+            total: warmupTasks.length
+          });
+        }
+      }));
+
+      return {
+        total: warmupTasks.length,
+        failures
+      };
     }
 
     function formatDuration(seconds) {
@@ -3140,13 +3356,33 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
       timeFactorToast.classList.add('is-hidden');
     }
 
+    function getTimeFactorReadoutText(value = speedFactor) {
+      return `Time Factor: ${formatTimeFactor(value)} • ${formatDisplayedTimeRate(value)}`;
+    }
+
+    function applyTimeFactorVisualState(element, value = speedFactor) {
+      if (!element) {
+        return;
+      }
+
+      element.classList.remove('time-factor-positive', 'time-factor-negative', 'time-factor-neutral');
+      element.classList.add(
+        value > 0
+          ? 'time-factor-positive'
+          : value < 0
+            ? 'time-factor-negative'
+            : 'time-factor-neutral'
+      );
+    }
+
     function showTransientTimeFactorToast() {
       if (showHelp) {
         clearTransientTimeFactorToast();
         return;
       }
 
-      timeFactorToast.textContent = `Time Factor: ${formatTimeFactor(speedFactor)}`;
+      timeFactorToast.textContent = getTimeFactorReadoutText(speedFactor);
+      applyTimeFactorVisualState(timeFactorToast, speedFactor);
       timeFactorToast.classList.remove('is-hidden');
       if (timeFactorToastTimer !== null) {
         window.clearTimeout(timeFactorToastTimer);
@@ -5831,17 +6067,21 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
       requestAnimationFrame(drawScene);
     }
 
+    function ensureDrawLoopStarted() {
+      if (drawLoopStarted) {
+        return;
+      }
+      drawLoopStarted = true;
+      requestAnimationFrame(drawScene);
+    }
+
     function updateTimeFactorIndicators() {
-      const formattedTimeRate = formatDisplayedTimeRate(speedFactor);
-      timeFactorDisplay.textContent = `Time Factor: ${formatTimeFactor(speedFactor)} • ${formattedTimeRate}`;
-      timeFactorDisplay.className = speedFactor > 0
-        ? 'time-factor-positive'
-        : speedFactor < 0
-          ? 'time-factor-negative'
-          : 'time-factor-neutral';
+      timeFactorDisplay.textContent = getTimeFactorReadoutText(speedFactor);
+      applyTimeFactorVisualState(timeFactorDisplay, speedFactor);
       document.getElementById('timeScaleDisplay').textContent = getTimeScaleDescription();
       if (!timeFactorToast.classList.contains('is-hidden')) {
-        timeFactorToast.textContent = `Time Factor: ${formatTimeFactor(speedFactor)} • ${formattedTimeRate}`;
+        timeFactorToast.textContent = getTimeFactorReadoutText(speedFactor);
+        applyTimeFactorVisualState(timeFactorToast, speedFactor);
       }
     }
 
@@ -6475,6 +6715,22 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
       startFollowing(targetBody.id, true);
     });
 
+    function blockInputDuringStartup(e) {
+      if (startupWarmupComplete) {
+        return;
+      }
+
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    }
+
+    window.addEventListener('keydown', blockInputDuringStartup, { capture: true });
+    window.addEventListener('pointerdown', blockInputDuringStartup, { capture: true });
+    window.addEventListener('click', blockInputDuringStartup, { capture: true });
+    window.addEventListener('dblclick', blockInputDuringStartup, { capture: true });
+    window.addEventListener('contextmenu', blockInputDuringStartup, { capture: true });
+    window.addEventListener('wheel', blockInputDuringStartup, { capture: true, passive: false });
+
     window.addEventListener('resize', resizeCanvas);
     window.addEventListener('beforeunload', () => persistSessionState(true));
     window.addEventListener('pagehide', () => persistSessionState(true));
@@ -6484,19 +6740,34 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
       }
     });
 
-    resizeCanvas();
-    if (!restoreSessionState()) {
-      applyDefaultSessionState();
+    async function initializeApp() {
+      resizeCanvas();
+      if (!restoreSessionState()) {
+        applyDefaultSessionState();
+      }
+      updateOverlay();
+      updateHelpVisibility();
+      updateFollowUI();
+      updateCreatorInfoVisibility();
+      updateAboutInfoVisibility();
+      updateInfoCard();
+
+      let warmupFailures = 0;
+      try {
+        const warmupResult = await warmCoreSceneAssets();
+        warmupFailures = warmupResult.failures;
+      } finally {
+        hideLoadingOverlay();
+        preloadDeferredBodyImages();
+        ensureDrawLoopStarted();
+      }
+
+      if (warmupFailures > 0) {
+        showTransientStatusMessage('Core scene ready. Some optional images may continue warming or fall back quietly.', 2800);
+      }
     }
-    updateOverlay();
-    updateHelpVisibility();
-    updateFollowUI();
-    updateCreatorInfoVisibility();
-    updateAboutInfoVisibility();
-    updateInfoCard();
-    loadMilkyWayBackground();
-    preloadWikipediaRenderImages();
-    requestAnimationFrame(drawScene);
+
+    void initializeApp();
   </script>
 </body>
 </html>
