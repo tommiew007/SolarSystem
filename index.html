@@ -120,7 +120,7 @@
     .hidden-ui {
       display: none !important;
     }
-    #infoCard, #legend, #followPanel, #creatorPanel, #aboutPanel {
+    #infoCard, #legend, #followPanel, #creatorPanel, #aboutPanel, #moreInfoPanel {
       position: absolute;
       background: rgba(5, 10, 20, 0.74);
       border: 1px solid rgba(255, 255, 255, 0.12);
@@ -310,7 +310,7 @@
       text-align: center;
       z-index: 11;
     }
-    #aboutPanel {
+    #aboutPanel, #moreInfoPanel {
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
@@ -322,28 +322,36 @@
       line-height: 1.48;
       z-index: 13;
     }
-    #aboutPanel h2 {
+    #aboutPanel h2, #moreInfoPanel h2 {
       margin: 0 0 10px;
       font-size: clamp(20px, 1.35vw, 28px);
       line-height: 1.12;
     }
-    #aboutPanel p {
+    #aboutPanel p, #moreInfoPanel p {
       margin: 0 0 10px;
       color: rgba(255, 255, 255, 0.88);
     }
-    #aboutPanel ul {
+    #aboutPanel ul, #moreInfoPanel ul {
       margin: 0 0 14px 18px;
       padding: 0;
     }
-    #aboutPanel li {
+    #aboutPanel li, #moreInfoPanel li {
       margin: 0 0 8px;
       color: rgba(255, 255, 255, 0.88);
     }
-    #aboutPanel .about-close {
+    #aboutPanel .about-actions,
+    #moreInfoPanel .about-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 8px;
+    }
+    #aboutPanel .about-close,
+    #aboutPanel .about-more,
+    #moreInfoPanel .about-close {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      margin-top: 6px;
       padding: 10px 14px;
       border: 1px solid rgba(255, 255, 255, 0.16);
       border-radius: 8px;
@@ -352,8 +360,13 @@
       font: inherit;
       cursor: pointer;
     }
-    #aboutPanel .about-close:hover {
+    #aboutPanel .about-close:hover,
+    #aboutPanel .about-more:hover,
+    #moreInfoPanel .about-close:hover {
       background: rgba(255, 255, 255, 0.16);
+    }
+    #moreInfoPanel {
+      z-index: 14;
     }
     .is-hidden {
       display: none !important;
@@ -455,7 +468,8 @@
         top: max(10px, env(safe-area-inset-top));
         width: calc(100vw - 20px);
       }
-      #aboutPanel {
+      #aboutPanel,
+      #moreInfoPanel {
         left: max(10px, env(safe-area-inset-left));
         right: max(10px, env(safe-area-inset-right));
         top: 50%;
@@ -489,7 +503,27 @@
       <li>The simulation remembers your preferred view, speed, labels, music, units, and other settings between sessions unless you clear them.</li>
     </ul>
     <p>Some parts remain intentionally simplified for readability: orbit spacing is compressed to fit the screen, and Pluto stays on the simplified model path.</p>
-    <button id="closeAboutButton" class="about-close" type="button">Close About</button>
+    <div class="about-actions">
+      <button id="moreInfoButton" class="about-more" type="button">More Info</button>
+      <button id="closeAboutButton" class="about-close" type="button">Close About</button>
+    </div>
+  </div>
+  <div id="moreInfoPanel" class="is-hidden">
+    <h2>More Info</h2>
+    <p>This simulation is built as an HTML5 browser app, using a single canvas-based scene with JavaScript for interaction, motion, rendering, and state management. It is designed to run directly in a modern browser without requiring extra software.</p>
+    <p>The visual scene combines local image assets with live browser rendering. Camera movement, labels, info cards, music, touch support, and saved settings all run in the browser so the project stays easy to open, share, and publish.</p>
+    <ul>
+      <li><strong>Core technology:</strong> HTML5, CSS, JavaScript, the Canvas 2D API for the scene, and the Web Audio API for the ambient soundtrack.</li>
+      <li><strong>Planet positions:</strong> date-based heliocentric planet placement uses JPL approximate position formulas so the major planets can be shown at realistic locations for the chosen simulation date.</li>
+      <li><strong>Sizes, periods, and orbital values:</strong> body diameters, periods, and other baseline numbers are drawn from NASA and JPL fact-sheet style references used throughout the model data.</li>
+      <li><strong>Object imagery:</strong> local body images are sourced from Wikipedia article imagery and then stored in the project for scene rendering and cards.</li>
+      <li><strong>Milky Way background:</strong> the galaxy panorama comes from ESO imagery and is used as the real-space backdrop behind the simulation.</li>
+      <li><strong>Modeling note:</strong> distances are intentionally compacted on screen for readability, so the simulation preserves useful relationships without requiring an impossible amount of display space.</li>
+    </ul>
+    <p>The result is a browser-friendly educational model that mixes real astronomical reference data with readable visual design choices, so it can feel informative without becoming too dense to explore.</p>
+    <div class="about-actions">
+      <button id="closeMoreInfoButton" class="about-close" type="button">Close More Info</button>
+    </div>
   </div>
   <div id="overlay">
     <span id="timeFactorDisplay" class="time-factor-neutral" role="button" tabindex="0" title="Click to enter a time factor">Time Factor: 0.00</span>
@@ -555,7 +589,10 @@
     const followPanel = document.getElementById('followPanel');
     const creatorPanel = document.getElementById('creatorPanel');
     const aboutPanel = document.getElementById('aboutPanel');
+    const moreInfoPanel = document.getElementById('moreInfoPanel');
+    const moreInfoButton = document.getElementById('moreInfoButton');
     const closeAboutButton = document.getElementById('closeAboutButton');
+    const closeMoreInfoButton = document.getElementById('closeMoreInfoButton');
     const timeFactorDisplay = document.getElementById('timeFactorDisplay');
     const timeFactorToast = document.getElementById('timeFactorToast');
     const statusToast = document.getElementById('statusToast');
@@ -1445,6 +1482,7 @@
     let showCards = true;
     let showCreatorInfo = false;
     let showAboutInfo = false;
+    let showMoreInfo = false;
     let showNibiru = false;
     let showFollowChooser = false;
     let followTargetId = null;
@@ -2554,21 +2592,34 @@
     }
 
     function getHeldTimeFactorInterval(elapsedMs) {
-      if (elapsedMs < 220) {
+      if (elapsedMs < 180) {
         return Infinity;
       }
 
-      const ramp = clamp((elapsedMs - 220) / 2000, 0, 1);
-      return lerp(145, 16, 1 - Math.exp(-4.4 * ramp));
+      const ramp = clamp((elapsedMs - 180) / 1700, 0, 1);
+      return lerp(125, 11, 1 - Math.exp(-5.2 * ramp));
     }
 
     function getHeldTimeFactorStepMultiplier(elapsedMs) {
-      if (elapsedMs < 520) {
+      if (elapsedMs < 450) {
         return 1;
       }
 
-      const ramp = clamp((elapsedMs - 520) / 2200, 0, 1);
-      return clamp(Math.round(Math.pow(2, ramp * 3.2)), 1, 9);
+      const holdSeconds = (elapsedMs - 450) / 1000;
+
+      if (holdSeconds < 1.2) {
+        return clamp(Math.round(Math.pow(2.3, holdSeconds * 1.45)), 1, 4);
+      }
+
+      if (holdSeconds < 3.5) {
+        return clamp(Math.round(4 * Math.pow(1.45, holdSeconds - 1.2)), 4, 12);
+      }
+
+      if (holdSeconds < 6.5) {
+        return clamp(Math.round(12 * Math.pow(1.2, holdSeconds - 3.5)), 12, 22);
+      }
+
+      return clamp(Math.round(22 * Math.pow(1.11, holdSeconds - 6.5)), 22, 42);
     }
 
     function updateHeldTimeFactor(timestamp) {
@@ -2660,6 +2711,26 @@
       persistSessionState();
     }
 
+    function toggleAboutPanels() {
+      const nextVisible = !(showAboutInfo || showMoreInfo);
+      showAboutInfo = nextVisible;
+      if (!nextVisible) {
+        showMoreInfo = false;
+      }
+      updateAboutInfoVisibility();
+    }
+
+    function openMoreInfoPanel() {
+      showAboutInfo = true;
+      showMoreInfo = true;
+      updateAboutInfoVisibility();
+    }
+
+    function closeMoreInfoPanel() {
+      showMoreInfo = false;
+      updateMoreInfoVisibility();
+    }
+
     function updateResponsiveUI() {
       const touchLayout = isTouchUILayout();
       touchToolbar.classList.toggle('is-hidden', !touchLayout);
@@ -2704,8 +2775,8 @@
       touchMusicButton.classList.toggle('is-active', musicEnabled && !musicUnavailable);
       touchUnitsButton.textContent = getMeasurementSystemLabel();
       touchUnitsButton.classList.toggle('is-active', measurementSystem === 'english');
-      touchAboutButton.textContent = showAboutInfo ? 'About On' : 'About';
-      touchAboutButton.classList.toggle('is-active', showAboutInfo);
+      touchAboutButton.textContent = (showAboutInfo || showMoreInfo) ? 'About On' : 'About';
+      touchAboutButton.classList.toggle('is-active', showAboutInfo || showMoreInfo);
       touchHelpButton.textContent = showHelp ? 'Hide Help' : 'Help';
       touchHelpButton.classList.toggle('is-active', showHelp);
     }
@@ -4242,6 +4313,7 @@
       showCards = true;
       showCreatorInfo = false;
       showAboutInfo = false;
+      showMoreInfo = false;
       moonMotionMultiplier = 1;
       measurementSystem = 'metric';
       simulationReferenceMs = Date.now();
@@ -4519,9 +4591,20 @@
     }
 
     function updateAboutInfoVisibility() {
+      if (!showAboutInfo) {
+        showMoreInfo = false;
+      }
       aboutPanel.classList.toggle('is-hidden', !showAboutInfo);
+      updateMoreInfoVisibility(false);
       updateResponsiveUI();
       persistSessionState();
+    }
+
+    function updateMoreInfoVisibility(syncResponsive = true) {
+      moreInfoPanel.classList.toggle('is-hidden', !(showAboutInfo && showMoreInfo));
+      if (syncResponsive) {
+        updateResponsiveUI();
+      }
     }
 
     function updateCanvasCursor() {
@@ -5180,8 +5263,7 @@
       }
       if (key === 'a' && !e.ctrlKey && !e.metaKey && !e.altKey) {
         e.preventDefault();
-        showAboutInfo = !showAboutInfo;
-        updateAboutInfoVisibility();
+        toggleAboutPanels();
       }
       if (key === 'u') {
         e.preventDefault();
@@ -5391,8 +5473,7 @@
 
     touchAboutButton.addEventListener('click', () => {
       void restoreMusicOnGesture();
-      showAboutInfo = !showAboutInfo;
-      updateAboutInfoVisibility();
+      toggleAboutPanels();
     });
 
     touchHelpButton.addEventListener('click', () => {
@@ -5404,6 +5485,14 @@
     closeAboutButton.addEventListener('click', () => {
       showAboutInfo = false;
       updateAboutInfoVisibility();
+    });
+
+    moreInfoButton.addEventListener('click', () => {
+      openMoreInfoPanel();
+    });
+
+    closeMoreInfoButton.addEventListener('click', () => {
+      closeMoreInfoPanel();
     });
 
     function handlePointerDragMove(e) {
