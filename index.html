@@ -1143,7 +1143,7 @@
           .sort((a, b) => a.orbitRadiusKm - b.orbitRadiusKm)
           .map((moon, moonIndex, moonArray) => ({
             ...moon,
-            orbitEphemeris: JPL_MEAN_MOON_ELEMENTS[`moon:${planet.name}:${moon.name}`] || null,
+            orbitEphemeris: globalThis.JPL_MEAN_MOON_ELEMENTS?.[`moon:${planet.name}:${moon.name}`] || null,
             seed: getStableSeed(`${planet.name}-${moon.name}`),
             surfaceStyle: getSurfaceStyle('moon', moon.name, planet.name),
             radiusPx: diameterKmToPx(moon.diameterKm) / 2,
@@ -1505,7 +1505,7 @@
       }
     };
 
-    const JPL_MEAN_MOON_ELEMENTS = {
+    globalThis.JPL_MEAN_MOON_ELEMENTS = {
       'moon:Earth:Moon': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 135.27 },
       'moon:Mars:Phobos': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 189.7 },
       'moon:Mars:Deimos': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 205.0 },
@@ -1629,6 +1629,7 @@
     let currentMusicTrackIndex = DEFAULT_MUSIC_TRACK_INDEX;
     let musicResumePending = true;
     let musicUnavailable = false;
+    let liveNowSnapshot = null;
     let sceneBodies = [];
     let pointerBodyId = null;
     let hoveredBodyId = null;
