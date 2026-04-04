@@ -30,7 +30,7 @@
       max-width: min(500px, calc(100vw - 20px));
       padding: clamp(8px, 0.65vw, 12px) clamp(10px, 0.8vw, 14px);
       border-radius: 12px;
-      font-size: clamp(10px, 0.62vw, 13px);
+      font-size: clamp(12px, 0.74vw, 15px);
       line-height: 1.32;
       z-index: 9;
     }
@@ -75,7 +75,7 @@
       background: rgba(255, 255, 255, 0.1);
       color: white;
       font: inherit;
-      font-size: clamp(10px, 0.62vw, 13px);
+      font-size: clamp(12px, 0.74vw, 15px);
       text-align: center;
       cursor: pointer;
     }
@@ -424,7 +424,7 @@
         left: max(10px, env(safe-area-inset-left));
         right: max(10px, env(safe-area-inset-right));
         bottom: calc(max(10px, env(safe-area-inset-bottom)) + 72px);
-        font-size: clamp(10px, 2.5vw, 13px);
+        font-size: clamp(12px, 3vw, 15px);
       }
       #timeFactorToast {
         left: max(10px, env(safe-area-inset-left));
@@ -2404,9 +2404,9 @@
     }
 
     function normalizeTimeFactor(value) {
-      const normalized = Math.round((Number.isFinite(value) ? value : 0) * 100000) / 100000;
+      const normalized = Math.round((Number.isFinite(value) ? value : 0) * 1_000_000_000_000) / 1_000_000_000_000;
       const capped = clamp(normalized, -MAX_DISPLAY_TIME_FACTOR / DISPLAY_TIME_FACTOR_MULTIPLIER, MAX_DISPLAY_TIME_FACTOR / DISPLAY_TIME_FACTOR_MULTIPLIER);
-      return Math.abs(capped) < 0.0000001 ? 0 : capped;
+      return Math.abs(capped) < 0.000000000001 ? 0 : capped;
     }
 
     function normalizeDisplayedTimeFactor(value) {
@@ -2803,7 +2803,7 @@
     }
 
     function formatDisplayedTimeRate(value = speedFactor) {
-      if (Math.abs(value) < 0.0000001) {
+      if (Math.abs(value) < 0.000000000001) {
         return 'Paused';
       }
 
