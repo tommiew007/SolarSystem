@@ -51,6 +51,26 @@
       letter-spacing: 0.08em;
       text-transform: uppercase;
     }
+    #overlay .timeline-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    #overlay .timeline-row select {
+      flex: 0 0 96px;
+      padding: 6px 8px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #eef6ff;
+      font: inherit;
+      color-scheme: dark;
+    }
+    #overlay .timeline-row input[type="range"] {
+      flex: 1 1 auto;
+      accent-color: #8ec0ff;
+    }
     #timeFactorDisplay {
       font-weight: 700;
       cursor: pointer;
@@ -426,6 +446,15 @@
         bottom: calc(max(10px, env(safe-area-inset-bottom)) + 72px);
         font-size: clamp(12px, 3vw, 15px);
       }
+      #overlay .timeline-row {
+        flex-wrap: wrap;
+      }
+      #overlay .timeline-row select {
+        flex-basis: 110px;
+      }
+      #overlay .timeline-row input[type="range"] {
+        min-width: 160px;
+      }
       #timeFactorToast {
         left: max(10px, env(safe-area-inset-left));
         right: max(10px, env(safe-area-inset-right));
@@ -497,9 +526,10 @@
     <ul>
       <li>Planet and moon sizes are drawn from a shared size scale relative to the Sun, so body diameters stay visually meaningful.</li>
       <li>Planet positions now follow date-based JPL approximate heliocentric positions, letting the model reflect where the planets should be for the chosen simulation date and time.</li>
-      <li>Moons orbit their parent planets with independent motion controls so fast systems like Jupiter can still be explored comfortably.</li>
+      <li>Moons now use date-based mean-motion positions as well, so changing the simulation date re-creates the same moon geometry for that moment.</li>
+      <li>A built-in event feed can flag transits, eclipses, and occultation-style alignments for major moons with lightweight predictive timing.</li>
       <li>Hover and click cards show object facts, distances, orbital timing, follow actions, and quick links to learn more.</li>
-      <li>Camera controls support drag, zoom, follow mode, recentering, and touch-friendly navigation on phones and tablets.</li>
+      <li>Camera controls support drag, zoom, follow mode, recentering, a draggable date timeline, and touch-friendly navigation on phones and tablets.</li>
       <li>The simulation remembers your preferred view, speed, labels, music, units, and other settings between sessions unless you clear them.</li>
     </ul>
     <p>Some parts remain intentionally simplified for readability: orbit spacing is compressed to fit the screen, and Pluto stays on the simplified model path.</p>
@@ -514,10 +544,12 @@
     <p>The visual scene combines local image assets with live browser rendering. Camera movement, labels, info cards, music, touch support, and saved settings all run in the browser so the project stays easy to open, share, and publish.</p>
     <ul>
       <li><strong>Core technology:</strong> HTML5, CSS, JavaScript, the Canvas 2D API for the scene, and the Web Audio API for the ambient soundtrack.</li>
-      <li><strong>Planet positions:</strong> date-based heliocentric planet placement uses JPL approximate position formulas so the major planets can be shown at realistic locations for the chosen simulation date.</li>
+      <li><strong>Planet positions:</strong> date-based heliocentric planet placement uses JPL approximate position formulas so the major planets can be shown at realistic locations for the chosen simulation date. These positions are computed locally in the browser from embedded reference data, not fetched live.</li>
+      <li><strong>Moon positions:</strong> date-based moon placement uses JPL planetary satellite mean-element epochs and mean anomalies as lightweight browser-friendly anchors for recreating moon geometry by date. These moon positions are also computed locally from stored reference values rather than requested from JPL or NASA on each change.</li>
       <li><strong>Sizes, periods, and orbital values:</strong> body diameters, periods, and other baseline numbers are drawn from NASA and JPL fact-sheet style references used throughout the model data.</li>
       <li><strong>Object imagery:</strong> local body images are sourced from Wikipedia article imagery and then stored in the project for scene rendering and cards.</li>
       <li><strong>Milky Way background:</strong> the galaxy panorama comes from ESO imagery and is used as the real-space backdrop behind the simulation.</li>
+      <li><strong>Event feed:</strong> eclipse, transit, and occultation-style notices are generated from simplified Sun/Earth alignment geometry around each parent planet, prioritizing readability over observatory-grade precision.</li>
       <li><strong>Modeling note:</strong> distances are intentionally compacted on screen for readability, so the simulation preserves useful relationships without requiring an impossible amount of display space.</li>
     </ul>
     <p>The result is a browser-friendly educational model that mixes real astronomical reference data with readable visual design choices, so it can feel informative without becoming too dense to explore.</p>
@@ -535,6 +567,7 @@
       <span id="speedHelp">Speed: tap W / S by 1, hold to ramp (1 = 1 Earth hour/sec)</span>
       <span id="moonHelp">Moon Motion: [ / ] adjusts moon speed</span>
       <span id="unitsHelp">Units: U toggles metric / English</span>
+      <span id="timelineHelp">Timeline: drag the scrubber through days, months, or years</span>
       <span id="resetHelp">Reset: R | Defaults: Shift+R | Live: Live Now button | Clear hover: Esc</span>
       <span id="toggleHelp">Toggles: F follow, C cards, L labels, I info, A about, M cycles music, Shift+N Nibiru, H/? help</span>
     </div>
@@ -549,7 +582,20 @@
       <span id="labelDisplay">Labels: Off</span>
       <span id="cardsDisplay">Cards: On</span>
       <span id="followDisplay">Follow: Free camera</span>
-      <span id="motionDisplay">Model: Compact layout, JPL date-based planets; Pluto simplified</span>
+      <span id="eventsDisplay">Events: None nearby</span>
+      <span id="motionDisplay">Model: Compact layout, JPL date-based planets/moons; Pluto simplified</span>
+    </div>
+    <div class="overlay-section">
+      <strong class="overlay-heading">Timeline</strong>
+      <div class="timeline-row">
+        <select id="timelineUnitSelect" aria-label="Timeline scale">
+          <option value="day">Days</option>
+          <option value="month">Months</option>
+          <option value="year">Years</option>
+        </select>
+        <input id="timelineScrubber" type="range" min="-90" max="90" step="1" value="0" aria-label="Simulation date timeline scrubber">
+      </div>
+      <span id="timelineOffsetDisplay">Timeline: anchored here</span>
     </div>
     <button id="liveNowButton" type="button">Live Now</button>
     <button id="clearSettingsButton" type="button">Clear Saved Settings</button>
@@ -606,12 +652,17 @@
     const speedHelp = document.getElementById('speedHelp');
     const moonHelp = document.getElementById('moonHelp');
     const unitsHelp = document.getElementById('unitsHelp');
+    const timelineHelp = document.getElementById('timelineHelp');
     const resetHelp = document.getElementById('resetHelp');
     const toggleHelp = document.getElementById('toggleHelp');
     const moonMotionDisplay = document.getElementById('moonMotionDisplay');
     const simulationDateDisplay = document.getElementById('simulationDateDisplay');
     const unitsDisplay = document.getElementById('unitsDisplay');
     const cardsDisplay = document.getElementById('cardsDisplay');
+    const eventsDisplay = document.getElementById('eventsDisplay');
+    const timelineUnitSelect = document.getElementById('timelineUnitSelect');
+    const timelineScrubber = document.getElementById('timelineScrubber');
+    const timelineOffsetDisplay = document.getElementById('timelineOffsetDisplay');
     const touchSlowerButton = document.getElementById('touchSlowerButton');
     const touchPauseButton = document.getElementById('touchPauseButton');
     const touchFasterButton = document.getElementById('touchFasterButton');
@@ -643,7 +694,7 @@
     const MAX_SCALE = 1200;
     const HAS_WEB_AUDIO = Boolean(window.AudioContext || window.webkitAudioContext);
     const STORAGE_KEY = 'solar-system-session-state-v1';
-    const SESSION_STATE_VERSION = 10;
+    const SESSION_STATE_VERSION = 11;
     const HABITABLE_ZONE_INNER_KM = EARTH_ORBIT_RADIUS_KM * 0.95;
     const HABITABLE_ZONE_OUTER_KM = EARTH_ORBIT_RADIUS_KM * 1.67;
     const FROST_LINE_INNER_KM = EARTH_ORBIT_RADIUS_KM * 2.55;
@@ -670,6 +721,8 @@
     const LEGACY_V3_SIM_DAYS_PER_SECOND_PER_TIME_FACTOR = DAYS_PER_EARTH_MONTH * DISPLAY_TIME_FACTOR_MULTIPLIER;
     const TRAIL_SAMPLE_ANGLE_STEP = Math.PI / 120;
     const MAX_TRAIL_POINTS = 240;
+    const EVENT_PREDICTION_HORIZON_DAYS = 120;
+    const MAX_TELEMETRY_EVENTS = 3;
     const MUSIC_TRACKS = [
       {
         name: 'Celestial Drift',
@@ -1090,6 +1143,7 @@
           .sort((a, b) => a.orbitRadiusKm - b.orbitRadiusKm)
           .map((moon, moonIndex, moonArray) => ({
             ...moon,
+            orbitEphemeris: JPL_MEAN_MOON_ELEMENTS[`moon:${planet.name}:${moon.name}`] || null,
             seed: getStableSeed(`${planet.name}-${moon.name}`),
             surfaceStyle: getSurfaceStyle('moon', moon.name, planet.name),
             radiusPx: diameterKmToPx(moon.diameterKm) / 2,
@@ -1451,6 +1505,87 @@
       }
     };
 
+    const JPL_MEAN_MOON_ELEMENTS = {
+      'moon:Earth:Moon': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 135.27 },
+      'moon:Mars:Phobos': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 189.7 },
+      'moon:Mars:Deimos': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 205.0 },
+      'moon:Jupiter:Metis': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 166.0 },
+      'moon:Jupiter:Adrastea': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 214.5 },
+      'moon:Jupiter:Amalthea': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 310.6 },
+      'moon:Jupiter:Thebe': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 182.1 },
+      'moon:Jupiter:Io': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 330.9 },
+      'moon:Jupiter:Europa': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 345.4 },
+      'moon:Jupiter:Ganymede': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 324.8 },
+      'moon:Jupiter:Callisto': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 87.4 },
+      'moon:Jupiter:Leda': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 232.6 },
+      'moon:Jupiter:Himalia': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 78.3 },
+      'moon:Jupiter:Elara': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 346.9 },
+      'moon:Jupiter:Lysithea': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 328.5 },
+      'moon:Jupiter:Ananke': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 271.7, retrograde: true },
+      'moon:Jupiter:Carme': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 259.5, retrograde: true },
+      'moon:Jupiter:Pasiphae': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 279.3, retrograde: true },
+      'moon:Jupiter:Sinope': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 157.4, retrograde: true },
+      'moon:Saturn:Pan': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 146.6 },
+      'moon:Saturn:Daphnis': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 153.6 },
+      'moon:Saturn:Atlas': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 289.1 },
+      'moon:Saturn:Prometheus': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 135.4 },
+      'moon:Saturn:Pandora': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 123.9 },
+      'moon:Saturn:Epimetheus': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 197.2 },
+      'moon:Saturn:Janus': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 111.7 },
+      'moon:Saturn:Mimas': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 275.3 },
+      'moon:Saturn:Methone': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 0.0 },
+      'moon:Saturn:Pallene': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 2.0 },
+      'moon:Saturn:Enceladus': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 57.0 },
+      'moon:Saturn:Telesto': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 0.0 },
+      'moon:Saturn:Calypso': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 0.0 },
+      'moon:Saturn:Tethys': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 0.0 },
+      'moon:Saturn:Helene': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: -64.5 },
+      'moon:Saturn:Polydeuces': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 359.0 },
+      'moon:Saturn:Dione': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 212.0 },
+      'moon:Saturn:Rhea': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 31.5 },
+      'moon:Saturn:Titan': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 11.7 },
+      'moon:Saturn:Hyperion': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 122.9 },
+      'moon:Saturn:Iapetus': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 74.8 },
+      'moon:Saturn:Phoebe': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 308.0, retrograde: true },
+      'moon:Uranus:Cordelia': { epochMs: Date.UTC(2025, 0, 1, 0), meanAnomalyDeg: 287.4 },
+      'moon:Uranus:Ophelia': { epochMs: Date.UTC(2025, 0, 1, 0), meanAnomalyDeg: 213.4 },
+      'moon:Uranus:Bianca': { epochMs: Date.UTC(2025, 0, 1, 0), meanAnomalyDeg: 109.1 },
+      'moon:Uranus:Cressida': { epochMs: Date.UTC(2025, 0, 1, 0), meanAnomalyDeg: 0.5 },
+      'moon:Uranus:Desdemona': { epochMs: Date.UTC(2025, 0, 1, 0), meanAnomalyDeg: 230.0 },
+      'moon:Uranus:Juliet': { epochMs: Date.UTC(2025, 0, 1, 0), meanAnomalyDeg: 319.8 },
+      'moon:Uranus:Portia': { epochMs: Date.UTC(2025, 0, 1, 0), meanAnomalyDeg: 310.1 },
+      'moon:Uranus:Rosalind': { epochMs: Date.UTC(2025, 0, 1, 0), meanAnomalyDeg: 287.7 },
+      'moon:Uranus:Cupid': { epochMs: Date.UTC(2025, 0, 1, 0), meanAnomalyDeg: 3.3 },
+      'moon:Uranus:Belinda': { epochMs: Date.UTC(2025, 0, 1, 0), meanAnomalyDeg: 226.4 },
+      'moon:Uranus:Perdita': { epochMs: Date.UTC(2025, 0, 1, 0), meanAnomalyDeg: 168.0 },
+      'moon:Uranus:Puck': { epochMs: Date.UTC(2025, 0, 1, 0), meanAnomalyDeg: 264.1 },
+      'moon:Uranus:Mab': { epochMs: Date.UTC(2025, 0, 1, 0), meanAnomalyDeg: 250.8 },
+      'moon:Uranus:Miranda': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 73.0 },
+      'moon:Uranus:Ariel': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 193.5 },
+      'moon:Uranus:Umbriel': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 253.0 },
+      'moon:Uranus:Titania': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 68.1 },
+      'moon:Uranus:Oberon': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 143.6 },
+      'moon:Neptune:Naiad': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 89.7 },
+      'moon:Neptune:Thalassa': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 165.7 },
+      'moon:Neptune:Despina': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 125.1 },
+      'moon:Neptune:Galatea': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 86.7 },
+      'moon:Neptune:Larissa': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 165.5 },
+      'moon:Neptune:Hippocamp': { epochMs: Date.UTC(2010, 0, 1, 12), meanAnomalyDeg: 286.5 },
+      'moon:Neptune:Proteus': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 276.8 },
+      'moon:Neptune:Triton': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 63.0, retrograde: true },
+      'moon:Neptune:Nereid': { epochMs: Date.UTC(2020, 0, 1, 0), meanAnomalyDeg: 318.5 },
+      'moon:Neptune:Halimede': { epochMs: Date.UTC(2020, 0, 1, 0), meanAnomalyDeg: 135.8, retrograde: true },
+      'moon:Neptune:Sao': { epochMs: Date.UTC(2020, 0, 1, 0), meanAnomalyDeg: 178.5 },
+      'moon:Neptune:Laomedeia': { epochMs: Date.UTC(2020, 0, 1, 0), meanAnomalyDeg: 248.1 },
+      'moon:Neptune:Psamathe': { epochMs: Date.UTC(2020, 0, 1, 0), meanAnomalyDeg: 183.2, retrograde: true },
+      'moon:Neptune:Neso': { epochMs: Date.UTC(2020, 0, 1, 0), meanAnomalyDeg: 13.8, retrograde: true },
+      'moon:Pluto:Charon': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 304.1 },
+      'moon:Pluto:Styx': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 358.1 },
+      'moon:Pluto:Nix': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 338.2 },
+      'moon:Pluto:Kerberos': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 276.1 },
+      'moon:Pluto:Hydra': { epochMs: Date.UTC(2000, 0, 1, 12), meanAnomalyDeg: 335.0 }
+    };
+
     function getRenderableBodies() {
       return PLANETS.flatMap(planet => [
         {
@@ -1485,6 +1620,9 @@
     let showMoreInfo = false;
     let showNibiru = false;
     let showFollowChooser = false;
+    let timelineUnit = 'day';
+    let timelineAnchorMs = null;
+    let timelineOffset = 0;
     let followTargetId = null;
     let followNeedsZoom = false;
     let musicEnabled = true;
@@ -1740,6 +1878,10 @@
       return (value * Math.PI) / 180;
     }
 
+    function radToDeg(value) {
+      return (value * 180) / Math.PI;
+    }
+
     function normalizeDegrees(value) {
       let normalized = value % 360;
       if (normalized < 0) {
@@ -1837,12 +1979,105 @@
         return;
       }
 
-      simulationReferenceMs = parsedUnixMs - (simTimeMs / 1000) * MS_PER_DAY;
+      setSimulationDateMs(parsedUnixMs, { showStatus: true, syncTimeline: true });
+    }
+
+    function normalizeTimelineUnit(value) {
+      return value === 'month' || value === 'year' ? value : 'day';
+    }
+
+    function getTimelineRange(unit = timelineUnit) {
+      switch (normalizeTimelineUnit(unit)) {
+        case 'month':
+          return { min: -24, max: 24, label: 'month' };
+        case 'year':
+          return { min: -50, max: 50, label: 'year' };
+        default:
+          return { min: -90, max: 90, label: 'day' };
+      }
+    }
+
+    function addCalendarOffset(baseMs, unit, amount) {
+      const date = new Date(baseMs);
+      if (unit === 'month') {
+        date.setMonth(date.getMonth() + amount);
+      } else if (unit === 'year') {
+        date.setFullYear(date.getFullYear() + amount);
+      } else {
+        date.setDate(date.getDate() + amount);
+      }
+      return date.getTime();
+    }
+
+    function formatTimelineOffsetLabel() {
+      if (timelineOffset === 0) {
+        return 'Timeline: anchored here';
+      }
+
+      const range = getTimelineRange(timelineUnit);
+      const absValue = Math.abs(timelineOffset);
+      const suffix = absValue === 1 ? range.label : `${range.label}s`;
+      const direction = timelineOffset > 0 ? '+' : '-';
+      return `Timeline: ${direction}${absValue} ${suffix}`;
+    }
+
+    function updateTimelineControls() {
+      if (!timelineUnitSelect || !timelineScrubber || !timelineOffsetDisplay) {
+        return;
+      }
+      timelineUnit = normalizeTimelineUnit(timelineUnit);
+      const range = getTimelineRange(timelineUnit);
+      timelineOffset = clamp(Math.round(Number.isFinite(timelineOffset) ? timelineOffset : 0), range.min, range.max);
+      timelineUnitSelect.value = timelineUnit;
+      timelineScrubber.min = String(range.min);
+      timelineScrubber.max = String(range.max);
+      timelineScrubber.step = '1';
+      timelineScrubber.value = String(timelineOffset);
+      timelineOffsetDisplay.textContent = formatTimelineOffsetLabel();
+    }
+
+    function setSimulationDateMs(targetUnixMs, options = {}) {
+      const { showStatus = false, syncTimeline = false, persist = true } = options;
+      if (!Number.isFinite(targetUnixMs)) {
+        return;
+      }
+
+      simulationReferenceMs = targetUnixMs - (simTimeMs / 1000) * MS_PER_DAY;
       bodyTrails.clear();
       trailLastTimestamp = 0;
-      updateOverlay();
+      lastTimestamp = null;
+
+      if (syncTimeline) {
+        timelineAnchorMs = targetUnixMs;
+        timelineOffset = 0;
+        updateTimelineControls();
+      }
+
+      updateOverlay({ persist });
       updateInfoCard(true);
-      showTransientStatusMessage(`Simulation date: ${formatSimulationDateTime(parsedUnixMs)}`);
+
+      if (showStatus) {
+        showTransientStatusMessage(`Simulation date: ${formatSimulationDateTime(targetUnixMs)}`);
+      }
+    }
+
+    function resetTimelineAnchor(anchorMs = getCurrentSimulationDateMs()) {
+      timelineAnchorMs = anchorMs;
+      timelineOffset = 0;
+      updateTimelineControls();
+    }
+
+    function applyTimelineScrub(nextOffset, options = {}) {
+      const { showStatus = false, persist = false } = options;
+      if (!Number.isFinite(timelineAnchorMs)) {
+        timelineAnchorMs = getCurrentSimulationDateMs();
+      }
+
+      const range = getTimelineRange(timelineUnit);
+      timelineOffset = clamp(Math.round(nextOffset), range.min, range.max);
+      const targetUnixMs = addCalendarOffset(timelineAnchorMs, timelineUnit, timelineOffset);
+      updateTimelineControls();
+      setSimulationDateMs(targetUnixMs, { showStatus, syncTimeline: false, persist });
     }
 
     function solveKeplerDegrees(meanAnomalyDegrees, eccentricity, toleranceDegrees = 1e-6) {
@@ -1859,6 +2094,65 @@
       }
 
       return eccentricAnomaly;
+    }
+
+    function getMoonAngle(moon, currentSimulationDateMs, simDays) {
+      if (!moon.orbitalPeriodDays) {
+        return moon.phase;
+      }
+
+      const orbitEphemeris = moon.orbitEphemeris;
+      if (!orbitEphemeris) {
+        return moon.phase + ((simDays * moonMotionMultiplier) / moon.orbitalPeriodDays) * Math.PI * 2;
+      }
+
+      const elapsedDays = (currentSimulationDateMs - orbitEphemeris.epochMs) / MS_PER_DAY;
+      const direction = orbitEphemeris.retrograde ? -1 : 1;
+      const angleDeg = normalizeDegrees(
+        orbitEphemeris.meanAnomalyDeg
+        + ((elapsedDays * moonMotionMultiplier) / moon.orbitalPeriodDays) * 360 * direction
+      );
+      return degToRad(angleDeg);
+    }
+
+    function getMoonEventEligibility(moon) {
+      return moon.diameterKm >= 100 || moon.name === 'Moon' || moon.name === 'Phobos' || moon.name === 'Deimos';
+    }
+
+    function getMoonAlignmentThresholdDeg(parentRadiusPx, moonRadiusPx, moonOrbitRadiusPx) {
+      const angle = Math.asin(clamp((parentRadiusPx + moonRadiusPx * 0.8) / Math.max(moonOrbitRadiusPx, 1), 0.015, 0.35));
+      return clamp(radToDeg(angle), 3, 18);
+    }
+
+    function getNextAlignmentDays(currentAngleDeg, targetAngleDeg, relativeRateDegPerDay) {
+      if (!Number.isFinite(relativeRateDegPerDay) || Math.abs(relativeRateDegPerDay) < 0.000001) {
+        return Infinity;
+      }
+
+      const current = normalizeDegrees(currentAngleDeg);
+      const target = normalizeDegrees(targetAngleDeg);
+      if (relativeRateDegPerDay > 0) {
+        return ((target - current + 360) % 360) / relativeRateDegPerDay;
+      }
+
+      return ((current - target + 360) % 360) / Math.abs(relativeRateDegPerDay);
+    }
+
+    function formatEventDelay(days) {
+      if (!Number.isFinite(days) || days < 0) {
+        return 'soon';
+      }
+      if (days < 1 / 24) {
+        return `in ${Math.max(1, Math.round(days * 1440))}m`;
+      }
+      if (days < 1) {
+        return `in ${(days * 24).toFixed(days < 0.25 ? 1 : 0)}h`;
+      }
+      if (days < 30) {
+        return `in ${days.toFixed(days < 10 ? 1 : 0)}d`;
+      }
+
+      return `in ${(days / DAYS_PER_EARTH_MONTH).toFixed(days < 90 ? 1 : 0)}mo`;
     }
 
     function getApproxPlanetHeliocentricPosition(planetName, julianDate) {
@@ -2522,12 +2816,11 @@
       }
 
       clearCameraFlight(false);
-      simulationReferenceMs = nowMs;
+      setSimulationDateMs(nowMs, { showStatus: false, syncTimeline: true });
       simTimeMs = 0;
+      simulationReferenceMs = nowMs;
       speedFactor = normalizeTimeFactor(REAL_TIME_DISPLAY_FACTOR / DISPLAY_TIME_FACTOR_MULTIPLIER);
       paused = false;
-      bodyTrails.clear();
-      trailLastTimestamp = 0;
       lastTimestamp = null;
       followNeedsZoom = false;
 
@@ -2753,6 +3046,11 @@
       unitsHelp.textContent = touchLayout
         ? 'Units: tap Metric / English or press U'
         : 'Units: U toggles metric / English';
+      if (timelineHelp) {
+        timelineHelp.textContent = touchLayout
+          ? 'Timeline: drag the scrubber to shift days, months, or years'
+          : 'Timeline: drag the scrubber through days, months, or years';
+      }
       resetHelp.textContent = 'Reset: R | Defaults: Shift+R | Live: Live Now button | Clear hover: Esc';
       toggleHelp.textContent = touchLayout
         ? 'Toolbar: Follow, Labels, Music cycle, Units, About, Help • keyboard C cards, I info, Shift+N Nibiru'
@@ -3320,6 +3618,7 @@
         showCreatorInfo,
         showAboutInfo,
         showNibiru,
+        timelineUnit,
         followTargetId,
         musicEnabled,
         currentMusicTrackIndex,
@@ -3406,6 +3705,9 @@
         showCreatorInfo = typeof state.showCreatorInfo === 'boolean' ? state.showCreatorInfo : showCreatorInfo;
         showAboutInfo = typeof state.showAboutInfo === 'boolean' ? state.showAboutInfo : showAboutInfo;
         showNibiru = typeof state.showNibiru === 'boolean' ? state.showNibiru : showNibiru;
+        timelineUnit = normalizeTimelineUnit(state.timelineUnit);
+        timelineAnchorMs = getCurrentSimulationDateMs();
+        timelineOffset = 0;
         syncNibiruPlanetSet();
         followTargetId = getFollowOptions().some(option => option.id === state.followTargetId) ? state.followTargetId : null;
         musicEnabled = typeof state.musicEnabled === 'boolean' ? state.musicEnabled : musicEnabled;
@@ -4314,6 +4616,9 @@
       showCreatorInfo = false;
       showAboutInfo = false;
       showMoreInfo = false;
+      timelineUnit = 'day';
+      timelineAnchorMs = Date.now();
+      timelineOffset = 0;
       moonMotionMultiplier = 1;
       measurementSystem = 'metric';
       simulationReferenceMs = Date.now();
@@ -4760,6 +5065,7 @@
     }
 
     function buildWorldBodies(layout, planetStates, simDays) {
+      const currentSimulationDateMs = getCurrentSimulationDateMs();
       const bodies = [
         {
           ...SUN_INFO,
@@ -4802,7 +5108,7 @@
 
         for (const moon of planet.moons) {
           const moonOrbitRadiusPx = mapMoonOrbitRadius(moon, planet.moons, planet.radiusPx);
-          const moonAngle = moon.phase + ((simDays * moonMotionMultiplier) / moon.orbitalPeriodDays) * Math.PI * 2;
+          const moonAngle = getMoonAngle(moon, currentSimulationDateMs, simDays);
           const moonX = planet.x + Math.cos(moonAngle) * moonOrbitRadiusPx;
           const moonY = planet.y + Math.sin(moonAngle) * moonOrbitRadiusPx;
           const moonOrbitalSpeedKmS = moon.orbitalPeriodDays
@@ -4818,6 +5124,8 @@
             surfaceStyle: moon.surfaceStyle,
             x: moonX,
             y: moonY,
+            orbitAngle: moonAngle,
+            orbitRadiusPx: moonOrbitRadiusPx,
             radiusPx: moon.radiusPx,
             hitRadiusPx: Math.max(moon.radiusPx, 7 / scale),
             diameterKm: moon.diameterKm,
@@ -4825,12 +5133,123 @@
             orbitalSpeedKmS: moonOrbitalSpeedKmS,
             approxDistanceFromSunKm: (planet.approxDistanceFromSunKm || planet.semiMajorAxisKm || 0) + moon.orbitRadiusKm,
             moonCount: 0,
+            eventEligible: getMoonEventEligibility(moon),
+            retrograde: Boolean(moon.orbitEphemeris?.retrograde),
             fact: getMoonFact(planet.name, moon)
           });
         }
       }
 
       return bodies;
+    }
+
+    function getMoonEventSummary(worldBodyMap) {
+      try {
+        const sunBody = worldBodyMap.get('sun');
+        const earthBody = worldBodyMap.get('planet:Earth');
+        if (!sunBody) {
+          return 'Events: None nearby';
+        }
+
+        const events = [];
+
+        for (const body of worldBodyMap.values()) {
+          if (body.type !== 'Moon' || !body.eventEligible || !body.orbitRadiusPx || body.orbitAngle === undefined || body.orbitAngle === null || !body.parentName) {
+            continue;
+          }
+
+          const parentBody = worldBodyMap.get(`planet:${body.parentName}`);
+          if (!parentBody) {
+            continue;
+          }
+
+          const moonAngleDeg = normalizeDegrees(radToDeg(body.orbitAngle));
+          const sunAngleDeg = normalizeDegrees(radToDeg(Math.atan2(sunBody.y - parentBody.y, sunBody.x - parentBody.x)));
+          const earthAngleDeg = earthBody && parentBody.id !== 'planet:Earth'
+            ? normalizeDegrees(radToDeg(Math.atan2(earthBody.y - parentBody.y, earthBody.x - parentBody.x)))
+            : null;
+          const alignmentThresholdDeg = getMoonAlignmentThresholdDeg(parentBody.radiusPx, body.radiusPx, body.orbitRadiusPx);
+          const moonRateDegPerDay = body.orbitalPeriodDays
+            ? (360 / body.orbitalPeriodDays) * moonMotionMultiplier * (body.retrograde ? -1 : 1)
+            : 0;
+          const solarRateDegPerDay = parentBody.orbitalPeriodDays ? (360 / parentBody.orbitalPeriodDays) : 0;
+          const earthRateDegPerDay = earthAngleDeg === null
+            ? 0
+            : ((360 / EARTH_ORBITAL_PERIOD_DAYS) - (parentBody.orbitalPeriodDays ? 360 / parentBody.orbitalPeriodDays : 0));
+
+          const solarDiff = normalizeDegreesSigned(moonAngleDeg - sunAngleDeg);
+          const earthDiff = earthAngleDeg === null ? null : normalizeDegreesSigned(moonAngleDeg - earthAngleDeg);
+
+          if (body.parentName === 'Earth') {
+            if (Math.abs(solarDiff) <= alignmentThresholdDeg) {
+              events.push({ label: 'Solar eclipse', bodyName: body.name, timeDays: 0 });
+            } else if (Math.abs(Math.abs(solarDiff) - 180) <= alignmentThresholdDeg) {
+              events.push({ label: 'Lunar eclipse', bodyName: body.name, timeDays: 0 });
+            } else {
+              const nextSolarEclipseDays = getNextAlignmentDays(solarDiff, 0, moonRateDegPerDay - solarRateDegPerDay);
+              const nextLunarEclipseDays = getNextAlignmentDays(solarDiff, 180, moonRateDegPerDay - solarRateDegPerDay);
+              if (nextSolarEclipseDays <= EVENT_PREDICTION_HORIZON_DAYS) {
+                events.push({ label: 'Solar eclipse', bodyName: body.name, timeDays: nextSolarEclipseDays });
+              }
+              if (nextLunarEclipseDays <= EVENT_PREDICTION_HORIZON_DAYS) {
+                events.push({ label: 'Lunar eclipse', bodyName: body.name, timeDays: nextLunarEclipseDays });
+              }
+            }
+            continue;
+          }
+
+          if (earthDiff !== null) {
+            if (Math.abs(earthDiff) <= alignmentThresholdDeg) {
+              events.push({ label: 'Transit', bodyName: `${body.name} on ${body.parentName}`, timeDays: 0 });
+            } else if (Math.abs(Math.abs(earthDiff) - 180) <= alignmentThresholdDeg) {
+              events.push({ label: 'Occultation', bodyName: `${body.name} behind ${body.parentName}`, timeDays: 0 });
+            } else {
+              const nextTransitDays = getNextAlignmentDays(earthDiff, 0, moonRateDegPerDay - earthRateDegPerDay);
+              const nextOccultationDays = getNextAlignmentDays(earthDiff, 180, moonRateDegPerDay - earthRateDegPerDay);
+              if (nextTransitDays <= EVENT_PREDICTION_HORIZON_DAYS) {
+                events.push({ label: 'Transit', bodyName: `${body.name} on ${body.parentName}`, timeDays: nextTransitDays });
+              }
+              if (nextOccultationDays <= EVENT_PREDICTION_HORIZON_DAYS) {
+                events.push({ label: 'Occultation', bodyName: `${body.name} behind ${body.parentName}`, timeDays: nextOccultationDays });
+              }
+            }
+          }
+
+          if (Math.abs(Math.abs(solarDiff) - 180) <= alignmentThresholdDeg) {
+            events.push({ label: 'Eclipse', bodyName: `${body.name} in ${body.parentName} shadow`, timeDays: 0 });
+          } else {
+            const nextEclipseDays = getNextAlignmentDays(solarDiff, 180, moonRateDegPerDay - solarRateDegPerDay);
+            if (nextEclipseDays <= EVENT_PREDICTION_HORIZON_DAYS) {
+              events.push({ label: 'Eclipse', bodyName: `${body.name} in ${body.parentName} shadow`, timeDays: nextEclipseDays });
+            }
+          }
+        }
+
+        if (events.length === 0) {
+          return 'Events: None nearby';
+        }
+
+        const uniqueEvents = [];
+        const seen = new Set();
+        events
+          .sort((a, b) => a.timeDays - b.timeDays)
+          .forEach(event => {
+            const signature = `${event.label}:${event.bodyName}:${event.timeDays < 0.01 ? 'now' : event.timeDays.toFixed(2)}`;
+            if (seen.has(signature) || uniqueEvents.length >= MAX_TELEMETRY_EVENTS) {
+              return;
+            }
+            seen.add(signature);
+            uniqueEvents.push(event);
+          });
+
+        return `Events: ${uniqueEvents.map(event => (
+          event.timeDays <= (1 / 1440)
+            ? `${event.label} now: ${event.bodyName}`
+            : `${event.label} ${formatEventDelay(event.timeDays)}: ${event.bodyName}`
+        )).join(' • ')}`;
+      } catch (error) {
+        return 'Events: Unavailable';
+      }
     }
 
     function screenToWorld(clientX, clientY) {
@@ -5044,6 +5463,7 @@
       const simDays = simTimeMs / 1000;
       const years   = simDays / EARTH_ORBITAL_PERIOD_DAYS;
       document.getElementById('yearsDisplay').textContent = `Earth Years: ${years.toFixed(2)}`;
+      simulationDateDisplay.textContent = `Date: ${formatSimulationDateTime()}`;
 
       // Keep a subtle independent star drift so the background stays calm and lightweight.
       const starSpeedConstant = 0.0034;
@@ -5084,6 +5504,7 @@
       const orbitRadii = planetStates.map(planet => planet.guideOrbitRadiusPx ?? planet.orbitRadiusPx);
       const worldBodies = buildWorldBodies(layout, planetStates, simDays);
       const worldBodyMap = new Map(worldBodies.map(body => [body.id, body]));
+      eventsDisplay.textContent = getMoonEventSummary(worldBodyMap);
       const followBody = followTargetId ? worldBodyMap.get(followTargetId) : null;
 
       if (followBody) {
@@ -5204,8 +5625,9 @@
       cardsDisplay.textContent = `Cards: ${showCards ? 'On' : 'Off'}`;
       document.getElementById('followDisplay').textContent = `Follow: ${getFollowLabel()}`;
       document.getElementById('motionDisplay').textContent = showNibiru
-        ? 'Model: Compact layout, JPL date-based planets; Pluto/Nibiru simplified'
-        : 'Model: Compact layout, JPL date-based planets; Pluto simplified';
+        ? 'Model: Compact layout, JPL date-based planets/moons; Pluto/Nibiru simplified'
+        : 'Model: Compact layout, JPL date-based planets/moons; Pluto simplified';
+      updateTimelineControls();
       if (syncResponsive) {
         updateResponsiveUI();
       }
@@ -5392,6 +5814,33 @@
         promptForSimulationDateTime();
       }
     });
+
+    if (timelineUnitSelect && timelineScrubber) {
+      timelineUnitSelect.addEventListener('change', () => {
+        timelineUnit = normalizeTimelineUnit(timelineUnitSelect.value);
+        resetTimelineAnchor(getCurrentSimulationDateMs());
+        persistSessionState();
+      });
+
+      timelineScrubber.addEventListener('pointerdown', () => {
+        resetTimelineAnchor(getCurrentSimulationDateMs());
+      });
+
+      timelineScrubber.addEventListener('focus', () => {
+        if (timelineOffset === 0) {
+          timelineAnchorMs = getCurrentSimulationDateMs();
+          updateTimelineControls();
+        }
+      });
+
+      timelineScrubber.addEventListener('input', () => {
+        applyTimelineScrub(Number(timelineScrubber.value), { showStatus: false, persist: false });
+      });
+
+      timelineScrubber.addEventListener('change', () => {
+        applyTimelineScrub(Number(timelineScrubber.value), { showStatus: true, persist: true });
+      });
+    }
 
     touchSlowerButton.addEventListener('click', () => {
       void restoreMusicOnGesture();
