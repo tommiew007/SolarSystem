@@ -726,14 +726,14 @@
     <div class="overlay-section">
       <strong class="overlay-heading">Controls</strong>
       <span id="primaryControlsHelp">Zoom: wheel, Ctrl+wheel, or +/-</span>
-      <span id="navigationHelp">Pan: drag, double-click center, arrows move</span>
-      <span id="pauseHelp">Pause: Space or P</span>
-      <span id="speedHelp">Speed: tap W / S by 1, hold to ramp (1 = 1 Earth hour/sec)</span>
-      <span id="moonHelp">Moon Motion: [ / ] adjusts moon speed</span>
-      <span id="unitsHelp">Units: U toggles metric / English</span>
-      <span id="timelineHelp">Timeline: drag the scrubber through days, months, or years</span>
-      <span id="resetHelp">Reset: R | Defaults: Shift+R | Live: Live Now toggles real-time mode | Clear hover: Esc</span>
-      <span id="toggleHelp">Toggles: F follow, C cards, L labels, I info, A about, M cycles music, Shift+N Nibiru, H/? help</span>
+      <span id="navigationHelp">Pan or center: drag, double-click center, arrows move</span>
+      <span id="pauseHelp">Pause or play: Space or P</span>
+      <span id="speedHelp">Change speed: tap W / S by 1, hold to ramp (1 = 1 Earth hour/sec)</span>
+      <span id="moonHelp">Slow moons or return to default: [ / ]</span>
+      <span id="unitsHelp">Switch units: U for metric / English</span>
+      <span id="timelineHelp">Shift the date: drag the scrubber through days, months, or years</span>
+      <span id="resetHelp">Reset or clear: R reset, Shift+R defaults, Live Now real-time toggle, Esc clear hover</span>
+      <span id="toggleHelp">Toggle displays: F follow, C cards, L labels, I info, A about, M music, Shift+N Nibiru, H/? help</span>
     </div>
     <div class="overlay-section">
       <strong class="overlay-heading">Telemetry</strong>
@@ -1825,7 +1825,7 @@
     let timeFactorToastTimer = null;
     let statusToastTimer = null;
     let statusToastDismissOnInput = false;
-    let displayedMoonEventSummary = DEFAULT_MOON_EVENT_SUMMARY;
+    let displayedMoonEventSummary = null;
     let moonEventSummaryHoldUntil = 0;
     let speedUpHeld = false;
     let speedDownHeld = false;
@@ -1856,7 +1856,7 @@ This card explains the body you are hovering over or have clicked. Read it top t
 Hover previews a body, click pins the card, Follow centers the camera on it, and Open in Wikipedia jumps to a reference page.`,
       overlay: `Main Menu
 
-This panel is the control center for the simulation. Time Factor sets how quickly simulated time moves, Controls lists the input shortcuts, Telemetry reports the current simulation state, and Timeline shifts the simulation date without changing the current speed.
+This panel is the control center for the simulation. Time Factor sets how quickly simulated time moves, Controls lists actions first and shortcuts second, Telemetry reports the current simulation state, and Timeline shifts the simulation date without changing the current speed.
 
 Use Live Now to jump into real-time astronomical positions, and Clear Saved Settings if you want to wipe the stored browser session and start fresh.`,
       scale: `Scale Guide
@@ -3555,29 +3555,29 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
         ? 'Zoom: pinch or tap Zoom +/-'
         : 'Zoom: wheel, Ctrl+wheel, or +/-';
       navigationHelp.textContent = touchLayout
-        ? 'Pan: drag with one finger, double-tap center'
-        : 'Pan: drag, double-click center, arrows move';
+        ? 'Pan or center: drag with one finger, double-tap center'
+        : 'Pan or center: drag, double-click center, arrows move';
       pauseHelp.textContent = touchLayout
-        ? 'Pause: touch Pause or press Space / P'
-        : 'Pause: Space or P';
+        ? 'Pause or play: touch Pause or press Space / P'
+        : 'Pause or play: Space or P';
       speedHelp.textContent = touchLayout
-        ? 'Speed: touch Time +/- or hold W / S to ramp (1 = 1 Earth hour/sec)'
-        : 'Speed: tap W / S by 1, hold to ramp (1 = 1 Earth hour/sec)';
+        ? 'Change speed: touch Time +/- or hold W / S to ramp (1 = 1 Earth hour/sec)'
+        : 'Change speed: tap W / S by 1, hold to ramp (1 = 1 Earth hour/sec)';
       moonHelp.textContent = touchLayout
-        ? 'Moon Motion: -Moon slows, +Moon returns to default'
-        : 'Moon Motion: [ slows moons, ] returns to default';
+        ? 'Slow moons or return to default: -Moon / +Moon'
+        : 'Slow moons or return to default: [ / ]';
       unitsHelp.textContent = touchLayout
-        ? 'Units: tap Metric / English or press U'
-        : 'Units: U toggles metric / English';
+        ? 'Switch units: tap Metric / English or press U'
+        : 'Switch units: U for metric / English';
       if (timelineHelp) {
         timelineHelp.textContent = touchLayout
-          ? 'Timeline: drag the scrubber to shift days, months, or years'
-          : 'Timeline: drag the scrubber through days, months, or years';
+          ? 'Shift the date: drag the scrubber to move through days, months, or years'
+          : 'Shift the date: drag the scrubber through days, months, or years';
       }
-      resetHelp.textContent = 'Reset: R | Defaults: Shift+R | Live: Live Now toggles real-time mode | Clear hover: Esc';
+      resetHelp.textContent = 'Reset or clear: R reset, Shift+R defaults, Live Now real-time toggle, Esc clear hover';
       toggleHelp.textContent = touchLayout
-        ? 'Toolbar: Follow, Labels, Music cycle, Units, About, Help • keyboard C cards, I info, Shift+N Nibiru'
-        : 'Toggles: F follow, C cards, L labels, U units, I info, A about, M cycles music, Shift+N Nibiru, H/? help';
+        ? 'Toggle displays: use the toolbar for follow, labels, music, units, about, and help • keyboard C cards, I info, Shift+N Nibiru'
+        : 'Toggle displays: F follow, C cards, L labels, U units, I info, A about, M music, Shift+N Nibiru, H/? help';
 
       touchPauseButton.textContent = paused ? 'Play' : 'Pause';
       touchPauseButton.classList.toggle('is-active', paused);

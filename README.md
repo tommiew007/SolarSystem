@@ -47,28 +47,28 @@ The app runs entirely in the browser and does not require a build step.
 
 ### Core
 
-- `Mouse wheel`, `Ctrl+wheel`, `+`, `-`: zoom
-- `Drag`: pan
-- `Double-click`: center clicked location
-- `Space` or `P`: pause/resume
-- `W` / `S`: increase or decrease time factor
-- Hold `W` / `S`: accelerated ramp
-- `[` / `]`: slow moons / return moon motion toward default
-- `R`: reset simulation state
-- `Shift+R`: reset to defaults
-- `Esc`: clear hover/card artifacts
+- Zoom: `Mouse wheel`, `Ctrl+wheel`, `+`, `-`
+- Pan: `Drag`
+- Center clicked location: `Double-click`
+- Pause or resume: `Space` or `P`
+- Increase or decrease time factor: `W` / `S`
+- Ramp time-factor changes faster: hold `W` / `S`
+- Slow moons or return moon motion to default: `[` / `]`
+- Reset simulation state: `R`
+- Reset to defaults: `Shift+R`
+- Clear hover/card artifacts: `Esc`
 
 ### Toggles
 
-- `F`: open follow chooser
-- `L`: labels on/off
-- `C`: cards on/off
-- `U`: metric/English units
-- `I`: creator info
-- `A`: about panel
-- `H` or `?`: help on/off
-- `M`: cycle ambient music tracks and mute
-- `Shift+N`: toggle Nibiru easter egg
+- Open follow chooser: `F`
+- Toggle labels: `L`
+- Toggle cards: `C`
+- Switch metric / English units: `U`
+- Toggle creator info: `I`
+- Toggle the About panel: `A`
+- Toggle help: `H` or `?`
+- Cycle ambient music tracks / mute: `M`
+- Toggle the Nibiru easter egg: `Shift+N`
 
 ### Date and Time
 
@@ -79,9 +79,9 @@ The app runs entirely in the browser and does not require a build step.
 
 ### Touch / Mobile
 
-- One-finger drag: pan
-- Pinch: zoom
-- Touch toolbar includes time, moon motion, zoom, center, follow, labels, music, units, the Live Now toggle, about, and help
+- Pan: one-finger drag
+- Zoom: pinch
+- Access time, moon motion, zoom, center, follow, labels, music, units, the Live Now toggle, About, and Help from the touch toolbar
 
 ## On-Screen Panels
 
