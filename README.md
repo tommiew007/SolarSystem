@@ -15,7 +15,7 @@ This project focuses on readability, exploration, and education. It blends real 
 - Contextual info buttons on the main menu, object card, and scale guide
 - Follow camera with animated flight behavior
 - Timeline scrubber for shifting the simulation by days, months, or years
-- Event feed for lightweight moon transits, eclipses, and occultation-style alignments
+- Event feed for lightweight moon transits, eclipses, and occultation-style alignments, smoothed for readability
 - Real local image assets in `/images` for in-scene bodies
 - Milky Way panorama background
 - Staged loading overlay that warms the Milky Way, Sun, and core planet assets before interaction begins
@@ -110,7 +110,7 @@ The telemetry area can show:
 - card state
 - follow target
 - current motion model description
-- event feed for moon alignments
+- readability-smoothed event feed for moon alignments
 - timeline offset
 
 ## Assets and Sources

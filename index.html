@@ -684,7 +684,7 @@
       <li>Planet and moon sizes are drawn from a shared size scale relative to the Sun, so body diameters stay visually meaningful.</li>
       <li>Planet positions now follow date-based JPL approximate heliocentric positions, letting the model reflect where the planets should be for the chosen simulation date and time.</li>
       <li>Moons now use date-based mean-motion positions as well, so changing the simulation date re-creates the same moon geometry for that moment.</li>
-      <li>A built-in event feed can flag transits, eclipses, and occultation-style alignments for major moons with lightweight predictive timing.</li>
+      <li>A built-in event feed can flag transits, eclipses, and occultation-style alignments for major moons with lightweight predictive timing, then hold the current readout long enough to be readable.</li>
       <li>A staged startup warmup now loads the Milky Way, Sun, and core planet assets behind a dedicated loading overlay so the scene feels ready before you begin interacting.</li>
       <li>Hover and click cards show object facts, distances, orbital timing, follow actions, quick links to learn more, and panel info buttons that explain how to read the displays.</li>
       <li>Camera controls support drag, zoom, follow mode, recentering, a draggable date timeline, a Live Now real-time toggle, and touch-friendly navigation on phones and tablets.</li>
@@ -708,7 +708,7 @@
       <li><strong>Object imagery:</strong> local body images are sourced from Wikipedia article imagery and then stored in the project for scene rendering and cards.</li>
       <li><strong>Milky Way background:</strong> the galaxy panorama comes from ESO imagery and is used as the real-space backdrop behind the simulation.</li>
       <li><strong>Startup warmup:</strong> the app now preloads the Milky Way, the Sun, and the core planet/dwarf-planet scene assets before unlocking interaction, then continues warming minor moon images in the background.</li>
-      <li><strong>Event feed:</strong> eclipse, transit, and occultation-style notices are generated from simplified Sun/Earth alignment geometry around each parent planet, prioritizing readability over observatory-grade precision.</li>
+      <li><strong>Event feed:</strong> eclipse, transit, and occultation-style notices are generated from simplified Sun/Earth alignment geometry around each parent planet, then cadence-smoothed into a readable current/next display instead of re-sorting every frame.</li>
       <li><strong>Modeling note:</strong> distances are intentionally compacted on screen for readability, so the simulation preserves useful relationships without requiring an impossible amount of display space.</li>
       <li><strong>Context help:</strong> small info buttons on the main menu, object card, and scale guide open concise explanations of what each panel means and how to read it.</li>
     </ul>
@@ -897,6 +897,8 @@
     const MAX_TRAIL_POINTS = 240;
     const EVENT_PREDICTION_HORIZON_DAYS = 120;
     const MAX_TELEMETRY_EVENTS = 3;
+    const EVENT_ACTIVE_THRESHOLD_DAYS = 1 / 1440;
+    const EVENT_FEED_DISPLAY_HOLD_MS = 5000;
     const MUSIC_TRACKS = [
       {
         name: 'Celestial Drift',
@@ -1823,6 +1825,8 @@
     let timeFactorToastTimer = null;
     let statusToastTimer = null;
     let statusToastDismissOnInput = false;
+    let displayedMoonEventSummary = DEFAULT_MOON_EVENT_SUMMARY;
+    let moonEventSummaryHoldUntil = 0;
     let speedUpHeld = false;
     let speedDownHeld = false;
     let timeFactorHoldDirection = 0;
@@ -1861,6 +1865,11 @@ Body sizes use one shared scale relative to the Sun, so diameters stay meaningfu
 
 The green band marks the habitable zone, the blue band marks the frost-line region, and the planet positions still follow date-based JPL-style placement even inside this compact layout.`
     };
+    const DEFAULT_MOON_EVENT_SUMMARY = Object.freeze({
+      text: 'Events: None nearby',
+      signature: 'none',
+      hasActive: false
+    });
 
     // Zoom & pan state
     let scale = 1.0;
@@ -2340,20 +2349,74 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
     }
 
     function formatEventDelay(days) {
+      return getEventDelayBucket(days).label;
+    }
+
+    function roundToNearest(value, step) {
+      if (!Number.isFinite(value) || !Number.isFinite(step) || step <= 0) {
+        return value;
+      }
+      return Math.round(value / step) * step;
+    }
+
+    function formatRoundedEventValue(value) {
+      const rounded = Math.abs(value - Math.round(value)) < 0.001 ? Math.round(value) : value;
+      return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+    }
+
+    function getEventDelayBucket(days) {
       if (!Number.isFinite(days) || days < 0) {
-        return 'soon';
+        return { key: 'soon', label: 'soon' };
       }
-      if (days < 1 / 24) {
-        return `in ${Math.max(1, Math.round(days * 1440))}m`;
-      }
-      if (days < 1) {
-        return `in ${(days * 24).toFixed(days < 0.25 ? 1 : 0)}h`;
-      }
-      if (days < 30) {
-        return `in ${days.toFixed(days < 10 ? 1 : 0)}d`;
+      if (days <= EVENT_ACTIVE_THRESHOLD_DAYS) {
+        return { key: 'now', label: 'now' };
       }
 
-      return `in ${(days / DAYS_PER_EARTH_MONTH).toFixed(days < 90 ? 1 : 0)}mo`;
+      const minutes = days * 1440;
+      if (minutes < 60) {
+        const roundedMinutes = clamp(roundToNearest(minutes, 5), 5, 55);
+        return {
+          key: `${roundedMinutes}m`,
+          label: `in ${roundedMinutes}m`
+        };
+      }
+
+      const hours = days * 24;
+      if (hours < 24) {
+        const roundedHours = hours < 6 ? roundToNearest(hours, 0.5) : Math.round(hours);
+        const labelValue = formatRoundedEventValue(roundedHours);
+        return {
+          key: `${labelValue}h`,
+          label: `in ${labelValue}h`
+        };
+      }
+
+      if (days < 30) {
+        const roundedDays = days < 5 ? roundToNearest(days, 0.5) : Math.round(days);
+        const labelValue = formatRoundedEventValue(roundedDays);
+        return {
+          key: `${labelValue}d`,
+          label: `in ${labelValue}d`
+        };
+      }
+
+      if (days < EARTH_ORBITAL_PERIOD_DAYS) {
+        const months = days / DAYS_PER_EARTH_MONTH;
+        const roundedMonths = months < 3 ? roundToNearest(months, 0.5) : Math.round(months);
+        const labelValue = formatRoundedEventValue(roundedMonths);
+        return {
+          key: `${labelValue}mo`,
+          label: `in ${labelValue}mo`
+        };
+      }
+
+      const years = days / EARTH_ORBITAL_PERIOD_DAYS;
+      const roundedYears = years < 3 ? roundToNearest(years, 0.5) : Math.round(years);
+      const labelValue = formatRoundedEventValue(roundedYears);
+      return {
+        key: `${labelValue}yr`,
+        label: `in ${labelValue}yr`
+      };
     }
 
     function getApproxPlanetHeliocentricPosition(planetName, julianDate) {
@@ -5610,7 +5673,7 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
         const sunBody = worldBodyMap.get('sun');
         const earthBody = worldBodyMap.get('planet:Earth');
         if (!sunBody) {
-          return 'Events: None nearby';
+          return DEFAULT_MOON_EVENT_SUMMARY;
         }
 
         const events = [];
@@ -5688,7 +5751,7 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
         }
 
         if (events.length === 0) {
-          return 'Events: None nearby';
+          return DEFAULT_MOON_EVENT_SUMMARY;
         }
 
         const uniqueEvents = [];
@@ -5696,22 +5759,56 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
         events
           .sort((a, b) => a.timeDays - b.timeDays)
           .forEach(event => {
-            const signature = `${event.label}:${event.bodyName}:${event.timeDays < 0.01 ? 'now' : event.timeDays.toFixed(2)}`;
-            if (seen.has(signature) || uniqueEvents.length >= MAX_TELEMETRY_EVENTS) {
+            const signature = `${event.label}:${event.bodyName}:${getEventDelayBucket(event.timeDays).key}`;
+            if (seen.has(signature) || uniqueEvents.length >= MAX_TELEMETRY_EVENTS * 2) {
               return;
             }
             seen.add(signature);
             uniqueEvents.push(event);
           });
 
-        return `Events: ${uniqueEvents.map(event => (
-          event.timeDays <= (1 / 1440)
-            ? `${event.label} now: ${event.bodyName}`
-            : `${event.label} ${formatEventDelay(event.timeDays)}: ${event.bodyName}`
-        )).join(' • ')}`;
+        const activeEvent = uniqueEvents.find(event => event.timeDays <= EVENT_ACTIVE_THRESHOLD_DAYS) || null;
+        const upcomingEvent = uniqueEvents.find(event => event.timeDays > EVENT_ACTIVE_THRESHOLD_DAYS) || null;
+        const displayedEvents = [activeEvent, upcomingEvent].filter(Boolean);
+        if (displayedEvents.length === 0) {
+          return DEFAULT_MOON_EVENT_SUMMARY;
+        }
+
+        return {
+          text: `Events: ${displayedEvents.map(event => (
+            event.timeDays <= EVENT_ACTIVE_THRESHOLD_DAYS
+              ? `${event.label} now: ${event.bodyName}`
+              : `${event.label} ${formatEventDelay(event.timeDays)}: ${event.bodyName}`
+          )).join(' • ')}`,
+          signature: displayedEvents.map(event => `${event.label}:${event.bodyName}:${getEventDelayBucket(event.timeDays).key}`).join('|'),
+          hasActive: Boolean(activeEvent)
+        };
       } catch (error) {
-        return 'Events: Unavailable';
+        return {
+          text: 'Events: Unavailable',
+          signature: 'unavailable',
+          hasActive: false
+        };
       }
+    }
+
+    function updateMoonEventTelemetry(summary, timestamp = performance.now()) {
+      const nextSummary = summary || DEFAULT_MOON_EVENT_SUMMARY;
+      const previousSummary = displayedMoonEventSummary || DEFAULT_MOON_EVENT_SUMMARY;
+      const signatureChanged = nextSummary.signature !== previousSummary.signature;
+      const activeStateChanged = nextSummary.hasActive !== previousSummary.hasActive;
+      const shouldCommit = !eventsDisplay.textContent
+        || signatureChanged && nextSummary.hasActive
+        || activeStateChanged
+        || timestamp >= moonEventSummaryHoldUntil;
+
+      if (!shouldCommit) {
+        return;
+      }
+
+      displayedMoonEventSummary = nextSummary;
+      moonEventSummaryHoldUntil = timestamp + EVENT_FEED_DISPLAY_HOLD_MS;
+      eventsDisplay.textContent = nextSummary.text;
     }
 
     function screenToWorld(clientX, clientY) {
@@ -5973,7 +6070,7 @@ The green band marks the habitable zone, the blue band marks the frost-line regi
       const orbitRadii = planetStates.map(planet => planet.guideOrbitRadiusPx ?? planet.orbitRadiusPx);
       const worldBodies = buildWorldBodies(layout, planetStates, simDays);
       const worldBodyMap = new Map(worldBodies.map(body => [body.id, body]));
-      eventsDisplay.textContent = getMoonEventSummary(worldBodyMap);
+      updateMoonEventTelemetry(getMoonEventSummary(worldBodyMap), timestamp);
       const followBody = followTargetId ? worldBodyMap.get(followTargetId) : null;
 
       if (followBody) {
