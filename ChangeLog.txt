@@ -1,0 +1,232 @@
+Solar System Simulation
+Change Log
+
+This file records the active development history of the project through April 3, 2026.
+
+Maintenance note:
+- At meaningful checkpoints or phase releases, update this file, README.md, and the in-app help/about/info text together so the project documentation stays in sync with the code.
+
+1. Initial Audit And Scale Pass
+- Audited the original solar-system scaling logic.
+- Confirmed that interplanetary distances were intentionally compressed for screen readability.
+- Verified that relative planet diameters were largely correct.
+- Identified that orbital timing was closer to real periods than real linear speeds because compact radii and real periods were being mixed.
+- Flagged the original Earth-Moon rendering as spatially incorrect under the compressed-distance model.
+
+2. Core Layout And Object Expansion
+- Reworked the scene into a more data-driven model.
+- Added the major moons for the original planet set, keeping Mercury and Venus moonless.
+- Added responsive planet spacing that spreads or contracts with screen width.
+- Updated the compact layout so it preserves more physically consistent relative orbital motion.
+- Added labels for the Sun, planets, and moons, with an `L` toggle.
+- Added faint habitable-zone and frost-line bands.
+- Added orbit trails for moving bodies.
+- Added a scale legend explaining which parts are scaled and which are compacted.
+- Refined Saturn’s rings so the planet properly occludes the back half.
+- Added Uranus’s lighter ring system.
+- Updated planet spacing logic to account for body diameters rather than center spacing alone.
+- Tuned label sizing and general readability several times.
+
+3. Expanded Body Catalog
+- Added Pluto as a dwarf planet after Neptune and before optional Nibiru.
+- Added Nibiru as a toggleable easter egg body using lore-based size and orbit assumptions.
+- Changed the Nibiru shortcut from `Ctrl+N` to `Shift+N`.
+- Expanded the modeled moon catalog far beyond the original major-moon-only set.
+- Added many additional moons for Jupiter, Saturn, Uranus, Neptune, and Pluto.
+- Wired the added moons into hover, click, follow, labels, image loading, and info-card behavior.
+
+4. Object Cards, Education, And Overlay Panels
+- Added hover/click object cards with body name, type, fact text, and quick stats.
+- Added follow buttons directly inside object cards.
+- Added Wikipedia article links inside object cards.
+- Added orbital speed and approximate Sun distance to cards.
+- Updated the Sun card to show planet count rather than moon count.
+- Added a creator info toggle with `I`.
+- Added a full About panel with plain-language project description.
+- Added a More Info panel describing the technology stack, assets, and data sources.
+- Added an About credit line: developed and created by Tom Wellborn, 2026.
+- Removed the easter-egg mention from the About panel so it stays hidden.
+- Split the main overlay into clearer Controls and Telemetry sections.
+- Added clickable info buttons to the main menu, object info card, and scale guide.
+- Added reusable panel-explainer messages that dismiss on the next user input.
+
+5. Help And Telemetry Improvements
+- Added `H` to hide or show on-screen help and the scale guide together.
+- Later refined that behavior so help hiding does not break normal hover cards.
+- Added `C` to toggle cards on and off while help is visible.
+- Fixed the interaction between help visibility and card visibility so toggles remain authoritative.
+- Added a temporary time-factor toast that appears when help is hidden and the user changes speed.
+- Reworked the Time Factor line so it sits at the top of the overlay, uses stronger styling, and shows a human-readable rate description.
+- Added human-readable rate text beside the numeric time factor, such as hours, days, weeks, months, or years per second.
+- Added telemetry for moon motion multiplier, measurement units, follow target, music, event feed, and model status.
+- Added a timeline area with scale selector, scrubber, and textual offset display.
+
+6. Control-Scheme Evolution
+- Remapped zoom to `Z` and `X`, then later adopted more mainstream `+`, `-`, mouse-wheel, and drag-based navigation while keeping compatibility aliases.
+- Added mouse-wheel zoom.
+- Added `Ctrl+wheel` zoom handling.
+- Added drag-to-pan on desktop.
+- Added right-drag panning on empty space.
+- Added arrow-key panning.
+- Fixed keyboard zoom so it anchors to true screen center.
+- Added double-click recentering.
+- Made startup default to Sun-centered, fully zoomed-out framing.
+- Added `Esc` behavior changes over time, ending in clear-hover-artifacts behavior.
+- Added `Shift+R` to reset to full defaults.
+- Added confirmation prompts for reset and clear-settings actions.
+- Added `P` as a pause/resume alias for `Space`.
+- Added `?` as a help alias.
+- Added `U` for metric/English units.
+- Added touch-toolbar controls for mobile and tablet use.
+
+7. Follow Camera And Navigation Polish
+- Added `F` to open a follow chooser for Sun, planets, and moons.
+- Added follow-camera mode that keeps the selected body centered.
+- Added automatic follow zoom so chosen bodies occupy a larger part of the screen.
+- Reworked follow zoom to better frame bodies at roughly one-third of the screen.
+- Added support for zooming while following without breaking the follow lock.
+- Fixed follow lag on fast-moving objects by applying camera updates before the frame transform.
+- Improved follow flights several times:
+- initial direct snap-follow behavior
+- animated follow flights
+- freeze-time during follow flights, then resume afterward
+- zoom-out / pan / zoom-in camera sequencing
+- midpoint flight experiments
+- smoother continuous interpolation
+- finally a three-phase zoom-out, pan-to-center, then zoom-in sequence
+- Added protection against re-following the same body by showing a reusable status message instead of restarting the camera move.
+
+8. Hover, Selection, And Hit-Testing Fixes
+- Rebuilt hover and click detection around actual on-screen body positions.
+- Fixed multiple hover-blocking issues caused by the info-card region.
+- Changed hover logic to re-evaluate based on live pointer position and scene state.
+- Added a hover delay so passive pointer movement does not constantly trigger cards.
+- Added a longer grace period before hover cards disappear so users can move onto action buttons.
+- Fixed card action usability by keeping cards alive while moving from the object to card actions.
+- Improved Saturn hover hit-testing to respect visible ring bands rather than a giant circular area.
+- Tightened Uranus ring hover sensitivity.
+- Fixed issues where hidden cards still blocked hover interaction.
+
+9. Info-Card Imagery And Scene Assets
+- Added imagery to cards, first through NASA search results.
+- Replaced sketchy/unfocused NASA card images with more specific Wikipedia article mappings.
+- Created a per-body title map for better image matching.
+- Added local image assets for scene bodies in the `/images` folder.
+- Completed a full local asset set for the modeled planets, Pluto, Nibiru, Sun, and all currently modeled moons.
+- Switched scene rendering away from remote image fallback and toward local assets.
+- Added cache-busting for HTTP-served local assets while preserving `file://` compatibility.
+- Ensured the Sun, planets, moons, and background now rely on project-local imagery for the scene.
+- Kept Wikipedia links available in object cards for user reference.
+
+10. Planet And Moon Rendering Evolution
+- Added a low-poly/procedural body renderer with simple lighting.
+- Added billboard labels that stay screen-readable.
+- Added a lightweight starfield.
+- Later replaced much of the in-scene body look with local high-resolution imagery.
+- Experimented with rotating Wikipedia-derived planet projections.
+- Removed the unstable fake-rotation projection path when it produced doubled or warped surfaces.
+- Added subject-bound detection and crop logic to better isolate bodies inside source images.
+- Added scene-render preprocessing to fade dark background space around body images.
+- Reduced haloing by trimming background pixels and improving image compositing.
+- Fixed Saturn’s body rendering by separating the globe from the separately drawn rings.
+- Fixed Mercury and other bodies that were badly distorted by the earlier projected-image experiment.
+- Increased max zoom substantially so tiny moons can be viewed.
+- Added and then later removed procedural sunspots after switching to a real Sun image.
+- Replaced the old procedural Sun with a local real Sun image.
+
+11. Rings, Trails, And Background Visuals
+- Refined Saturn’s rings to render with front/back occlusion.
+- Added Uranus ring bands.
+- Added orbit trails for planets.
+- Fixed trail rendering so high-speed motion does not create false polygonal orbit shapes by sampling along motion more consistently.
+- Optimized trail drawing to use a single stroked path per body rather than many per-segment strokes.
+- Added a full-window Milky Way panorama background from ESO imagery.
+- Fixed the starfield so it always fills the entire window and does not collapse to one side under zoom or follow transforms.
+
+12. Music And Soundtrack System
+- Added ambient background music with `M`.
+- Made pause stop the soundtrack as well as motion.
+- Later expanded music into a circular track cycle with multiple serene spacey procedural presets plus mute.
+- Added current-track telemetry.
+- Made music preference persistent across sessions.
+- Fixed a race that could wrongly save music as off after toggling.
+- Set music on by default for fresh sessions, subject to normal browser autoplay rules.
+
+13. Persistence, Defaults, And Session State
+- Added browser-side session persistence using localStorage.
+- Saved time factor, simulation time, pause state, zoom, pan, labels, help, follow target, music preference, cards state, creator info, Nibiru state, units, timeline scale, and more.
+- Added a clear-saved-settings action.
+- Added confirmations before destructive reset/clear actions.
+- Added proper startup defaults for Sun-centered, zoomed-out framing.
+- Added migration handling as the time-factor model evolved across multiple versions.
+
+14. Mobile And Tablet Support
+- Added mobile viewport and safe-area-aware layout behavior.
+- Added touch-friendly toolbar controls.
+- Added one-finger drag pan.
+- Added pinch zoom.
+- Added double-tap recentering.
+- Adjusted overlay panels to be more usable on smaller screens.
+- Kept desktop and touch interactions aligned where practical.
+
+15. Time-Factor And Motion Model Retuning
+- Added clearer time-factor explanations so users know what a value means in simulated time.
+- Reworked time-factor text and reference messaging many times to make it understandable.
+- Added direct time-factor entry by clicking the displayed number.
+- Added clamping to prevent unrealistic or destabilizing time-factor input.
+- Added hold-to-ramp acceleration for `W` and `S`, then steepened the exponential curve several times.
+- Adjusted the time baseline multiple times during development to improve feel.
+- Current baseline: displayed `1` equals `1 Earth hour per real second`.
+- Added a special real-time `Live Now` factor.
+- Added a moon-motion multiplier so fast moon systems can be slowed independently of planet motion.
+- Later capped moon motion at `1.00x` so it only slows moons below their default speed.
+
+16. Date-Based Astronomy Features
+- Replaced synthetic circular planet placement with date-based JPL approximate heliocentric positions computed locally in the browser.
+- Added a clickable simulation date/time display for direct date entry.
+- Added a timeline scrubber that shifts the simulation by days, months, or years.
+- Added local date-based moon positioning from stored reference epochs and mean anomalies.
+- Added an event feed for simplified moon transits, eclipses, and occultation-style alignments.
+- Added a Live Now action to jump to the current real date/time and a real-time speed factor.
+- Evolved Live Now from a one-shot sync into a real toggle that restores the prior simulation state when switched off.
+- Fixed `W/S` behavior in Live Now mode so the first manual step snaps to the next whole displayed factor.
+- Added explicit note in More Info that date-based positions are computed locally from reference data rather than fetched live from NASA/JPL.
+
+17. Units And Measurement Support
+- Added a metric/English toggle.
+- Converted object-card values for diameter, orbital speed, and approximate Sun distance.
+- Added units telemetry and session persistence for the selected measurement system.
+
+18. Accessibility And Readability Passes
+- Tuned instruction, help, card, and label font sizes multiple times.
+- Cleaned up verbose help text into more readable control and telemetry language.
+- Enlarged temporary status messages and moved them closer to the screen center for better visibility.
+- Added contextual info buttons for panels to reduce reliance on memorized controls.
+
+19. Notable Bug Fixes
+- Fixed many hover/click mismatches under zoom, pan, and follow.
+- Fixed hidden UI elements still intercepting interaction.
+- Fixed right-click context-menu conflicts with object interaction.
+- Fixed drag panning reliability by using stronger pointer-capture logic and browser-level movement handling.
+- Fixed startup and reset view consistency.
+- Fixed Sun-image loading/caching problems between local files and GitHub Pages.
+- Fixed multiple ring and hover bugs around Saturn and Uranus.
+- Fixed body-image halos and scene-image compositing artifacts.
+- Fixed startup crashes caused by the new moon ephemeris table being referenced before initialization.
+- Fixed timeline dropdown option readability.
+- Fixed `Live Now` showing as paused due to precision/formatting thresholds.
+
+20. Reversions And Replaced Experiments
+- Reverted an oversized UI-text pass after it proved unnecessary.
+- Reverted an experimental double-click object action prompt.
+- Reverted a temporary `Time Factor x10,000` display experiment.
+- Replaced NASA card-image search with Wikipedia/local imagery.
+- Replaced unstable rotating Wikipedia-body projections with stable still-image rendering.
+- Removed procedural sunspots after adopting a real Sun image.
+
+21. Documentation And Project Information
+- Added and expanded README.md with controls, data model notes, assets, and persistence behavior.
+- Added About and More Info panels with plain-language and technical explanations.
+- Added creator credit to About.
+- Updated in-app help repeatedly as controls and simulation behavior changed.
+- Added this ChangeLog.txt as a structured record of the active development history.

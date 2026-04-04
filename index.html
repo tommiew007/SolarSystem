@@ -37,6 +37,44 @@
     #overlay span {
       display: block;
     }
+    .panel-title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .panel-info-button {
+      flex: 0 0 auto;
+      width: 24px;
+      height: 24px;
+      padding: 0;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #eef6ff;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    #overlay .panel-title-row .panel-info-button {
+      width: 24px;
+      margin-top: 0;
+      display: inline-flex;
+      text-align: center;
+    }
+    .panel-info-button:hover {
+      background: rgba(120, 170, 255, 0.18);
+      border-color: rgba(180, 210, 255, 0.34);
+    }
+    .panel-title-text {
+      display: block;
+      font-weight: 700;
+    }
     #overlay .overlay-section {
       margin-top: 8px;
       padding-top: 7px;
@@ -66,6 +104,10 @@
       color: #eef6ff;
       font: inherit;
       color-scheme: dark;
+    }
+    #overlay .timeline-row option {
+      color: #0c1020;
+      background: #ffffff;
     }
     #overlay .timeline-row input[type="range"] {
       flex: 1 1 auto;
@@ -136,6 +178,7 @@
       background: rgba(6, 12, 24, 0.9);
       border: 1px solid rgba(255, 255, 255, 0.18);
       box-shadow: 0 18px 42px rgba(0, 0, 0, 0.38);
+      white-space: pre-line;
     }
     .hidden-ui {
       display: none !important;
@@ -169,6 +212,24 @@
     #infoCard .card-actions,
     #infoCard .card-actions * {
       pointer-events: auto !important;
+    }
+    #infoCard .card-header-row,
+    #infoCard .card-header-row * {
+      pointer-events: auto !important;
+    }
+    #infoCard .card-header-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    #infoCard .card-panel-title {
+      margin: 0;
+      color: rgba(255, 255, 255, 0.8);
+      font-size: clamp(12px, 0.72vw, 14px);
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
     }
     #infoCard h2 {
       margin: 0 0 4px;
@@ -528,8 +589,8 @@
       <li>Planet positions now follow date-based JPL approximate heliocentric positions, letting the model reflect where the planets should be for the chosen simulation date and time.</li>
       <li>Moons now use date-based mean-motion positions as well, so changing the simulation date re-creates the same moon geometry for that moment.</li>
       <li>A built-in event feed can flag transits, eclipses, and occultation-style alignments for major moons with lightweight predictive timing.</li>
-      <li>Hover and click cards show object facts, distances, orbital timing, follow actions, and quick links to learn more.</li>
-      <li>Camera controls support drag, zoom, follow mode, recentering, a draggable date timeline, and touch-friendly navigation on phones and tablets.</li>
+      <li>Hover and click cards show object facts, distances, orbital timing, follow actions, quick links to learn more, and panel info buttons that explain how to read the displays.</li>
+      <li>Camera controls support drag, zoom, follow mode, recentering, a draggable date timeline, a Live Now real-time toggle, and touch-friendly navigation on phones and tablets.</li>
       <li>The simulation remembers your preferred view, speed, labels, music, units, and other settings between sessions unless you clear them.</li>
     </ul>
     <p>Some parts remain intentionally simplified for readability: orbit spacing is compressed to fit the screen, and Pluto stays on the simplified model path.</p>
@@ -544,13 +605,14 @@
     <p>The visual scene combines local image assets with live browser rendering. Camera movement, labels, info cards, music, touch support, and saved settings all run in the browser so the project stays easy to open, share, and publish.</p>
     <ul>
       <li><strong>Core technology:</strong> HTML5, CSS, JavaScript, the Canvas 2D API for the scene, and the Web Audio API for the ambient soundtrack.</li>
-      <li><strong>Planet positions:</strong> date-based heliocentric planet placement uses JPL approximate position formulas so the major planets can be shown at realistic locations for the chosen simulation date. These positions are computed locally in the browser from embedded reference data, not fetched live.</li>
+      <li><strong>Planet positions:</strong> date-based heliocentric planet placement uses JPL approximate position formulas so the major planets can be shown at realistic locations for the chosen simulation date. These positions are computed locally in the browser from embedded reference data, not fetched live. The Live Now control snaps that same model to the current real moment, then can toggle back to your prior simulation state.</li>
       <li><strong>Moon positions:</strong> date-based moon placement uses JPL planetary satellite mean-element epochs and mean anomalies as lightweight browser-friendly anchors for recreating moon geometry by date. These moon positions are also computed locally from stored reference values rather than requested from JPL or NASA on each change.</li>
       <li><strong>Sizes, periods, and orbital values:</strong> body diameters, periods, and other baseline numbers are drawn from NASA and JPL fact-sheet style references used throughout the model data.</li>
       <li><strong>Object imagery:</strong> local body images are sourced from Wikipedia article imagery and then stored in the project for scene rendering and cards.</li>
       <li><strong>Milky Way background:</strong> the galaxy panorama comes from ESO imagery and is used as the real-space backdrop behind the simulation.</li>
       <li><strong>Event feed:</strong> eclipse, transit, and occultation-style notices are generated from simplified Sun/Earth alignment geometry around each parent planet, prioritizing readability over observatory-grade precision.</li>
       <li><strong>Modeling note:</strong> distances are intentionally compacted on screen for readability, so the simulation preserves useful relationships without requiring an impossible amount of display space.</li>
+      <li><strong>Context help:</strong> small info buttons on the main menu, object card, and scale guide open concise explanations of what each panel means and how to read it.</li>
     </ul>
     <p>The result is a browser-friendly educational model that mixes real astronomical reference data with readable visual design choices, so it can feel informative without becoming too dense to explore.</p>
     <div class="about-actions">
@@ -558,6 +620,10 @@
     </div>
   </div>
   <div id="overlay">
+    <div class="panel-title-row">
+      <button id="overlayInfoButton" class="panel-info-button" type="button" aria-label="Explain the main menu">i</button>
+      <strong class="panel-title-text">Main Menu</strong>
+    </div>
     <span id="timeFactorDisplay" class="time-factor-neutral" role="button" tabindex="0" title="Click to enter a time factor">Time Factor: 0.00</span>
     <div class="overlay-section">
       <strong class="overlay-heading">Controls</strong>
@@ -568,7 +634,7 @@
       <span id="moonHelp">Moon Motion: [ / ] adjusts moon speed</span>
       <span id="unitsHelp">Units: U toggles metric / English</span>
       <span id="timelineHelp">Timeline: drag the scrubber through days, months, or years</span>
-      <span id="resetHelp">Reset: R | Defaults: Shift+R | Live: Live Now button | Clear hover: Esc</span>
+      <span id="resetHelp">Reset: R | Defaults: Shift+R | Live: Live Now toggles real-time mode | Clear hover: Esc</span>
       <span id="toggleHelp">Toggles: F follow, C cards, L labels, I info, A about, M cycles music, Shift+N Nibiru, H/? help</span>
     </div>
     <div class="overlay-section">
@@ -621,7 +687,10 @@
     <button id="touchHelpButton" type="button" aria-label="Toggle help">Help</button>
   </div>
   <div id="legend">
-    <strong>Scale Guide</strong>
+    <div class="panel-title-row">
+      <button id="legendInfoButton" class="panel-info-button" type="button" aria-label="Explain the scale guide">i</button>
+      <strong class="panel-title-text">Scale Guide</strong>
+    </div>
     <span>Planet and moon diameters are drawn from the same size scale relative to the Sun.</span>
     <span>Planet spacing is compacted to fit the screen and adjusts evenly with window width.</span>
     <span>Planet positions follow JPL approximate heliocentric date/time positions while orbit spacing stays compressed.</span>
@@ -642,6 +711,8 @@
     const timeFactorDisplay = document.getElementById('timeFactorDisplay');
     const timeFactorToast = document.getElementById('timeFactorToast');
     const statusToast = document.getElementById('statusToast');
+    const overlayInfoButton = document.getElementById('overlayInfoButton');
+    const legendInfoButton = document.getElementById('legendInfoButton');
     const followSelect = document.getElementById('followSelect');
     const liveNowButton = document.getElementById('liveNowButton');
     const clearSettingsButton = document.getElementById('clearSettingsButton');
@@ -1648,6 +1719,7 @@
     let hoverHideTimer = null;
     let timeFactorToastTimer = null;
     let statusToastTimer = null;
+    let statusToastDismissOnInput = false;
     let speedUpHeld = false;
     let speedDownHeld = false;
     let timeFactorHoldDirection = 0;
@@ -1665,6 +1737,24 @@
     const ASSET_CACHE_SUFFIX = window.location.protocol === 'file:' ? '' : `?v=${LOCAL_IMAGE_CACHE_KEY}`;
     const MILKY_WAY_BACKGROUND_URL = `images/milky-way-panorama.jpg${ASSET_CACHE_SUFFIX}`;
     let milkyWayBackgroundImage = null;
+
+    const PANEL_INFO_MESSAGES = {
+      object: `Object Info
+
+This card explains the body you are hovering over or have clicked. Read it top to bottom: what the body is, what it orbits, how large it is, how long its orbit takes, how fast it moves, and how far it is from the Sun in approximate terms.
+
+Hover previews a body, click pins the card, Follow centers the camera on it, and Open in Wikipedia jumps to a reference page.`,
+      overlay: `Main Menu
+
+This panel is the control center for the simulation. Time Factor sets how quickly simulated time moves, Controls lists the input shortcuts, Telemetry reports the current simulation state, and Timeline shifts the simulation date without changing the current speed.
+
+Use Live Now to jump into real-time astronomical positions, and Clear Saved Settings if you want to wipe the stored browser session and start fresh.`,
+      scale: `Scale Guide
+
+Body sizes use one shared scale relative to the Sun, so diameters stay meaningful across planets and moons. Orbital spacing is intentionally compressed to fit the screen, which means distances are readable rather than literal.
+
+The green band marks the habitable zone, the blue band marks the frost-line region, and the planet positions still follow date-based JPL-style placement even inside this compact layout.`
+    };
 
     // Zoom & pan state
     let scale = 1.0;
@@ -2038,9 +2128,13 @@
     }
 
     function setSimulationDateMs(targetUnixMs, options = {}) {
-      const { showStatus = false, syncTimeline = false, persist = true } = options;
+      const { showStatus = false, syncTimeline = false, persist = true, preserveLiveNowMode = false } = options;
       if (!Number.isFinite(targetUnixMs)) {
         return;
+      }
+
+      if (!preserveLiveNowMode) {
+        clearLiveNowSnapshot();
       }
 
       simulationReferenceMs = targetUnixMs - (simTimeMs / 1000) * MS_PER_DAY;
@@ -2725,6 +2819,16 @@
       return value * DISPLAY_TIME_FACTOR_MULTIPLIER;
     }
 
+    function getNextWholeDisplayedTimeFactor(currentDisplayedFactor, stepDirection) {
+      const rounded = Math.round(currentDisplayedFactor);
+      if (Math.abs(currentDisplayedFactor - rounded) < 0.000001) {
+        return rounded + stepDirection;
+      }
+      return stepDirection > 0
+        ? Math.ceil(currentDisplayedFactor)
+        : Math.floor(currentDisplayedFactor);
+    }
+
     function adjustMoonMotionMultiplier(stepDirection) {
       moonMotionMultiplier = normalizeMoonMotionMultiplier(moonMotionMultiplier + (MOON_MOTION_MULTIPLIER_STEP * stepDirection));
       updateOverlay();
@@ -2741,10 +2845,14 @@
     }
 
     function setDisplayedTimeFactor(nextDisplayedFactor, options = {}) {
-      const { showStatus = true } = options;
+      const { showStatus = true, preserveLiveNowMode = false } = options;
       const cappedDisplayedFactor = normalizeDisplayedTimeFactor(nextDisplayedFactor);
       const wasCapped = Math.abs(cappedDisplayedFactor - nextDisplayedFactor) > 0.000001;
       const normalizedSpeedFactor = normalizeTimeFactor(cappedDisplayedFactor / DISPLAY_TIME_FACTOR_MULTIPLIER);
+
+      if (!preserveLiveNowMode) {
+        clearLiveNowSnapshot();
+      }
 
       if (cameraFlight?.resumeState) {
         cameraFlight.resumeState.speedFactor = normalizedSpeedFactor;
@@ -2800,11 +2908,95 @@
       });
     }
 
+    function isLiveNowActive() {
+      return Boolean(liveNowSnapshot);
+    }
+
+    function updateLiveNowControls() {
+      const liveNowActive = isLiveNowActive();
+      liveNowButton.textContent = liveNowActive ? 'Exit Live Now' : 'Live Now';
+      touchLiveNowButton.textContent = liveNowActive ? 'Exit Live' : 'Live';
+      touchLiveNowButton.classList.toggle('is-active', liveNowActive);
+    }
+
+    function clearLiveNowSnapshot() {
+      if (!liveNowSnapshot) {
+        return;
+      }
+
+      liveNowSnapshot = null;
+      updateLiveNowControls();
+    }
+
+    function createLiveNowSnapshot() {
+      return {
+        simulationReferenceMs,
+        simTimeMs,
+        speedFactor,
+        paused,
+        scale,
+        panX,
+        panY,
+        followTargetId,
+        followNeedsZoom,
+        showFollowChooser,
+        timelineUnit,
+        timelineAnchorMs,
+        timelineOffset
+      };
+    }
+
+    async function restoreFromLiveNowSnapshot() {
+      if (!liveNowSnapshot) {
+        return false;
+      }
+
+      const snapshot = liveNowSnapshot;
+      liveNowSnapshot = null;
+
+      clearCameraFlight(false);
+      simulationReferenceMs = snapshot.simulationReferenceMs;
+      simTimeMs = snapshot.simTimeMs;
+      speedFactor = snapshot.speedFactor;
+      paused = snapshot.paused;
+      scale = snapshot.scale;
+      panX = snapshot.panX;
+      panY = snapshot.panY;
+      followTargetId = snapshot.followTargetId;
+      followNeedsZoom = snapshot.followNeedsZoom;
+      showFollowChooser = snapshot.showFollowChooser;
+      timelineUnit = normalizeTimelineUnit(snapshot.timelineUnit);
+      timelineAnchorMs = Number.isFinite(snapshot.timelineAnchorMs) ? snapshot.timelineAnchorMs : getCurrentSimulationDateMs();
+      timelineOffset = Number.isFinite(snapshot.timelineOffset) ? snapshot.timelineOffset : 0;
+      bodyTrails.clear();
+      trailLastTimestamp = 0;
+      lastTimestamp = null;
+
+      if (musicEngine) {
+        try {
+          await musicEngine.setPaused(paused);
+        } catch (error) {
+          // Ignore audio pause/resume failures so the simulation still restores correctly.
+        }
+      }
+
+      updateFollowUI();
+      updateOverlay();
+      updateInfoCard(true);
+      updateCanvasCursor();
+      showTransientStatusMessage('Live Now off. Restored your previous simulation state.');
+      return true;
+    }
+
     function confirmDestructiveAction(message) {
       return window.confirm(message);
     }
 
     async function syncSimulationToLiveNow() {
+      if (await restoreFromLiveNowSnapshot()) {
+        return;
+      }
+
       const realTimeFactorLabel = getRealTimeDisplayedFactorLabel();
       const nowMs = Date.now();
       const currentDateLabel = formatSimulationDateTime(nowMs);
@@ -2816,8 +3008,9 @@
         return;
       }
 
+      liveNowSnapshot = createLiveNowSnapshot();
       clearCameraFlight(false);
-      setSimulationDateMs(nowMs, { showStatus: false, syncTimeline: true });
+      setSimulationDateMs(nowMs, { showStatus: false, syncTimeline: true, preserveLiveNowMode: true });
       simTimeMs = 0;
       simulationReferenceMs = nowMs;
       speedFactor = normalizeTimeFactor(REAL_TIME_DISPLAY_FACTOR / DISPLAY_TIME_FACTOR_MULTIPLIER);
@@ -2851,6 +3044,12 @@
         return;
       }
 
+      if (isLiveNowActive()) {
+        setDisplayedTimeFactor(getNextWholeDisplayedTimeFactor(getDisplayedTimeFactor(), stepDirection));
+        return;
+      }
+
+      clearLiveNowSnapshot();
       speedFactor = normalizeTimeFactor(speedFactor + (TIME_FACTOR_STEP * stepDirection));
       updateTimeFactorIndicators();
       showTransientTimeFactorToast();
@@ -2963,25 +3162,49 @@
         window.clearTimeout(statusToastTimer);
         statusToastTimer = null;
       }
+      statusToastDismissOnInput = false;
       statusToast.classList.add('is-hidden');
       statusToast.textContent = '';
     }
 
-    function showTransientStatusMessage(message, durationMs = 2200) {
+    function showTransientStatusMessage(message, durationMs = 2200, options = {}) {
+      const { dismissOnInput = false } = options;
       if (!message) {
         clearTransientStatusMessage();
         return;
       }
 
+      statusToastDismissOnInput = dismissOnInput;
       statusToast.textContent = message;
       statusToast.classList.remove('is-hidden');
       if (statusToastTimer !== null) {
         window.clearTimeout(statusToastTimer);
       }
-      statusToastTimer = window.setTimeout(() => {
+      if (Number.isFinite(durationMs) && durationMs > 0) {
+        statusToastTimer = window.setTimeout(() => {
+          statusToastTimer = null;
+          clearTransientStatusMessage();
+        }, durationMs);
+      } else {
         statusToastTimer = null;
-        statusToast.classList.add('is-hidden');
-      }, durationMs);
+      }
+    }
+
+    function showPanelInfoMessage(panelKey) {
+      const message = PANEL_INFO_MESSAGES[panelKey];
+      if (!message) {
+        return;
+      }
+
+      showTransientStatusMessage(message, 0, { dismissOnInput: true });
+    }
+
+    function dismissStatusToastOnInput() {
+      if (!statusToastDismissOnInput) {
+        return;
+      }
+
+      clearTransientStatusMessage();
     }
 
     async function togglePauseState() {
@@ -3052,7 +3275,7 @@
           ? 'Timeline: drag the scrubber to shift days, months, or years'
           : 'Timeline: drag the scrubber through days, months, or years';
       }
-      resetHelp.textContent = 'Reset: R | Defaults: Shift+R | Live: Live Now button | Clear hover: Esc';
+      resetHelp.textContent = 'Reset: R | Defaults: Shift+R | Live: Live Now toggles real-time mode | Clear hover: Esc';
       toggleHelp.textContent = touchLayout
         ? 'Toolbar: Follow, Labels, Music cycle, Units, About, Help • keyboard C cards, I info, Shift+N Nibiru'
         : 'Toggles: F follow, C cards, L labels, U units, I info, A about, M cycles music, Shift+N Nibiru, H/? help';
@@ -3074,6 +3297,7 @@
       touchMusicButton.classList.toggle('is-active', musicEnabled && !musicUnavailable);
       touchUnitsButton.textContent = getMeasurementSystemLabel();
       touchUnitsButton.classList.toggle('is-active', measurementSystem === 'english');
+      updateLiveNowControls();
       touchAboutButton.textContent = (showAboutInfo || showMoreInfo) ? 'About On' : 'About';
       touchAboutButton.classList.toggle('is-active', showAboutInfo || showMoreInfo);
       touchHelpButton.textContent = showHelp ? 'Hide Help' : 'Help';
@@ -4559,6 +4783,7 @@
     }
 
     function resetSimulationView() {
+      clearLiveNowSnapshot();
       paused = false;
       speedFactor = 0;
       simTimeMs = 0;
@@ -5355,7 +5580,10 @@
         }
 
         infoCard.innerHTML = `
-          <h2>Object Info</h2>
+          <div class="card-header-row">
+            <button type="button" class="panel-info-button" data-card-action="info-object" aria-label="Explain the object info panel">i</button>
+            <strong class="card-panel-title">Object Info</strong>
+          </div>
           <span class="type">Hover or click</span>
           <p class="fact">Move over a planet, moon, or the Sun to inspect scaled size, orbital timing, and a quick fact.</p>
           <p class="hint">Click to pin a card in place. Click empty space to clear it.</p>
@@ -5407,6 +5635,10 @@
       `;
 
       infoCard.innerHTML = `
+        <div class="card-header-row">
+          <button type="button" class="panel-info-button" data-card-action="info-object" aria-label="Explain the object info panel">i</button>
+          <strong class="card-panel-title">Object Info</strong>
+        </div>
         <h2>${escapeHtml(activeBody.name)}</h2>
         <span class="type">${escapeHtml(activeBody.type)}${activeBody.parentName ? ` • orbits ${escapeHtml(activeBody.parentName)}` : ''}</span>
         <dl>
@@ -5644,12 +5876,14 @@
         toggleNibiruVisibility();
         return;
       }
-      if (key !== 'm') {
-        void restoreMusicOnGesture();
-      }
+        if (key !== 'm') {
+          void restoreMusicOnGesture();
+        }
 
-      if (key === 'w') {
-        e.preventDefault();
+        dismissStatusToastOnInput();
+
+        if (key === 'w') {
+          e.preventDefault();
         if (!speedUpHeld) {
           speedUpHeld = true;
           adjustTimeFactor(1);
@@ -5771,6 +6005,14 @@
       resetHeldTimeFactorState();
     });
 
+    window.addEventListener('pointerdown', () => {
+      dismissStatusToastOnInput();
+    }, { capture: true });
+
+    window.addEventListener('wheel', () => {
+      dismissStatusToastOnInput();
+    }, { passive: true, capture: true });
+
     followSelect.addEventListener('change', () => {
       const targetId = followSelect.value || null;
       if (targetId) {
@@ -5785,6 +6027,18 @@
 
     clearSettingsButton.addEventListener('click', () => {
       void clearSavedSettings();
+    });
+
+    overlayInfoButton.addEventListener('click', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      showPanelInfoMessage('overlay');
+    });
+
+    legendInfoButton.addEventListener('click', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      showPanelInfoMessage('scale');
     });
 
     liveNowButton.addEventListener('click', () => {
@@ -6160,6 +6414,16 @@
     });
 
     infoCard.addEventListener('click', e => {
+      const infoButton = e.target instanceof Element
+        ? e.target.closest('button[data-card-action="info-object"]')
+        : null;
+      if (infoButton) {
+        e.preventDefault();
+        e.stopPropagation();
+        showPanelInfoMessage('object');
+        return;
+      }
+
       const followButton = e.target instanceof Element
         ? e.target.closest('button[data-card-action="follow"]')
         : null;

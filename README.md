@@ -12,6 +12,7 @@ This project focuses on readability, exploration, and education. It blends real 
 - Pluto included as a dwarf planet
 - Large moon set across Earth, Mars, Jupiter, Saturn, Uranus, Neptune, and Pluto
 - Hover/click object cards with facts, size, orbital period, orbital speed, approximate Sun distance, follow action, and Wikipedia link
+- Contextual info buttons on the main menu, object card, and scale guide
 - Follow camera with animated flight behavior
 - Timeline scrubber for shifting the simulation by days, months, or years
 - Event feed for lightweight moon transits, eclipses, and occultation-style alignments
@@ -71,14 +72,14 @@ The app runs entirely in the browser and does not require a build step.
 
 - Click `Time Factor` to type a value directly
 - Click `Date` to enter a simulation date/time directly
-- Use `Live Now` to jump to the current real date/time and set real-time speed
+- Use `Live Now` to toggle into the current real date/time at real-time speed, then toggle back to your prior simulation state
 - Use the timeline scrubber to move through days, months, or years
 
 ### Touch / Mobile
 
 - One-finger drag: pan
 - Pinch: zoom
-- Touch toolbar includes time, moon motion, zoom, center, follow, labels, music, units, live sync, about, and help
+- Touch toolbar includes time, moon motion, zoom, center, follow, labels, music, units, the Live Now toggle, about, and help
 
 ## On-Screen Panels
 
@@ -88,6 +89,8 @@ The app runs entirely in the browser and does not require a build step.
 - `About`: feature overview
 - `More Info`: technology and source summary
 - `Scale Guide`: explains compacted spacing and scaled body sizes
+
+Major panels also include small `i` buttons that open a concise explanation of what that display means and how to read it. Those messages stay up until the next key press, click, or wheel input.
 
 ## Telemetry
 
